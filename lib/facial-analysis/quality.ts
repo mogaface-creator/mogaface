@@ -12,7 +12,7 @@
  */
 
 import { LANDMARK } from "./landmarkMapping.ts";
-import { angle, boundingBox } from "./geometry.ts";
+import { boundingBox } from "./geometry.ts";
 import type { LandmarkList, PhotoQualityResult } from "./types.ts";
 
 export interface QualityCheckInput {
@@ -35,10 +35,12 @@ export interface QualityCheckInput {
   expectFrontalOrientation?: boolean;
 }
 
-const MIN_RESOLUTION_ERROR = 240;
-const MIN_RESOLUTION_WARNING = 480;
-const MIN_FACE_WIDTH_ERROR = 0.15;
-const MIN_FACE_WIDTH_WARNING = 0.25;
+export const MIN_RESOLUTION_ERROR = 240;
+export const MIN_RESOLUTION_WARNING = 480;
+export const MIN_BRIGHTNESS = 40;
+export const MAX_BRIGHTNESS = 215;
+export const MIN_FACE_WIDTH_ERROR = 0.15;
+export const MIN_FACE_WIDTH_WARNING = 0.25;
 const EDGE_MARGIN = 0.02;
 const MAX_ROLL_WARNING_DEGREES = 15;
 const YAW_RATIO_WARNING = 1.8;
@@ -48,6 +50,47 @@ export function getFaceFrameCoverage(landmarks: LandmarkList): { width: number; 
   const box = boundingBox(landmarks);
   return { width: box.maxX - box.minX, height: box.maxY - box.minY };
 }
+
+/**
+ * Tilt of the eye line away from horizontal, in degrees (0 = level, sign =
+ * direction), computed in pixel space when the image size is given so a
+ * non-square photo doesn't skew it. Null if the eye landmarks are missing.
+ *
+ * (An earlier version returned `180 − angle(...)`, which is 180° for a
+ * perfectly level face — every level photo was warned as "tilted".)
+ */
+export function estimateRollDegrees(lm: LandmarkList, imageWidth = 1, imageHeight = 1): number | null {
+  const rightEyeOuter = lm[LANDMARK.rightEyeOuter];
+  const leftEyeOuter = lm[LANDMARK.leftEyeOuter];
+  if (!rightEyeOuter || !leftEyeOuter) return null;
+  const dx = (leftEyeOuter.x - rightEyeOuter.x) * imageWidth;
+  const dy = (leftEyeOuter.y - rightEyeOuter.y) * imageHeight;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return null;
+  let degrees = (Math.atan2(dy, dx) * 180) / Math.PI;
+  // Fold to [-90, 90] so a mirrored image (eyes in swapped x order) reads the same as an unmirrored one.
+  if (degrees > 90) degrees -= 180;
+  if (degrees < -90) degrees += 180;
+  return degrees;
+}
+
+/**
+ * Yaw approximation: larger / smaller of the nose-to-inner-eye horizontal
+ * spans on each side. 1 is frontal; larger means turned. Infinity when one
+ * side collapses; null if landmarks are missing.
+ */
+export function estimateYawRatio(lm: LandmarkList): number | null {
+  const rightEyeInner = lm[LANDMARK.rightEyeInner];
+  const leftEyeInner = lm[LANDMARK.leftEyeInner];
+  const noseTip = lm[LANDMARK.noseTip];
+  if (!rightEyeInner || !leftEyeInner || !noseTip) return null;
+  const rightSpan = Math.abs(noseTip.x - rightEyeInner.x);
+  const leftSpan = Math.abs(leftEyeInner.x - noseTip.x);
+  const smaller = Math.min(rightSpan, leftSpan);
+  return smaller === 0 ? Infinity : Math.max(rightSpan, leftSpan) / smaller;
+}
+
+export const MAX_ROLL_DEGREES = MAX_ROLL_WARNING_DEGREES;
+export const MAX_YAW_RATIO = YAW_RATIO_WARNING;
 
 export function checkPhotoQuality(input: QualityCheckInput): PhotoQualityResult {
   const errors: string[] = [];
@@ -67,9 +110,9 @@ export function checkPhotoQuality(input: QualityCheckInput): PhotoQualityResult 
   }
 
   if (typeof input.meanBrightness === "number") {
-    if (input.meanBrightness < 40) {
+    if (input.meanBrightness < MIN_BRIGHTNESS) {
       warnings.push("Image appears too dark. Try a photo with more even lighting.");
-    } else if (input.meanBrightness > 215) {
+    } else if (input.meanBrightness > MAX_BRIGHTNESS) {
       warnings.push("Image appears overexposed. Try a photo with softer, more even lighting.");
     }
   }
@@ -90,31 +133,14 @@ export function checkPhotoQuality(input: QualityCheckInput): PhotoQualityResult 
     }
 
     if (input.expectFrontalOrientation ?? true) {
-      const rightEyeOuter = lm[LANDMARK.rightEyeOuter];
-      const leftEyeOuter = lm[LANDMARK.leftEyeOuter];
-      const rightEyeInner = lm[LANDMARK.rightEyeInner];
-      const leftEyeInner = lm[LANDMARK.leftEyeInner];
-      const noseTip = lm[LANDMARK.noseTip];
-
-      if (rightEyeOuter && leftEyeOuter) {
-        // Roll: angle of the eye line away from horizontal.
-        const horizontalRef = { x: rightEyeOuter.x + 1, y: rightEyeOuter.y };
-        const roll = 180 - angle(horizontalRef, rightEyeOuter, leftEyeOuter);
-        if (Number.isFinite(roll) && Math.abs(roll) > MAX_ROLL_WARNING_DEGREES) {
-          warnings.push("Photo appears tilted. Use a level, front-facing photo for the most accurate results.");
-        }
+      const roll = estimateRollDegrees(lm, input.imageWidth, input.imageHeight);
+      if (roll !== null && Math.abs(roll) > MAX_ROLL_WARNING_DEGREES) {
+        warnings.push("Photo appears tilted. Use a level, front-facing photo for the most accurate results.");
       }
 
-      if (rightEyeInner && leftEyeInner && noseTip) {
-        // Yaw approximation: compare nose-to-eye horizontal spans on each side.
-        const rightSpan = Math.abs(noseTip.x - rightEyeInner.x);
-        const leftSpan = Math.abs(leftEyeInner.x - noseTip.x);
-        const smaller = Math.min(rightSpan, leftSpan);
-        const larger = Math.max(rightSpan, leftSpan);
-        const yawRatio = smaller === 0 ? Infinity : larger / smaller;
-        if (yawRatio > YAW_RATIO_WARNING) {
-          warnings.push("Face appears turned to the side. Use a front-facing photo for the most accurate results.");
-        }
+      const yawRatio = estimateYawRatio(lm);
+      if (yawRatio !== null && yawRatio > YAW_RATIO_WARNING) {
+        warnings.push("Face appears turned to the side. Use a front-facing photo for the most accurate results.");
       }
     }
   }

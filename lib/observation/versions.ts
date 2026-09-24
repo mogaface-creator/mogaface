@@ -28,5 +28,8 @@ export const FACIAL_ANALYSIS_METHODOLOGY_VERSION = ANALYSIS_VERSION;
  * which domains exist, which confidence states apply. This can change
  * independently of the underlying measurement formulas or combination
  * rules.
+ *
+ * 0.2.0: adds contour geometry, the under-eye brightness observation, and
+ * the video expression domain (see docs/VISUAL_OBSERVATION_LAYER.md).
  */
-export const OBSERVATION_ENGINE_VERSION = "0.1.0";
+export const OBSERVATION_ENGINE_VERSION = "0.2.0";

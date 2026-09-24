@@ -7,6 +7,7 @@
  * the app or silently coercing bad data.
  */
 
+import { createEmptyAppearanceConcerns, sanitizeAppearanceConcerns } from "./appearanceConcerns.ts";
 import { ASSESSMENT_VERSION, PHOTO_SLOTS, type Assessment } from "./types.ts";
 
 const GENDER_PRESENTATIONS = ["male", "female", "nonBinary", "preferNotToSay"] as const;
@@ -199,13 +200,17 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
 
   const profile = sanitizeProfile(raw.profile);
   const goals = sanitizeGoals(raw.goals);
+  // Absent on assessments saved before this field existed → empty. Present
+  // but malformed → the whole assessment is discarded, like every other section.
+  const appearanceConcerns =
+    raw.appearanceConcerns === undefined ? createEmptyAppearanceConcerns() : sanitizeAppearanceConcerns(raw.appearanceConcerns);
   const hair = sanitizeHair(raw.hair);
   const facialHair = sanitizeFacialHair(raw.facialHair);
   const lifestyle = sanitizeLifestyle(raw.lifestyle);
   const style = sanitizeStyle(raw.style);
   const photos = sanitizePhotos(raw.photos);
 
-  if (!profile || !goals || !hair || !facialHair || !lifestyle || !style || !photos) return null;
+  if (!profile || !goals || !appearanceConcerns || !hair || !facialHair || !lifestyle || !style || !photos) return null;
 
   return {
     id: raw.id,
@@ -214,6 +219,7 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
     assessmentVersion: ASSESSMENT_VERSION,
     profile,
     goals,
+    appearanceConcerns,
     hair,
     facialHair,
     lifestyle,

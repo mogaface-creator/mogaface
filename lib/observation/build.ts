@@ -6,11 +6,13 @@ import {
   buildLifestyleAnalysis,
   buildStyleAnalysis,
 } from "./questionnaireDomains.ts";
+import { buildExpressionAnalysis } from "./videoDomains.ts";
 import { ANALYSIS_LIMITATIONS } from "./limitations.ts";
 import { FACIAL_ANALYSIS_METHODOLOGY_VERSION, OBSERVATION_ENGINE_VERSION } from "./versions.ts";
 import { ANALYSIS_VERSION } from "../facial-analysis/analysis.ts";
 import type { Assessment } from "../assessment/types.ts";
 import type { MultiPhotoFacialAnalysis } from "../facial-analysis/multiPhoto/types.ts";
+import type { VideoExpressionAnalysis } from "../facial-analysis/video/types.ts";
 import type { MogaFaceAnalysis, Observation } from "./types.ts";
 
 /**
@@ -20,9 +22,14 @@ import type { MogaFaceAnalysis, Observation } from "./types.ts";
  * reach the review step before running photo analysis; in that case every
  * photo-derived domain is simply empty rather than fabricated.
  */
-export function buildMogaFaceAnalysis(assessment: Assessment, multiPhoto: MultiPhotoFacialAnalysis | null): MogaFaceAnalysis {
+export function buildMogaFaceAnalysis(
+  assessment: Assessment,
+  multiPhoto: MultiPhotoFacialAnalysis | null,
+  video: VideoExpressionAnalysis | null = null,
+): MogaFaceAnalysis {
   const facialStructure = buildFacialStructureAnalysis(multiPhoto);
   const eyeArea = buildEyeAreaAnalysis(multiPhoto);
+  const expression = buildExpressionAnalysis(video);
   const hair = buildHairAnalysis(assessment);
   const facialHair = buildFacialHairAnalysis(assessment);
   const skin = buildSkinAnalysis();
@@ -32,7 +39,9 @@ export function buildMogaFaceAnalysis(assessment: Assessment, multiPhoto: MultiP
   const observations: Observation<unknown>[] = [
     ...facialStructure.measured,
     ...eyeArea.measured,
+    ...eyeArea.visual,
     ...eyeArea.userReported,
+    ...expression.measured,
     ...hair.userReported,
     ...facialHair.userReported,
     ...skin.userReported,
@@ -46,6 +55,7 @@ export function buildMogaFaceAnalysis(assessment: Assessment, multiPhoto: MultiP
     createdAt: new Date().toISOString(),
     facialStructure,
     eyeArea,
+    expression,
     hair,
     facialHair,
     skin,
@@ -58,6 +68,7 @@ export function buildMogaFaceAnalysis(assessment: Assessment, multiPhoto: MultiP
       observationEngineVersion: OBSERVATION_ENGINE_VERSION,
       analysisVersion: ANALYSIS_VERSION,
       multiPhotoAnalysisVersion: multiPhoto?.multiPhotoAnalysisVersion ?? null,
+      videoAnalysisVersion: video?.videoAnalysisVersion ?? null,
       assessmentVersion: assessment.assessmentVersion,
     },
   };

@@ -6,6 +6,8 @@
  * interpreted. No field has a "correct" answer.
  */
 
+import type { AppearanceConcerns } from "./appearanceConcerns.ts";
+
 export type GenderPresentation = "male" | "female" | "nonBinary" | "preferNotToSay";
 
 export interface Profile {
@@ -163,6 +165,12 @@ export interface Assessment {
   assessmentVersion: typeof ASSESSMENT_VERSION;
   profile: Profile;
   goals: Goals;
+  /**
+   * Structured user-reported face/skin goals (see appearanceConcerns.ts).
+   * Added without bumping ASSESSMENT_VERSION: stored assessments saved
+   * before it existed load with an empty value (see sanitizeAssessment).
+   */
+  appearanceConcerns: AppearanceConcerns;
   hair: HairProfile;
   facialHair: FacialHairProfile;
   lifestyle: LifestyleProfile;

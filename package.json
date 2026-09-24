@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/facial-analysis/*.test.ts tests/assessment/*.test.ts tests/multiPhoto/*.test.ts tests/observation/*.test.ts"
+    "test": "node --test tests/facial-analysis/*.test.ts tests/assessment/*.test.ts tests/multiPhoto/*.test.ts tests/observation/*.test.ts tests/treatment-opportunities/*.test.ts tests/visual/*.test.ts tests/calibration/*.test.ts"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",

@@ -51,6 +51,8 @@ interface MultiChoiceGroupProps<T extends string> {
   /** When set, further selections are disabled once this many are selected. */
   max?: number;
   helperText?: string;
+  /** Keeps the label for assistive tech but hides it visually (when a heading above already says it). */
+  hideLabel?: boolean;
 }
 
 export function MultiChoiceGroup<T extends string>({
@@ -60,6 +62,7 @@ export function MultiChoiceGroup<T extends string>({
   onChange,
   max,
   helperText,
+  hideLabel,
 }: MultiChoiceGroupProps<T>) {
   const atMax = typeof max === "number" && value.length >= max;
 
@@ -73,7 +76,7 @@ export function MultiChoiceGroup<T extends string>({
 
   return (
     <fieldset>
-      <legend className="text-sm font-medium">{label}</legend>
+      <legend className={hideLabel ? "sr-only" : "text-sm font-medium"}>{label}</legend>
       {(helperText || max) && (
         <p className="mt-1 text-xs text-muted">
           {helperText}

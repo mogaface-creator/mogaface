@@ -9,6 +9,8 @@
  * OBSERVATION_ENGINE.md for the full rationale.
  */
 
+import type { ExpressionEvidence, LinePatternEvidence } from "../facial-analysis/video/types.ts";
+
 export type ObservationSourceType = "measured" | "user_reported" | "inferred";
 
 /**
@@ -28,7 +30,8 @@ export type AnalysisDomain =
   | "facial-hair"
   | "skin"
   | "lifestyle"
-  | "style";
+  | "style"
+  | "expression";
 
 /** A single piece of provenance-tracked information. */
 export interface Observation<T> {
@@ -74,10 +77,31 @@ export interface FacialStructureAnalysis {
 
 export interface EyeAreaAnalysis {
   measured: Observation<number>[];
+  /**
+   * Appearance-only visual observations (value `true` = present in this photo), e.g. "visible
+   * dark-looking under-eye appearance". Empty unless a front photo with an under-eye measurement exists.
+   */
+  visual: Observation<boolean>[];
+  /** Under-eye categories deliberately NOT measured, each with the reason — never silently omitted. */
+  notMeasured: { id: string; label: string; reason: string }[];
   /** Empty today — the assessment does not currently collect glasses use, eyebrow grooming preference, or eye-area concerns. */
   userReported: Observation<string>[];
   /** Empty — no defensible methodology exists for eye-shape classification from landmark thresholds. */
   inferences: InferencePlaceholder[];
+}
+
+/**
+ * Dynamic expression evidence from the optional video. Every observation is
+ * traceable to sampled video frames (`source` = "video_frame_<i>+…").
+ */
+export interface ExpressionAnalysis {
+  /** "not_provided": no video was given. "insufficient_evidence": one was, but no neutral baseline could be established. */
+  status: "not_provided" | "analyzed" | "insufficient_evidence";
+  /** Measured movement (numbers) and line-contrast observations (numbers, and `true` for a visible pattern). */
+  measured: Observation<number | boolean>[];
+  expressions: ExpressionEvidence[];
+  linePatterns: LinePatternEvidence[];
+  notes: string[];
 }
 
 export interface HairAnalysis {
@@ -116,6 +140,8 @@ export interface MogaFaceAnalysisVersions {
   observationEngineVersion: string;
   analysisVersion: string;
   multiPhotoAnalysisVersion: string | null;
+  /** Null when no video was analyzed. */
+  videoAnalysisVersion: string | null;
   assessmentVersion: string;
 }
 
@@ -126,6 +152,7 @@ export interface MogaFaceAnalysis {
 
   facialStructure: FacialStructureAnalysis;
   eyeArea: EyeAreaAnalysis;
+  expression: ExpressionAnalysis;
   hair: HairAnalysis;
   facialHair: FacialHairAnalysis;
   skin: SkinAnalysis;

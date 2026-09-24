@@ -56,3 +56,34 @@ test("loadAssessment returns null when nothing has been saved yet", () => {
   clearAssessment();
   assert.equal(loadAssessment(), null);
 });
+
+test("appearance concerns persist through storage and reload correctly", () => {
+  const assessment = createEmptyAssessment();
+  assessment.appearanceConcerns = {
+    ...assessment.appearanceConcerns,
+    selected: ["FACIAL_LINES", "SKIN_TONE"],
+    details: ["FOREHEAD_LINES"],
+    priorities: ["FACIAL_LINES"],
+  };
+  saveAssessment(assessment);
+  assert.deepEqual(loadAssessment()?.appearanceConcerns, assessment.appearanceConcerns);
+});
+
+test("an older stored assessment without appearanceConcerns still loads (with empty concerns)", () => {
+  const older: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
+  delete older.appearanceConcerns;
+  memoryStorage.setItem("mogaface:assessment", JSON.stringify(older));
+  const loaded = loadAssessment();
+  assert.notEqual(loaded, null);
+  assert.deepEqual(loaded?.appearanceConcerns.selected, []);
+});
+
+test("malformed stored appearance concerns are rejected safely, not thrown", () => {
+  const bad: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
+  bad.appearanceConcerns = { version: "0.1.0", selected: ["FACIAL_LINES"], details: ["JAW_DEFINITION"], priorities: [] };
+  memoryStorage.setItem("mogaface:assessment", JSON.stringify(bad));
+  assert.equal(loadAssessment(), null);
+  bad.appearanceConcerns = "garbage";
+  memoryStorage.setItem("mogaface:assessment", JSON.stringify(bad));
+  assert.equal(loadAssessment(), null);
+});

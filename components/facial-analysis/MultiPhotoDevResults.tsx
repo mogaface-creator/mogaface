@@ -1,6 +1,11 @@
 import { PHOTO_SLOTS } from "@/lib/assessment/types.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
 import type { MogaFaceAnalysis, Observation } from "@/lib/observation/types.ts";
+import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
+import type { AppearanceConcernSignal } from "@/lib/assessment/appearanceConcerns.ts";
+import { explainOpportunity } from "@/lib/treatment-opportunities/evidence.ts";
+import { TREATMENT_CATEGORY_DEFINITIONS } from "@/lib/treatment-opportunities/categories.ts";
+import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
 import { formatRatio } from "./format";
 
 function formatObservationValue(value: unknown): string {
@@ -42,11 +47,14 @@ interface MultiPhotoDevResultsProps {
   photos: PhotoAnalysisRecord[];
   analysis: MultiPhotoFacialAnalysis | null;
   mogaFaceAnalysis: MogaFaceAnalysis | null;
+  treatmentOpportunities: TreatmentOpportunity[];
+  userReportedSignals: AppearanceConcernSignal[];
+  videoAnalysis: VideoExpressionAnalysis | null;
   isRunning: boolean;
   progress: { slot: PhotoSlot; index: number; total: number } | null;
 }
 
-export function MultiPhotoDevResults({ photos, analysis, mogaFaceAnalysis, isRunning, progress }: MultiPhotoDevResultsProps) {
+export function MultiPhotoDevResults({ photos, analysis, mogaFaceAnalysis, treatmentOpportunities, userReportedSignals, videoAnalysis, isRunning, progress }: MultiPhotoDevResultsProps) {
   const bySlot = new Map(photos.map((p) => [p.slot, p]));
   const landmarksDone = photos.some((p) => p.landmarks !== null);
   const measurementsDone = photos.some((p) => p.measurements !== null);
@@ -146,6 +154,76 @@ export function MultiPhotoDevResults({ photos, analysis, mogaFaceAnalysis, isRun
                   observation{mogaFaceAnalysis.style.userReported.length === 1 ? "" : "s"}
                 </li>
               </ul>
+
+              {videoAnalysis && (
+                <>
+                  <h3 className="mt-6 text-sm font-semibold">Expression video (development view)</h3>
+                  <p className="mt-2 text-xs text-muted">
+                    {videoAnalysis.status === "analyzed" ? "Analyzed" : "Insufficient evidence"} — {videoAnalysis.framesUsable} of{" "}
+                    {videoAnalysis.framesSampled} sampled frames usable
+                    {videoAnalysis.baseline ? `; neutral baseline from frames ${videoAnalysis.baseline.frames.join(", ")}` : ""}.
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs">
+                    {videoAnalysis.expressions.map((e) => (
+                      <li key={e.expression}>
+                        <span className="font-medium">{e.expression.replace("_", " ").toLowerCase()}</span> — {e.status.replace("_", " ")}
+                        {e.status === "observed" && e.evidence.movementPct !== null
+                          ? ` · ${e.evidence.movementPct.toFixed(1)}% (${e.evidence.movementMetric}) · evidence ${e.strength} · frames ${e.evidence.expressionFrames.join(", ")}`
+                          : ` · ${e.reason}`}
+                      </li>
+                    ))}
+                    {videoAnalysis.linePatterns.map((p) => (
+                      <li key={`${p.kind}-${p.expression}`} className="text-muted">
+                        {p.kind} line pattern ({p.expression.replace("_", " ").toLowerCase()}) — {p.status.replace("_", " ")}
+                        {p.contrastRatio !== null ? ` · contrast ×${p.contrastRatio.toFixed(2)}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                  {videoAnalysis.notes.length > 0 && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{videoAnalysis.notes.join(" ")}</p>}
+                </>
+              )}
+
+              <h3 className="mt-6 text-sm font-semibold">User-reported concerns → normalized signals (development view)</h3>
+              {userReportedSignals.length === 0 ? (
+                <p className="mt-3 text-sm text-muted">None recorded.</p>
+              ) : (
+                <ul className="mt-3 space-y-1 text-xs">
+                  {userReportedSignals.map((s) => (
+                    <li key={s.questionId}>
+                      <span className="font-medium">{s.label}</span> — <code className="text-muted">{s.signal}</code>
+                      {s.isPriority && <span className="ml-1 text-accent">(priority)</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <h3 className="mt-6 text-sm font-semibold">Treatment opportunities (development view)</h3>
+              {treatmentOpportunities.length === 0 ? (
+                <p className="mt-3 text-sm text-muted">
+                  None — no stated goal is supported by the available evidence. Any opportunity is a topic for a clinician to assess, not a recommendation.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {treatmentOpportunities.map((o) => (
+                    <li key={o.id} className="rounded-xl border border-border px-4 py-3">
+                      <p className="font-medium">
+                        {o.category ? TREATMENT_CATEGORY_DEFINITIONS[o.category].label : o.title}{" "}
+                        <span className="text-xs font-normal text-muted">
+                          {o.status.replace(/_/g, " ")}
+                          {o.confidence ? ` · evidence ${o.confidence}` : ""} · clinician review required ·{" "}
+                          {o.consumerReady ? "consumer-ready" : "GATED: rests on uncalibrated visual evidence — dev only"}
+                        </span>
+                      </p>
+                      <p className="mt-1 text-muted">{o.rationale}</p>
+                      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-muted">
+                        {explainOpportunity(o).reasons.map((r) => (
+                          <li key={r}>{r}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <div className="mt-6 rounded-xl border border-border px-4 py-3 text-xs text-muted">
                 <p className="font-medium text-foreground">Limitations</p>

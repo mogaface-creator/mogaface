@@ -188,6 +188,19 @@ happen to match today only because both are new — a future change to
 combination/consistency rules bumps `multiPhotoAnalysisVersion` without
 requiring a change to the underlying per-photo formulas, and vice versa.
 
+## 11. Visual observations, video, and the roll-estimate fix
+
+Contour geometry, the under-eye brightness observation, and the optional
+video expression analysis are documented in
+[`docs/VISUAL_OBSERVATION_LAYER.md`](docs/VISUAL_OBSERVATION_LAYER.md). They
+add no formula to sections 1-9 and do not change `analysisVersion`.
+
+One correction to section 8: the roll estimate used by the photo-quality
+check now returns the signed eye-line angle in pixel space (0° = level). It
+previously returned 180° for a perfectly level face, so every level photo
+received the "tilted" warning and an 8-point `qualityScore` penalty. Tilt is
+still flagged above 15°; the score formula itself is unchanged.
+
 ## What this is not
 
 - Not a medical, dermatological, or diagnostic tool.

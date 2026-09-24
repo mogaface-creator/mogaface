@@ -16,6 +16,8 @@
  * union must be updated to match.
  */
 
+import type { ContourGeometry } from "../contour.ts";
+import type { UnderEyeMeasurement } from "../underEye.ts";
 import type {
   FaceMeasurements,
   LandmarkList,
@@ -92,6 +94,11 @@ export interface PhotoAnalysisRecord {
   symmetry: SymmetryResult | null;
   proportions: ProportionResult | null;
 
+  /** Relative face-outline geometry (front and 45° only). Optional: absent on records produced before it existed. */
+  contour?: ContourGeometry | null;
+  /** Under-eye strip brightness vs adjacent cheek (front only). Optional for the same reason. */
+  underEye?: UnderEyeMeasurement | null;
+
   errors: string[];
   warnings: string[];
   processingTimeMs: number | null;
@@ -114,6 +121,8 @@ export function createIdleRecord(slot: PhotoSlot, file: File): PhotoAnalysisReco
     measurements: null,
     symmetry: null,
     proportions: null,
+    contour: null,
+    underEye: null,
     errors: [],
     warnings: [],
     processingTimeMs: null,

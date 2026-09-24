@@ -20,7 +20,9 @@
 
 import { detectFace, FaceLandmarkerError } from "../faceLandmarker.ts";
 import { checkPhotoQuality, getFaceFrameCoverage } from "../quality.ts";
-import { loadImage, sampleMeanBrightness } from "../imageSampling.ts";
+import { loadImage, sampleGrayImage, sampleMeanBrightness } from "../imageSampling.ts";
+import { calculateContourGeometry } from "../contour.ts";
+import { measureUnderEye } from "../underEye.ts";
 import { calculateMeasurements } from "../measurements.ts";
 import { calculateSymmetry } from "../symmetry.ts";
 import { calculateProportions } from "../proportions.ts";
@@ -99,6 +101,19 @@ export async function analyzeSinglePhoto(
       record.measurements = calculateMeasurements(landmarks);
       record.symmetry = calculateSymmetry(landmarks, record.measurements);
       record.proportions = calculateProportions(record.measurements);
+
+      // Visual-observation inputs (relative geometry; front-view under-eye brightness).
+      // Best-effort: a failure here must never fail the photo's core analysis.
+      try {
+        record.contour = calculateContourGeometry(landmarks, image.naturalWidth, image.naturalHeight, viewCategory === "front" ? "front" : "threeQuarter");
+        if (viewCategory === "front") {
+          const gray = sampleGrayImage(image);
+          record.underEye = gray ? measureUnderEye(gray, landmarks) : null;
+        }
+      } catch {
+        record.contour = null;
+        record.underEye = null;
+      }
     }
 
     setStatus("complete");

@@ -7,6 +7,7 @@ import { AssessmentProgress } from "./AssessmentProgress";
 import { AssessmentIntro } from "./AssessmentIntro";
 import { ProfileStep } from "./ProfileStep";
 import { GoalsStep } from "./GoalsStep";
+import { AppearanceConcernsStep } from "./AppearanceConcernsStep";
 import { HairStep } from "./HairStep";
 import { FacialHairStep } from "./FacialHairStep";
 import { LifestyleStep } from "./LifestyleStep";
@@ -22,6 +23,7 @@ const STEP_ORDER = [
   "intro",
   "profile",
   "goals",
+  "appearanceConcerns",
   "hair",
   "facialHair",
   "lifestyle",
@@ -35,13 +37,14 @@ type StepId = (typeof STEP_ORDER)[number];
 const PROGRESS_INDEX: Partial<Record<StepId, number>> = {
   profile: 0,
   goals: 1,
-  hair: 2,
-  facialHair: 3,
-  lifestyle: 4,
-  style: 5,
-  photoInstructions: 6,
-  photoCollection: 6,
-  review: 7,
+  appearanceConcerns: 2,
+  hair: 3,
+  facialHair: 4,
+  lifestyle: 5,
+  style: 6,
+  photoInstructions: 7,
+  photoCollection: 7,
+  review: 8,
 };
 
 // This component is only ever mounted client-side (see app/assessment/page.tsx,
@@ -113,6 +116,15 @@ export function AssessmentShell() {
 
           {stepId === "goals" && (
             <GoalsStep value={assessment.goals} onChange={(goals) => patch({ goals })} onNext={goNext} onBack={goBack} />
+          )}
+
+          {stepId === "appearanceConcerns" && (
+            <AppearanceConcernsStep
+              value={assessment.appearanceConcerns}
+              onChange={(appearanceConcerns) => patch({ appearanceConcerns })}
+              onNext={goNext}
+              onBack={goBack}
+            />
           )}
 
           {stepId === "hair" && (

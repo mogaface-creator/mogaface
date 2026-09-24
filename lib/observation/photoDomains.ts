@@ -6,7 +6,8 @@
  */
 
 import { measuredObservation } from "./helpers.ts";
-import type { MultiPhotoFacialAnalysis } from "../facial-analysis/multiPhoto/types.ts";
+import { classifyUnderEyeDarkness } from "../facial-analysis/underEye.ts";
+import type { MultiPhotoFacialAnalysis, PhotoSlot } from "../facial-analysis/multiPhoto/types.ts";
 import type { EyeAreaAnalysis, FacialStructureAnalysis, InferencePlaceholder, Observation } from "./types.ts";
 
 const EYE_SYMMETRY_METRIC_NAMES = ["Eye width symmetry", "Eye vertical position symmetry", "Eyebrow symmetry"];
@@ -16,6 +17,43 @@ function frontRecord(multiPhoto: MultiPhotoFacialAnalysis | null) {
   const front = multiPhoto?.photos.find((p) => p.slot === "front");
   if (!front || !front.measurements || !front.symmetry || !front.proportions) return null;
   return { measurements: front.measurements, symmetry: front.symmetry, proportions: front.proportions };
+}
+
+const SLOT_LABELS: Record<PhotoSlot, string> = {
+  front: "front",
+  leftFortyFive: "left 45°",
+  rightFortyFive: "right 45°",
+  leftProfile: "left profile",
+  rightProfile: "right profile",
+};
+
+/**
+ * Relative face-outline geometry from every complete front/45° photo that
+ * has it. Front contributes both sides plus two ratios; a 45° photo only its
+ * near side (the far side is foreshortened). Each observation's source is
+ * the photo slot it was measured on. A missing angle simply contributes
+ * nothing — never a fallback from another view.
+ */
+function buildContourObservations(multiPhoto: MultiPhotoFacialAnalysis | null): Observation<number>[] {
+  const out: Observation<number>[] = [];
+  for (const record of multiPhoto?.photos ?? []) {
+    const c = record.contour;
+    if (record.status !== "complete" || !c) continue;
+    const slot = record.slot;
+    const add = (id: string, label: string, value: number | null) => {
+      if (value === null || !Number.isFinite(value)) return;
+      out.push(measuredObservation({ id: `facialStructure.contour.${id}`, domain: "facial-structure", label: `${label} (${SLOT_LABELS[slot]})`, value, source: slot }));
+    };
+    for (const side of ["right", "left"] as const) {
+      const s = c[side];
+      if (!s) continue;
+      add(`cheekContourAngle.${slot}.${side}`, `Cheek contour angle, ${side} side`, s.cheekContourAngle);
+      add(`jawContourAngle.${slot}.${side}`, `Jaw contour angle, ${side} side`, s.jawContourAngle);
+    }
+    add("jawToFaceWidthRatio", "Jaw width / face width", c.jawToFaceWidthRatio);
+    add("lowerFaceContourRatio", "Lower-face height / jaw width", c.lowerFaceContourRatio);
+  }
+  return out;
 }
 
 export function buildFacialStructureAnalysis(multiPhoto: MultiPhotoFacialAnalysis | null): FacialStructureAnalysis {
@@ -49,6 +87,8 @@ export function buildFacialStructureAnalysis(multiPhoto: MultiPhotoFacialAnalysi
     }
   }
 
+  measured.push(...buildContourObservations(multiPhoto));
+
   const inferences: InferencePlaceholder[] = [
     {
       id: "facialStructure.classification",
@@ -62,6 +102,13 @@ export function buildFacialStructureAnalysis(multiPhoto: MultiPhotoFacialAnalysi
 
   return { measured, inferences };
 }
+
+/** Categories that would need shading/shape analysis a selfie cannot defend. Reported, never silently dropped. */
+export const UNDER_EYE_NOT_MEASURED = [
+  { id: "eyeArea.visibleUnderEyePuffiness", label: "Visible under-eye puffiness", reason: "Needs 3D shape information a single 2D photo does not provide." },
+  { id: "eyeArea.apparentUnderEyeHollowing", label: "Apparent under-eye hollowing", reason: "Shadow and shape cannot be told apart in a single photo; no defensible method exists." },
+  { id: "eyeArea.visibleUnderEyeFineLinePattern", label: "Visible under-eye fine-line pattern", reason: "Fine texture is not reliably resolvable from a typical selfie." },
+];
 
 export function buildEyeAreaAnalysis(multiPhoto: MultiPhotoFacialAnalysis | null): EyeAreaAnalysis {
   const front = frontRecord(multiPhoto);
@@ -82,8 +129,44 @@ export function buildEyeAreaAnalysis(multiPhoto: MultiPhotoFacialAnalysis | null
     }
   }
 
+  const visual: Observation<boolean>[] = [];
+  const underEye = multiPhoto?.photos.find((p) => p.slot === "front" && p.status === "complete")?.underEye;
+  if (underEye) {
+    const side = (which: "right" | "left") => {
+      const u = underEye[which];
+      if (u) {
+        measured.push(
+          measuredObservation({
+            id: `eyeArea.underEyeBrightnessRatio.${which}`,
+            domain: "eye-area",
+            label: `Under-eye brightness relative to adjacent cheek (${which} eye)`,
+            value: u.luminanceRatio,
+            source: "front",
+          }),
+        );
+      }
+      return u;
+    };
+    side("right");
+    side("left");
+    // Borderline (close to the threshold) is insufficient evidence: no observation.
+    if (classifyUnderEyeDarkness(underEye) === "OBSERVED") {
+      visual.push(
+        measuredObservation({
+          id: "eyeArea.visibleUnderEyeDarkness",
+          domain: "eye-area",
+          label: "Visible dark-looking under-eye appearance (relative to adjacent cheek)",
+          value: true,
+          source: "front",
+        }),
+      );
+    }
+  }
+
   return {
     measured,
+    visual,
+    notMeasured: UNDER_EYE_NOT_MEASURED,
     // Not currently collected by the assessment (glasses use, eyebrow
     // grooming preference, eye-area concerns) — left empty rather than
     // fabricated.

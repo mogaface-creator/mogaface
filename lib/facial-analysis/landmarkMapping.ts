@@ -66,6 +66,34 @@ export const LANDMARK = {
   // Face boundary (cheek extremes at ear level) — used for face width.
   faceRightEdge: 234,
   faceLeftEdge: 454,
+
+  // --- Added for the visual-observation layer (video expressions, under-eye
+  // region, contour geometry). Every index below was checked against
+  // MediaPipe's own connection sets (FACE_LANDMARKS_RIGHT_EYE / LEFT_EYE /
+  // RIGHT_EYEBROW / LEFT_EYEBROW / LIPS / FACE_OVAL as exposed by
+  // @mediapipe/tasks-vision), not inferred from an offset.
+
+  // Eyelid centers: vertical eye opening = lower - upper.
+  rightUpperLid: 159,
+  rightLowerLid: 145,
+  leftUpperLid: 386,
+  leftLowerLid: 374,
+
+  // Middle of each eyebrow's upper contour: brow-to-eye distance tracks brow raise.
+  rightEyebrowMid: 105,
+  leftEyebrowMid: 334,
+
+  // Inner lip edges: mouth opening.
+  innerUpperLip: 13,
+  innerLowerLip: 14,
+
+  // Face-oval contour between ear level and chin, subject's right then left.
+  // Oval order (ear → chin): 234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152
+  // and mirrored 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152.
+  rightOvalCheek: 132,
+  rightOvalJawFront: 150,
+  leftOvalCheek: 361,
+  leftOvalJawFront: 379,
 } as const;
 
 export type LandmarkName = keyof typeof LANDMARK;

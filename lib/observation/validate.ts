@@ -17,6 +17,7 @@ const VALID_DOMAINS: AnalysisDomain[] = [
   "skin",
   "lifestyle",
   "style",
+  "expression",
 ];
 const VALID_TYPES: ObservationSourceType[] = ["measured", "user_reported", "inferred"];
 const EXPECTED_CONFIDENCE: Record<ObservationSourceType, ConfidenceState> = {
@@ -24,6 +25,9 @@ const EXPECTED_CONFIDENCE: Record<ObservationSourceType, ConfidenceState> = {
   user_reported: "self_reported",
   inferred: "not_available",
 };
+
+/** Video-derived observations must name the sampled frames they came from: "video_frame_3+video_frame_14". */
+const VIDEO_SOURCE = /^video_frame_\d+(\+video_frame_\d+)*$/;
 
 /** Returns a list of problems; an empty list means the observation is well-formed. */
 export function validateObservation(observation: Observation<unknown>): string[] {
@@ -46,6 +50,10 @@ export function validateObservation(observation: Observation<unknown>): string[]
     problems.push(
       `confidence "${observation.confidence}" does not match type "${observation.type}" (expected "${EXPECTED_CONFIDENCE[observation.type]}")`,
     );
+  }
+
+  if (observation.domain === "expression" && !VIDEO_SOURCE.test(String(observation.source))) {
+    problems.push(`expression observation source "${observation.source}" does not trace to video frames`);
   }
 
   if (!observation.createdAt || Number.isNaN(Date.parse(observation.createdAt))) {

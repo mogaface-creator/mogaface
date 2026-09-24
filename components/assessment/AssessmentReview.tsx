@@ -12,11 +12,16 @@ import { CURRENT_STYLE_OPTIONS } from "./StyleStep";
 import type { SessionFiles } from "./PhotoCollection";
 import { PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 import { validateAssessment } from "@/lib/assessment/schema.ts";
+import { APPEARANCE_CONCERN_CATALOG, normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns.ts";
 import { MultiPhotoDevResults } from "@/components/facial-analysis/MultiPhotoDevResults";
 import { analyzeSinglePhoto, buildMultiPhotoAnalysis } from "@/lib/facial-analysis/multiPhoto/coordinator.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
 import { buildMogaFaceAnalysis } from "@/lib/observation/build.ts";
 import type { MogaFaceAnalysis } from "@/lib/observation/types.ts";
+import { analyzeVideoFile } from "@/lib/facial-analysis/video/capture.ts";
+import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
+import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
+import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
 
 function labelFor<T extends string>(options: { value: T; label: string }[], value: T | null): string {
   if (value === null) return "Not provided";
@@ -49,6 +54,25 @@ function buildSections(assessment: Assessment): SummarySection[] {
       rows: [
         { label: "Areas", value: labelsFor(GOAL_AREA_OPTIONS, assessment.goals.areas) },
         { label: "Top priorities", value: labelsFor(GOAL_PRIORITY_OPTIONS, assessment.goals.priorities) },
+      ],
+    },
+    {
+      title: "Face & skin concerns",
+      rows: [
+        {
+          label: "Concerns",
+          value: labelsFor(
+            APPEARANCE_CONCERN_CATALOG.map((c) => ({ value: c.id, label: c.label })),
+            assessment.appearanceConcerns.selected,
+          ),
+        },
+        {
+          label: "Most important",
+          value: labelsFor(
+            APPEARANCE_CONCERN_CATALOG.map((c) => ({ value: c.id, label: c.label })),
+            assessment.appearanceConcerns.priorities,
+          ),
+        },
       ],
     },
     {
@@ -97,6 +121,12 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
   const [records, setRecords] = useState<PhotoAnalysisRecord[]>([]);
   const [analysis, setAnalysis] = useState<MultiPhotoFacialAnalysis | null>(null);
   const [mogaFaceAnalysis, setMogaFaceAnalysis] = useState<MogaFaceAnalysis | null>(null);
+  // The optional expression video lives in memory only, like the photo files — never persisted.
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoAnalysis, setVideoAnalysis] = useState<VideoExpressionAnalysis | null>(null);
+  const [videoProgress, setVideoProgress] = useState<{ done: number; total: number } | null>(null);
+  const analyzedVideoRef = useRef<File | null>(null);
+  const [treatmentOpportunities, setTreatmentOpportunities] = useState<TreatmentOpportunity[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<{ slot: PhotoSlot; index: number; total: number } | null>(null);
   // Tracks which File object each current record was produced from, so a
@@ -132,7 +162,22 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
     const nextAnalysis = buildMultiPhotoAnalysis(assessment.id, nextRecords);
     setRecords(nextRecords);
     setAnalysis(nextAnalysis);
-    setMogaFaceAnalysis(buildMogaFaceAnalysis(assessment, nextAnalysis));
+
+    // Video is optional and never blocks the photo analysis: an unreadable video
+    // simply comes back as an "insufficient evidence" analysis with notes.
+    let nextVideo = videoFile && analyzedVideoRef.current === videoFile ? videoAnalysis : null;
+    if (videoFile && analyzedVideoRef.current !== videoFile) {
+      setProgress(null);
+      nextVideo = await analyzeVideoFile(videoFile, { onProgress: (done, total) => setVideoProgress({ done, total }) });
+      analyzedVideoRef.current = videoFile;
+      setVideoProgress(null);
+    }
+    if (!videoFile) analyzedVideoRef.current = null;
+    setVideoAnalysis(nextVideo);
+
+    const nextMogaFaceAnalysis = buildMogaFaceAnalysis(assessment, nextAnalysis, nextVideo);
+    setMogaFaceAnalysis(nextMogaFaceAnalysis);
+    setTreatmentOpportunities(evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis }));
     setProgress(null);
     setIsRunning(false);
   };
@@ -198,6 +243,28 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
         </p>
       )}
 
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-muted">Expression video (optional)</h3>
+        <p className="mt-2 text-sm text-muted">
+          A short video (under 60 seconds) that starts with a still, relaxed face, then raises the eyebrows, frowns, smiles and squints. It stays on this device.
+        </p>
+        <input
+          type="file"
+          accept="video/*"
+          aria-label="Expression video"
+          disabled={isRunning}
+          onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+          className="mt-3 block text-sm"
+        />
+        {videoFile && <p className="mt-2 text-xs text-muted">Selected: {videoFile.name}</p>}
+      </div>
+
+      {videoProgress && (
+        <p role="status" aria-live="polite" className="mt-4 text-sm text-muted">
+          Reading video frame {videoProgress.done} of {videoProgress.total}…
+        </p>
+      )}
+
       <StepNav
         onBack={onBack}
         onNext={runAnalysis}
@@ -211,6 +278,9 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
             photos={records}
             analysis={analysis}
             mogaFaceAnalysis={mogaFaceAnalysis}
+            treatmentOpportunities={treatmentOpportunities}
+            userReportedSignals={normalizeAppearanceConcerns(assessment.appearanceConcerns)}
+            videoAnalysis={videoAnalysis}
             isRunning={isRunning}
             progress={progress}
           />

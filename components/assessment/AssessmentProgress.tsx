@@ -1,6 +1,7 @@
 export const ASSESSMENT_PROGRESS_STEPS = [
   "Profile",
   "Goals",
+  "Concerns",
   "Hair",
   "Facial Hair",
   "Lifestyle",

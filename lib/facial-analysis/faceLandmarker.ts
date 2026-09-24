@@ -93,8 +93,8 @@ export interface FaceDetectionResult {
   faces: LandmarkList[];
 }
 
-/** Runs detection on an already-loaded image element. */
-export async function detectFace(image: HTMLImageElement): Promise<FaceDetectionResult> {
+/** Runs detection on an already-loaded image element, or a canvas holding a video frame. */
+export async function detectFace(image: HTMLImageElement | HTMLCanvasElement): Promise<FaceDetectionResult> {
   const landmarker = await getFaceLandmarker();
   let result;
   try {
