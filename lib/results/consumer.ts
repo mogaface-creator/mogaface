@@ -18,7 +18,17 @@ export interface ConsumerArea {
 
 export type ConsumerVisualization =
   | { state: "ready"; beforeUrl: string; afterUrl: string; changes: string[]; label: string; notice: string; isMock: boolean }
-  | { state: "unavailable" | "failed"; title: string; body: string };
+  | {
+      state: "unavailable" | "failed";
+      title: string;
+      body: string;
+      /** Text inside the empty "illustrative after" frame. */
+      placeholder: string;
+      /** The person's own front photo, for the "before" frame — null when there isn't one. */
+      beforeUrl: string | null;
+      /** What an illustration would show, when a plan exists. Empty otherwise. */
+      plannedChanges: string[];
+    };
 
 export interface ConsumerResultView {
   headline: string;
@@ -38,9 +48,55 @@ export interface ConsumerResultView {
 export const CLINICIAN_NOTE =
   "Your results are intended to help you prepare for a consultation. A qualified clinician should assess your face in person and determine which treatments, if any, are appropriate.";
 
-const ALLOW = [VISUALIZATION_DISCLAIMER.label, VISUALIZATION_DISCLAIMER.notice, CLINICIAN_NOTE];
-const safe = (s: string) => findForbiddenLanguage(s, ALLOW).length === 0;
-const keepSafe = (list: string[]) => [...new Set(list.filter(safe))];
+export const ALLOW = [VISUALIZATION_DISCLAIMER.label, VISUALIZATION_DISCLAIMER.notice, CLINICIAN_NOTE];
+export const safe = (s: string) => findForbiddenLanguage(s, ALLOW).length === 0;
+export const keepSafe = (list: string[]) => [...new Set(list.filter(safe))];
+
+/** The before / illustrative-after state, shared by the summary view and the report view. */
+export function consumerVisualization(result: MogaFaceResult, beforeUrl: string | null, hasAreas: boolean): ConsumerVisualization {
+  const v = result.visualization;
+  const plan = result.visualizationPlan;
+  const planned = plan.status === "planned";
+  const extras = { beforeUrl, plannedChanges: planned ? keepSafe(plan.changes.map((c) => c.description)) : [] };
+  if (v.status === "ready" && v.imageUrl && beforeUrl) {
+    return {
+      state: "ready",
+      beforeUrl,
+      afterUrl: v.imageUrl,
+      changes: keepSafe(plan.changes.map((c) => c.description)),
+      label: VISUALIZATION_DISCLAIMER.label,
+      notice: VISUALIZATION_DISCLAIMER.notice,
+      isMock: v.isMock === true,
+    };
+  }
+  if (v.status === "failed") {
+    return {
+      state: "failed",
+      title: "Your assessment is ready",
+      body: "We couldn't generate the illustrative visualization this time. Your results below are unaffected.",
+      placeholder: "Your illustrative visualization couldn't be created this time.",
+      ...extras,
+    };
+  }
+  if (plan.status === "not_eligible" || v.errorCode === "not_eligible") {
+    return {
+      state: "unavailable",
+      title: "Your assessment is ready",
+      body: hasAreas
+        ? "We found useful areas to discuss, but there isn't enough visual evidence to create an illustrative visualization yet."
+        : "Your current assessment doesn't provide enough evidence for an illustrative visualization.",
+      placeholder: "An illustrative visualization needs more visual evidence.",
+      ...extras,
+    };
+  }
+  return {
+    state: "unavailable",
+    title: "Your assessment is ready",
+    body: "The illustrative visualization isn't available right now. Your results below are unaffected.",
+    placeholder: "Your illustrative visualization will appear here.",
+    ...extras,
+  };
+}
 
 export function toConsumerView(result: MogaFaceResult, beforeUrl: string | null): ConsumerResultView {
   const i = result.interpretation;
@@ -52,41 +108,7 @@ export function toConsumerView(result: MogaFaceResult, beforeUrl: string | null)
     (s) => !areas.some((a) => a.body === s),
   );
 
-  const v = result.visualization;
-  const plan = result.visualizationPlan;
-  let visualization: ConsumerVisualization;
-  if (v.status === "ready" && v.imageUrl && beforeUrl) {
-    visualization = {
-      state: "ready",
-      beforeUrl,
-      afterUrl: v.imageUrl,
-      changes: keepSafe(plan.changes.map((c) => c.description)),
-      label: VISUALIZATION_DISCLAIMER.label,
-      notice: VISUALIZATION_DISCLAIMER.notice,
-      isMock: v.isMock === true,
-    };
-  } else if (v.status === "failed") {
-    visualization = {
-      state: "failed",
-      title: "Your assessment is ready",
-      body: "We couldn't generate the illustrative visualization this time. Your results below are unaffected.",
-    };
-  } else if (plan.status === "not_eligible" || v.errorCode === "not_eligible") {
-    visualization = {
-      state: "unavailable",
-      title: "Your assessment is ready",
-      body:
-        areas.length > 0
-          ? "We found useful areas to discuss, but there isn't enough visual evidence to create an illustrative visualization yet."
-          : "Your current assessment doesn't provide enough evidence for an illustrative visualization.",
-    };
-  } else {
-    visualization = {
-      state: "unavailable",
-      title: "Your assessment is ready",
-      body: "The illustrative visualization isn't available right now. Your results below are unaffected.",
-    };
-  }
+  const visualization = consumerVisualization(result, beforeUrl, areas.length > 0);
 
   return {
     headline: "Your MogaFace assessment",

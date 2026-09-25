@@ -61,6 +61,7 @@ export async function runResultPipeline(snapshot: AssessmentSnapshot, options: P
     id: newId(),
     assessmentId: snapshot.assessment.id,
     createdAt: new Date().toISOString(),
+    assessmentCreatedAt: snapshot.assessment.createdAt,
     interpretation,
     treatmentOpportunities: snapshot.opportunities,
     visualizationPlan: plan,

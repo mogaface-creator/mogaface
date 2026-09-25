@@ -48,6 +48,12 @@ export function buildDemoSnapshot(): AssessmentSnapshot {
     priorities: ["FACIAL_DEFINITION", "FACIAL_LINES", "SKIN_TONE"],
   };
 
+  // Synthetic questionnaire answers, so every report section can be inspected. Not a real person's answers.
+  assessment.hair = { length: "medium", texture: "wavy", density: "medium", concerns: ["hairline"], currentStyle: "", haircutFrequency: "every1to2Months" };
+  assessment.facialHair = { currentStyle: "stubble", improvements: ["shape"] };
+  assessment.lifestyle = { sleepHours: "5to6", exerciseFrequency: "3to4PerWeek", trainingTypes: ["strength", "cardio"], dailyActivity: "moderatelyActive", waterIntake: "1to2L" };
+  assessment.style = { currentStyle: "smartCasual", styleGoals: ["clean", "confident"], monthlySpend: null };
+
   const analysis = buildMogaFaceAnalysis(assessment, null);
   const obs = (id: string, domain: "facial-structure" | "eye-area" | "expression", label: string, value: number | boolean, source: string) =>
     measuredObservation({ id, domain, label, value, source });

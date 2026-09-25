@@ -7,7 +7,7 @@ Assessment → facial analysis → observation layer → treatment opportunity e
 
 Everything on the right of the opportunity engine **builds on** the existing evidence; none of it recomputes a measurement, changes a threshold, or adds a treatment rule. The clinician is the final decision-maker, and every result says so.
 
-> **Status.** The pipeline runs end to end with a **mock** image provider. No real AI interpretation provider and no real image-generation provider is connected or tested. Real assessments currently produce very little consumer-facing visual content, because the visual observation layer is uncalibrated and its opportunities are gated (see "Why real results are sparse today").
+> **Status.** The pipeline runs end to end with a **mock** image provider and a deterministic local interpretation. A server-side AI *wording* provider exists (`INTERPRETATION_PROVIDER=openai`) but has only been tested against a stubbed API — it has not been run against the live service. No real image-generation provider is connected. Real assessments currently produce very little consumer-facing visual content, because the visual observation layer is uncalibrated and its opportunities are gated (see "Why real results are sparse today").
 
 ## Interpretation (`lib/interpretation/`)
 
@@ -37,6 +37,46 @@ The app depends on `InterpretationProvider`, not a vendor. `localRulesProvider` 
 ### Safety is enforced in code, not in a prompt
 
 `validateInterpretation` runs on the local output **and on anything a provider returns** (`interpretWithFallback` discards invalid output and falls back to the local rules). It rejects: a statement without evidence; a reference that does not exist in the input; visual evidence that is not consumer-usable; a treatment named without a backing opportunity; a "discuss" item without a real, consumer-ready opportunity of the same category; a category on a non-"discuss" item; and forbidden language anywhere (`lib/safety/language.ts`): need/should-get/suitable/candidate claims, diagnosis and named conditions, anatomical causes, aging, scores and percentages, attractiveness, ideal/perfect face, outcome promises, transformation claims, brand names.
+
+## The MogaFace report (`lib/interpretation/report.ts`, `components/results/Report.tsx`)
+
+`/results` renders a personalised report: cover · overview · top priorities (concern, why it matters, evidence available, status) · facial structure · eye area · expression and facial lines (**only** with valid, consumer-usable expression evidence) · skin · hair · facial hair · lifestyle · style · **areas to discuss with your clinician** (area, why it appeared, evidence, what the clinician can evaluate) · before / illustrative-after · what MogaFace can and cannot tell you · next step (CTA from the existing config) · footer.
+
+`InterpretationResult.report` is a `MogaFaceReport`. Every `ReportStatement` is `{ id, text, evidenceRefs[], confidence, sourceType }`:
+
+- `sourceType`: `user_reported` ("You reported…"), `observed`, `opportunity`, or `limitation` ("Not enough visual evidence was available…"). The validator ties it to the evidence: observed needs a visual observation, opportunity needs a treatment-opportunity reference, user-reported may cite neither, a limitation cannot cite an opportunity.
+- `confidence`: `complete | partial | limited` — evidence *availability* only, never a probability.
+- Sections with no evidence carry a limitation statement instead of being blank. Skin, hair, facial hair, lifestyle and style come from the questionnaire only and are labelled "From your assessment". Free-text answers are never echoed. Nothing here contains numbers, scores, causes or treatment names; area decisions come from the existing opportunity engine and calibration gate.
+- **Not built:** a first name (the assessment does not collect one), a `visualizationSummary` (the before/after panel reads the visualization plan directly).
+
+`toReportView` (`lib/results/reportView.ts`) turns it into plain copy and re-scans every string; an unsafe string is dropped and a section never goes blank.
+
+### AI wording provider (OpenAI) — built, disabled by default
+
+**Default: off.** With `INTERPRETATION_PROVIDER` unset (or `local`) the deterministic rules write the whole report, nothing is sent anywhere, and the browser never calls the endpoint. No live OpenAI call has been made from this repository; the model call is tested only against a stubbed `fetch`.
+
+**Role.** MogaFace's engines are the source of truth. The model only *rewords* a deterministic draft. It cannot find, create or change anything.
+
+**What is sent** (`lib/interpretation/prompts.ts` → `editableDraft`): one JSON object — the draft's overview, priorities, four findings sections (facial structure, eye area, expression, skin) and areas-to-discuss, i.e. goal/finding sentences plus evidence ids, statuses and categories — and the fixed system prompt. The assessment id is replaced by a fixed token and restored afterwards.
+
+**What is not sent:** photos, image URLs, video, landmarks, observation *values*, age, gender, height, weight, email/phone/account ids, the assessment id, timestamps, methodology versions, the questionnaire-only sections (hair, facial hair, lifestyle, style — kept verbatim on the server), the standing limitations copy, the clinician-review text and the CTA. (The browser posts its narrow `InterpretationInput` — which does contain observation values — to *our own* endpoint so the server can validate; the server does not forward it.) Tests assert all of this on the real outgoing request body.
+
+**Immutability** (`lib/interpretation/immutable.ts`, run in `interpretWithFallback` after `validateInterpretation`): compared with the draft, a returned report may differ **only** in the `text` of non-limitation statements (and their order within a section). Evidence references (as a set), source types, confidence, ids, statuses, categories, titles, concerns, evidence lines, "what the clinician can evaluate", section availability, limitations, clinician-review copy and CTA must be identical; extra or missing fields are rejected; limitation statements keep their exact text; sections not sent must be identical. Reworded text may not introduce a treatment, cause, instruction, judgement, promise, number, markup/link (words the draft itself used stay allowed) or grow much longer. On top of that, the existing validator enforces evidence existence and consumer-readiness, treatment-needs-an-opportunity, and all forbidden language (need/should-get/suitable/candidate/diagnosis/scores/percentages/attractiveness/dosage/prescribe/brands). The final result is the deterministic result with only the report's wording replaced.
+
+**Fallback.** Missing key, provider disabled, timeout (default 15 s, `INTERPRETATION_TIMEOUT_MS`, hard server-side race), network or provider error, refusal, truncation, malformed JSON, invalid output or changed facts → the deterministic report, HTTP 200, no error shown. The client validates the server's answer again before using it.
+
+**API.** `POST https://api.openai.com/v1/responses` (`lib/interpretation/openai.ts`, plain `fetch`, `Authorization: Bearer`), with a strict structured-output schema (`reportSchema.ts`) that fixes the *shape* only — values are checked by the validators above. Refusals, incomplete responses, HTTP/API errors and non-JSON output are content-free failure reasons that trigger the deterministic fallback. To add another vendor: write a `ModelCompletion`, add a branch in `select.ts`.
+
+**Endpoint** (`app/api/interpret/route.ts` → `lib/interpretation/handler.ts`), in this order: provider enabled and keyed → same origin → authenticated → rate limit → bounded, photo-free, exact-envelope body → consent `granted` → model. Logging is one line of metadata (`requestId`, provider, outcome, reason category, duration) — never the key, payload, answers or model output.
+
+| Concern | Status |
+|---|---|
+| Authentication | **None exists in MogaFace.** The boundary is `Authenticator` (`lib/interpretation/access.ts`). In production with none supplied every request gets 401; in development anyone on localhost may call it (only if a provider is configured). **Requirement:** a real authenticator returning a stable, non-personal subject id must be wired into `route.ts` before enabling in production. |
+| Rate limiting | Interface `RateLimiter` + an in-memory, per-process limiter (development only — not valid across serverless instances). In production with none supplied requests get 503. **Requirement:** a shared-store implementation (Redis/KV) wired into `route.ts`. |
+| Consent | `InterpretationConsent = not_required \| pending \| granted \| declined` (`consent.ts`). Only `granted` allows third-party processing; the default is `pending`. **No consent screen exists**, so real results stay local. Development can pass `?consent=granted`. **Undecided (product owner / legal):** the consent wording, whether `not_required` may ever allow a third party, where the decision is stored and for how long, retention and data-processing terms with the provider, the region, and any regulatory obligations. Nothing here claims compliance. |
+| Client opt-in | `NEXT_PUBLIC_INTERPRETATION_REMOTE=1` (a public, non-secret flag) — without it the browser makes no call. |
+| Secrets | `OPENAI_API_KEY` is read in one server module (`select.ts`); no `NEXT_PUBLIC_*` key exists; a test scans the sources, the responses and the logs. |
+| Model | `INTERPRETATION_MODEL`; the default (`gpt-6-luna`, the small high-volume tier on OpenAI's published model list) lives only in `openai.ts` — confirm it during the supervised live call. Only `model`, `instructions`, `input`, `text.format` (strict JSON schema), `max_output_tokens` and `store: false` are sent — no temperature, tools or reasoning settings. |
 
 ## Visualization plan (`lib/visualization/`)
 
@@ -77,6 +117,16 @@ Approved changes (first version): `facial_contour` (from contouring) and `expres
 
 `VISUAL_OBSERVATIONS_CALIBRATED = false`, so every opportunity citing video, contour or under-eye evidence is not consumer-ready, and the interpretation refuses to state those observations. A real assessment therefore yields: priorities, front-view structure/eye-area observations, a skin area (from answers), "not enough visual evidence" for the rest, and **no illustrative image**. That is intentional. To see the full experience during development, use the demo (below); to make real results richer, complete the calibration in `docs/VISUAL_CALIBRATION.md`.
 
+## Where a real report's data comes from
+
+1. The assessment lives in `AssessmentShell` state (persisted to localStorage without photo bytes, `lib/assessment/storage.ts`).
+2. `AssessmentReview.runAnalysis` analyses each photo in the browser (`analyzeSinglePhoto` → `buildMultiPhotoAnalysis`) and the optional video (`analyzeVideoFile`) — all in memory.
+3. `buildMogaFaceAnalysis(assessment, multiPhoto, video)` creates the observations; `evaluateTreatmentOpportunities` creates the opportunities.
+4. "View My Results" saves an `AssessmentSnapshot` (assessment, analysis, opportunities, front-photo blob URL) to `sessionStorage` (`lib/results/store.ts`) and opens `/results`.
+5. `ResultsExperience` loads that snapshot, runs `runResultPipeline` (local interpretation → report → visualization plan) and renders `toReportView`. With no snapshot it shows "No analysis found" — never a report and never demo data.
+
+A real result never receives an image: the results page passes no image provider outside the demo, so the before / illustrative-after panel stays a placeholder until a real provider is connected. Demo data is reachable only through `?demo=1` in a non-production build (`tests/results/real-data.test.ts` checks that no other module imports it).
+
 ## Development demo (not a real assessment)
 
 Outside production builds only:
@@ -88,4 +138,4 @@ The demo does not touch the real gate (tested) and production builds ignore thes
 
 ## Not implemented
 
-A real AI interpretation provider; a real image-generation provider and its server route; a photo-upload consent flow; server-side result persistence; a real consultation destination; visualization for filler, lifting or skin; using profile/45° photos as visualization sources.
+A live-tested AI provider; a real authenticator, shared-store rate limiter and consent screen; a real image-generation provider and its server route; a photo-upload consent flow; server-side result persistence; a real consultation destination; visualization for filler, lifting or skin; using profile/45° photos as visualization sources.

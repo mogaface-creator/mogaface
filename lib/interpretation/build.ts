@@ -32,6 +32,7 @@ import type {
   InterpretationStatement,
   UserGoal,
 } from "./types.ts";
+import { buildReport } from "./report.ts";
 import { INTERPRETATION_VERSION } from "./versions.ts";
 
 // ---------------------------------------------------------------------------
@@ -124,6 +125,8 @@ export function buildInterpretationInput(
     observations: (analysis?.observations ?? []).filter((o) => validateObservation(o).length === 0),
     opportunities,
     limitations: analysis?.limitations ?? [],
+    assessmentCreatedAt: assessment.createdAt,
+    methodologyVersions: analysis ? { ...analysis.versions } : undefined,
   };
 }
 
@@ -330,7 +333,7 @@ export function buildInterpretation(input: InterpretationInput, options: BuildOp
   ]);
   const evidence: EvidenceEntry[] = allRefs.map((r) => ({ ...r, label: labelFor(r) }));
 
-  return {
+  const base = {
     version: INTERPRETATION_VERSION,
     createdAt: (options.now ?? (() => new Date().toISOString()))(),
     summary,
@@ -345,6 +348,7 @@ export function buildInterpretation(input: InterpretationInput, options: BuildOp
     opportunities,
     limitations: [...CONSUMER_LIMITATIONS],
     evidence,
-    clinicianReviewRequired: true,
+    clinicianReviewRequired: true as const,
   };
+  return { ...base, report: buildReport(input, base, usableId) };
 }

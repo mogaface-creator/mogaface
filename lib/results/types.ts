@@ -5,6 +5,7 @@
  */
 
 import type { Assessment } from "../assessment/types.ts";
+import type { InterpretationConsent } from "../interpretation/consent.ts";
 import type { Visualization } from "../image-generation/types.ts";
 import type { InterpretationResult } from "../interpretation/types.ts";
 import type { MogaFaceAnalysis } from "../observation/types.ts";
@@ -25,6 +26,8 @@ export interface MogaFaceResult {
   id: string;
   assessmentId: string;
   createdAt: string;
+  /** When the assessment was started (ISO) — the report's date line. */
+  assessmentCreatedAt?: string;
   interpretation: InterpretationResult;
   treatmentOpportunities: TreatmentOpportunity[];
   visualizationPlan: VisualizationPlan;
@@ -44,6 +47,8 @@ export interface AssessmentSnapshot {
   createdAt: string;
   /** True only for the development demo fixture (never a real assessment). */
   isDemo?: boolean;
+  /** Consent to third-party interpretation. Absent means "pending": no consent screen exists yet, so real results stay on the local provider. */
+  interpretationConsent?: InterpretationConsent;
   assessment: Assessment;
   analysis: MogaFaceAnalysis;
   opportunities: TreatmentOpportunity[];

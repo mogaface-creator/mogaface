@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { selectImageGenerationProvider } from "@/lib/image-generation/provider.ts";
 import { createMockProvider } from "@/lib/image-generation/mockProvider.ts";
 import type { ImageGenerationProvider } from "@/lib/image-generation/types.ts";
-import { toConsumerView, type ConsumerResultView } from "@/lib/results/consumer.ts";
+import { DEFAULT_INTERPRETATION_CONSENT, isInterpretationConsent } from "@/lib/interpretation/consent.ts";
+import { chooseInterpretationProvider } from "@/lib/interpretation/remote.ts";
+import { toReportView, type ReportView } from "@/lib/results/reportView.ts";
 import { getConsultationCta } from "@/lib/results/config.ts";
 import { buildDemoSnapshot, demoAfterImage } from "@/lib/results/demo.ts";
 import { runResultPipeline } from "@/lib/results/pipeline.ts";
@@ -14,13 +15,13 @@ import { chooseResultSource } from "@/lib/results/source.ts";
 import { loadSnapshot } from "@/lib/results/store.ts";
 import { loadAnalysisResult } from "@/lib/facial-analysis/resultStore.ts";
 import type { ResultStage } from "@/lib/results/types.ts";
-import { ConsumerResult } from "./ConsumerResult";
+import { Report } from "./Report";
 import { LegacyResults } from "./LegacyResults";
 import { LoadingState } from "./LoadingState";
 
 type Mode =
   | { kind: "running"; stage: ResultStage }
-  | { kind: "done"; view: ConsumerResultView; isDemo: boolean }
+  | { kind: "done"; view: ReportView; isDemo: boolean }
   | { kind: "legacy" }
   | { kind: "empty" }
   | { kind: "error" };
@@ -30,7 +31,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 /**
  * Loads the assessment snapshot, runs interpretation → visualization plan →
- * (mock/none) image, and renders the consumer result. Development-only URL
+ * (mock/none) image, and renders the MogaFace report. Development-only URL
  * switches, ignored in production builds:
  *   ?demo=1            synthetic demo assessment + mock image (never a real result)
  *   ?demo=1&image=none       no image provider configured (visualization "unavailable")
@@ -66,15 +67,22 @@ export function ResultsExperience() {
       if (imageMode === "none") provider = null;
       else if (imageMode === "fail") provider = createMockProvider({ behavior: "fail", latencyMs: 400 });
       else if (demo) provider = createMockProvider({ render: () => demoAfterImage() });
-      else provider = selectImageGenerationProvider({ NODE_ENV: process.env.NODE_ENV });
+      else provider = null; // a real assessment never gets a mock image; the report shows the placeholder until a real provider is connected
 
       try {
         const result = await runResultPipeline(snapshot, {
           imageProvider: provider,
+          // Local deterministic wording unless the operator opted in AND the person consented (see lib/interpretation/consent.ts).
+          // Development only: ?consent=granted stands in for the consent screen that does not exist yet.
+          interpretationProvider: chooseInterpretationProvider({
+            demo,
+            remoteEnabled: process.env.NEXT_PUBLIC_INTERPRETATION_REMOTE === "1",
+            consent: !IS_PRODUCTION && params.get("consent") === "granted" ? "granted" : isInterpretationConsent(snapshot.interpretationConsent) ? snapshot.interpretationConsent : DEFAULT_INTERPRETATION_CONSENT,
+          }),
           calibrated: demo ? true : undefined, // the demo alone opens the calibration gate — see lib/results/demo.ts
           onStage: (stage) => set({ kind: "running", stage }),
         });
-        set({ kind: "done", view: toConsumerView(result, snapshot.frontPhoto?.ref ?? null), isDemo: snapshot.isDemo === true });
+        set({ kind: "done", view: toReportView(result, snapshot.frontPhoto?.ref ?? null), isDemo: snapshot.isDemo === true });
       } catch {
         set({ kind: "error" });
       }
@@ -97,7 +105,7 @@ export function ResultsExperience() {
               Demo data — development only. Synthetic evidence and placeholder images; this is not a real assessment.
             </p>
           )}
-          <ConsumerResult view={mode.view} cta={cta} />
+          <Report view={mode.view} cta={cta} />
         </>
       )}
 

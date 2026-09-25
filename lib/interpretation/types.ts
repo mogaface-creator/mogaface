@@ -98,6 +98,8 @@ export interface InterpretationResult {
   /** Audit list of every distinct evidence ref used above, with labels. */
   evidence: EvidenceEntry[];
   clinicianReviewRequired: true;
+  /** The premium personalised report, built from the same evidence. See report.ts. */
+  report: MogaFaceReport;
 }
 
 /** One user-stated goal/concern, already normalized. */
@@ -125,10 +127,98 @@ export interface InterpretationInput {
   opportunities: TreatmentOpportunity[];
   /** Technical limitations from the analysis (for a provider's context; consumers see InterpretationResult.limitations). */
   limitations: string[];
+  /** When the assessment was started (ISO). Used only for the report's date line. Never sent to a model. */
+  assessmentCreatedAt?: string;
+  /** Internal provenance of the analysis that produced the evidence. Never shown to consumers or sent to a model. */
+  methodologyVersions?: Record<string, string | null>;
 }
 
 export interface InterpretationProvider {
   /** Stable id, e.g. "local-rules". */
   id: string;
   interpret(input: InterpretationInput): Promise<InterpretationResult>;
+}
+
+// ---------------------------------------------------------------------------
+// The personalised report
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a report statement's content comes from:
+ *   user_reported — the person's own answers ("Your assessment reports…")
+ *   observed      — a computer-vision observation ("MogaFace observed…")
+ *   opportunity   — a treatment opportunity produced by the existing engine
+ *   limitation    — an honest statement that evidence is missing or unsupported
+ */
+export const REPORT_SOURCE_TYPES = ["user_reported", "observed", "opportunity", "limitation"] as const;
+export type ReportSourceType = (typeof REPORT_SOURCE_TYPES)[number];
+
+/** Evidence completeness/availability ONLY — never a probability that a claim is true. */
+export const EVIDENCE_LEVELS = ["complete", "partial", "limited"] as const;
+export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
+
+export interface ReportStatement {
+  id: string;
+  text: string;
+  /** Never empty. Every reference must resolve to something in the InterpretationInput. */
+  evidenceRefs: EvidenceRef[];
+  confidence: EvidenceLevel;
+  sourceType: ReportSourceType;
+}
+
+/** How a report section's content was obtained — drives the label the reader sees. */
+export type SectionBasis = "observed" | "user_reported" | "not_assessed";
+
+export interface ReportSection {
+  basis: SectionBasis;
+  /** Never empty: a section with no evidence carries an honest limitation statement instead. */
+  statements: ReportStatement[];
+  /** Plain-language description of how the content was obtained; null when nothing was measured. */
+  howAssessed: string | null;
+}
+
+export interface ReportPriority {
+  id: string;
+  /** Consumer wording, e.g. "A more defined appearance". */
+  concern: string;
+  why: ReportStatement;
+  evidence: ReportStatement;
+  status: "discuss" | "observation_only" | "recorded";
+}
+
+export interface ReportOpportunity {
+  id: string;
+  area: InterpretationArea;
+  title: string;
+  status: AreaStatus;
+  /** Why this area appeared. */
+  why: ReportStatement;
+  /** Plain-language description of the evidence behind it (no ids, no numbers). */
+  evidenceLines: string[];
+  /** What the clinician can evaluate — fixed wording, never a treatment claim. */
+  clinicianCanEvaluate: string;
+  /** Internal only — matches the backing treatment opportunity for "discuss". */
+  category: TreatmentCategory | null;
+}
+
+export interface MogaFaceReport {
+  overview: ReportStatement;
+  /** At most 3. */
+  priorities: ReportPriority[];
+  sections: {
+    facialStructure: ReportSection;
+    eyeArea: ReportSection;
+    /** Null unless valid, consumer-usable expression evidence exists. */
+    expression: ReportSection | null;
+    skin: ReportSection;
+    hair: ReportSection;
+    facialHair: ReportSection;
+    lifestyle: ReportSection;
+    style: ReportSection;
+  };
+  opportunities: ReportOpportunity[];
+  /** Non-empty. */
+  limitations: string[];
+  clinicianReview: string;
+  cta: { heading: string; supportingText: string };
 }

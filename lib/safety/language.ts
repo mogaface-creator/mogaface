@@ -27,6 +27,7 @@ export const FORBIDDEN_LANGUAGE: ForbiddenPattern[] = [
   { label: "named condition", pattern: /\b(acne|melasma|rosacea|dermatitis|scarring|hyperpigmentation|pigmentation disorder|eczema|psoriasis)\b/i },
   { label: "anatomical cause", pattern: /\b(tear[- ]?trough|fat pad|vascular|ptosis|volume (loss|deficiency|deficit)|laxity|sagging)\b/i },
   { label: "aging claim", pattern: /\b(aging|ageing|aged|wrinkles?|premature)\b/i },
+  { label: "prescription or dosage", pattern: /\b(prescri(be|bed|ption)|dosage|dose|\d+\s?units)\b/i },
   // Scores and comparison to an ideal
   { label: "score", pattern: /\bscores?\b/i },
   { label: "percentage", pattern: /\d\s?%/ },

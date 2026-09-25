@@ -14,7 +14,7 @@
 import { isConsumerReady } from "../facial-analysis/calibration/status.ts";
 import { findForbiddenLanguage } from "../safety/language.ts";
 import { TREATMENT_CATEGORIES } from "../treatment-opportunities/types.ts";
-import { EVIDENCE_SOURCE_TYPES, INTERPRETATION_AREAS } from "./types.ts";
+import { EVIDENCE_LEVELS, EVIDENCE_SOURCE_TYPES, INTERPRETATION_AREAS, REPORT_SOURCE_TYPES } from "./types.ts";
 import type { InterpretationInput } from "./types.ts";
 
 const AREA_STATUSES = ["discuss", "observation_only", "insufficient_evidence"];
@@ -88,6 +88,90 @@ export function validateInterpretation(value: unknown, input: InterpretationInpu
     }
   };
 
+  // ---- the personalised report (checked below, once every helper is defined) ----
+  const REPORT_SECTION_KEYS = ["facialStructure", "eyeArea", "expression", "skin", "hair", "facialHair", "lifestyle", "style"] as const;
+
+  const checkReportStatement = (s: unknown, where: string) => {
+    if (!isObject(s)) return problems.push(`${where}: statement must be an object`);
+    checkStatement({ id: s.id, statement: s.text, evidence: s.evidenceRefs }, where);
+    if (!(REPORT_SOURCE_TYPES as readonly unknown[]).includes(s.sourceType)) problems.push(`${where}: invalid sourceType`);
+    if (!(EVIDENCE_LEVELS as readonly unknown[]).includes(s.confidence)) problems.push(`${where}: invalid confidence`);
+    const refs = Array.isArray(s.evidenceRefs) ? s.evidenceRefs.filter(isObject) : [];
+    const cites = (t: string) => refs.some((e) => e.sourceType === t);
+    if (s.sourceType === "user_reported" && (cites("visual_observation") || cites("treatment_opportunity"))) problems.push(`${where}: a user-reported statement cannot rest on observations or opportunities`);
+    if (s.sourceType === "observed" && !cites("visual_observation")) problems.push(`${where}: an observed statement needs a visual observation reference`);
+    if (s.sourceType === "opportunity" && !cites("treatment_opportunity")) problems.push(`${where}: an opportunity statement needs a treatment opportunity reference`);
+    if (s.sourceType === "limitation" && (cites("treatment_opportunity") || s.confidence !== "limited")) problems.push(`${where}: a limitation statement must be low-evidence and cannot cite an opportunity`);
+  };
+
+  const checkReportSection = (sec: unknown, where: string) => {
+    if (!isObject(sec) || !Array.isArray(sec.statements) || sec.statements.length === 0) return problems.push(`${where} must have at least one statement`);
+    if (!["observed", "user_reported", "not_assessed"].includes(String(sec.basis))) problems.push(`${where}: invalid basis`);
+    if (sec.howAssessed !== null && !isText(sec.howAssessed)) problems.push(`${where}: howAssessed must be text or null`);
+    else if (isText(sec.howAssessed)) checkText(sec.howAssessed, `${where}.howAssessed`);
+    sec.statements.forEach((x: unknown, i: number) => checkReportStatement(x, `${where}.statements[${i}]`));
+  };
+
+  const checkReport = (rep: unknown) => {
+    if (!isObject(rep)) return problems.push("report must be an object");
+    checkReportStatement(rep.overview, "report.overview");
+
+    const interpretationPriorities = Array.isArray(r.priorities) ? r.priorities : [];
+    if (!Array.isArray(rep.priorities)) problems.push("report.priorities must be an array");
+    else {
+      if (rep.priorities.length > 3) problems.push("report: at most 3 priorities");
+      if (rep.priorities.length !== interpretationPriorities.length) problems.push("report.priorities must match the interpretation priorities");
+      rep.priorities.forEach((p: unknown, i: number) => {
+        const where = `report.priorities[${i}]`;
+        if (!isObject(p)) return problems.push(`${where} must be an object`);
+        checkText(p.concern, `${where}.concern`);
+        const expected = interpretationPriorities[i];
+        if (isObject(expected) && expected.label !== p.concern) problems.push(`${where}: concern differs from the interpretation priority`);
+        if (!["discuss", "observation_only", "recorded"].includes(String(p.status))) problems.push(`${where}: invalid status`);
+        checkReportStatement(p.why, `${where}.why`);
+        checkReportStatement(p.evidence, `${where}.evidence`);
+      });
+    }
+
+    if (!isObject(rep.sections)) problems.push("report.sections must be an object");
+    else
+      for (const key of REPORT_SECTION_KEYS) {
+        const sec = rep.sections[key];
+        if (key === "expression" && sec === null) continue; // shown only with valid expression evidence
+        checkReportSection(sec, `report.sections.${key}`);
+      }
+
+    const interpretationOpportunities = Array.isArray(r.opportunities) ? r.opportunities : [];
+    if (!Array.isArray(rep.opportunities)) problems.push("report.opportunities must be an array");
+    else {
+      if (rep.opportunities.length !== interpretationOpportunities.length) problems.push("report.opportunities must match the interpretation opportunities");
+      rep.opportunities.forEach((o: unknown, i: number) => {
+        const where = `report.opportunities[${i}]`;
+        if (!isObject(o)) return problems.push(`${where} must be an object`);
+        // The report may rephrase an area but never change the decision the interpretation made about it.
+        const expected = interpretationOpportunities[i];
+        if (isObject(expected) && (expected.id !== o.id || expected.area !== o.area || expected.status !== o.status || expected.category !== o.category)) {
+          problems.push(`${where}: differs from the interpretation opportunity (area, status or category changed)`);
+        }
+        checkText(o.title, `${where}.title`);
+        checkText(o.clinicianCanEvaluate, `${where}.clinicianCanEvaluate`);
+        if (!Array.isArray(o.evidenceLines)) problems.push(`${where}.evidenceLines must be an array`);
+        else o.evidenceLines.forEach((l: unknown, j: number) => checkText(l, `${where}.evidenceLines[${j}]`));
+        checkReportStatement(o.why, `${where}.why`);
+        if (isObject(o.why) && (o.status === "insufficient_evidence") !== (o.why.sourceType === "limitation")) problems.push(`${where}: only an insufficient-evidence area may be a limitation`);
+      });
+    }
+
+    if (!Array.isArray(rep.limitations) || rep.limitations.length === 0) problems.push("report.limitations must be a non-empty array");
+    else rep.limitations.forEach((l: unknown, i: number) => checkText(l, `report.limitations[${i}]`));
+    checkText(rep.clinicianReview, "report.clinicianReview");
+    if (!isObject(rep.cta)) problems.push("report.cta must be an object");
+    else {
+      checkText(rep.cta.heading, "report.cta.heading");
+      checkText(rep.cta.supportingText, "report.cta.supportingText");
+    }
+  };
+
   if (!isText(r.version)) problems.push("version must be a non-empty string");
   if (!isText(r.createdAt) || Number.isNaN(Date.parse(r.createdAt))) problems.push("createdAt must be a valid ISO date string");
   if (r.clinicianReviewRequired !== true) problems.push("clinicianReviewRequired must be true");
@@ -148,6 +232,8 @@ export function validateInterpretation(value: unknown, input: InterpretationInpu
     checkRef(e, `evidence[${i}]`);
     if (!isObject(e) || !isText(e.label)) problems.push(`evidence[${i}].label must be a non-empty string`);
   });
+
+  checkReport(r.report);
 
   return problems;
 }
