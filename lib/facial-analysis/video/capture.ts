@@ -47,7 +47,28 @@ function loadVideo(url: string): Promise<HTMLVideoElement> {
     video.onerror = () => reject(new VideoAnalysisError("Could not read this video. Try a different file or format."));
   });
   video.src = url;
-  return withTimeout(ready, LOAD_TIMEOUT_MS, "The video took too long to load.");
+  return withTimeout(ready.then(resolveDuration), LOAD_TIMEOUT_MS, "The video took too long to load.");
+}
+
+/**
+ * Browser-recorded WebM (MediaRecorder) reports duration = Infinity until the
+ * browser has seen the end of the file. Seeking far past the end makes it
+ * compute the real duration; then we rewind. A finite duration is left alone.
+ */
+async function resolveDuration(video: HTMLVideoElement): Promise<HTMLVideoElement> {
+  if (Number.isFinite(video.duration)) return video;
+  await new Promise<void>((resolve) => {
+    video.ontimeupdate = () => {
+      video.ontimeupdate = null;
+      resolve();
+    };
+    video.currentTime = 1e101;
+  });
+  await new Promise<void>((resolve) => {
+    video.onseeked = () => resolve();
+    video.currentTime = 0;
+  });
+  return video;
 }
 
 function seekTo(video: HTMLVideoElement, timeSec: number): Promise<void> {

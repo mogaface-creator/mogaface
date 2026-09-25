@@ -41,7 +41,7 @@ export const MIN_BRIGHTNESS = 40;
 export const MAX_BRIGHTNESS = 215;
 export const MIN_FACE_WIDTH_ERROR = 0.15;
 export const MIN_FACE_WIDTH_WARNING = 0.25;
-const EDGE_MARGIN = 0.02;
+export const EDGE_MARGIN = 0.02;
 const MAX_ROLL_WARNING_DEGREES = 15;
 const YAW_RATIO_WARNING = 1.8;
 

@@ -8,7 +8,7 @@
  */
 
 import { createEmptyAppearanceConcerns, sanitizeAppearanceConcerns } from "./appearanceConcerns.ts";
-import { ASSESSMENT_VERSION, PHOTO_SLOTS, type Assessment } from "./types.ts";
+import { ASSESSMENT_VERSION, PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type Assessment } from "./types.ts";
 
 const GENDER_PRESENTATIONS = ["male", "female", "nonBinary", "preferNotToSay"] as const;
 const GOAL_AREAS = [
@@ -244,7 +244,7 @@ export function validateAssessment(assessment: Assessment): AssessmentValidation
 
   const uploadedSlots = new Set(assessment.photos.map((p) => p.slot));
   for (const { slot, label } of PHOTO_SLOTS) {
-    if (!uploadedSlots.has(slot)) missing.push(`${label} photo`);
+    if (REQUIRED_PHOTO_SLOTS.includes(slot) && !uploadedSlots.has(slot)) missing.push(`${label} photo`);
   }
 
   return { isComplete: missing.length === 0, missing };

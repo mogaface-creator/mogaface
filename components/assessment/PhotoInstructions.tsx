@@ -1,5 +1,5 @@
 import { StepNav } from "./StepNav";
-import { PHOTO_SLOTS } from "@/lib/assessment/types.ts";
+import { PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS } from "@/lib/assessment/types.ts";
 
 const GUIDELINES = [
   "Camera at eye level",
@@ -9,7 +9,7 @@ const GUIDELINES = [
   "No sunglasses",
   "No heavy obstruction (hats, masks, hands)",
   "No extreme head tilt",
-  "Consistent distance across all five photos",
+  "Consistent distance across all your photos",
   "Hair away from important facial areas where possible",
 ];
 
@@ -23,11 +23,12 @@ export function PhotoInstructions({ onNext, onBack }: { onNext: () => void; onBa
       </p>
 
       <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
-        <h3 className="text-sm font-medium uppercase tracking-wide text-muted">You&apos;ll need five photos</h3>
+        <h3 className="text-sm font-medium uppercase tracking-wide text-muted">You&apos;ll need three photos — two more are optional</h3>
         <ol className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
           {PHOTO_SLOTS.map((p, i) => (
             <li key={p.slot}>
               {String(i + 1).padStart(2, "0")} — {p.label}
+              {REQUIRED_PHOTO_SLOTS.includes(p.slot) ? "" : " (optional)"}
             </li>
           ))}
         </ol>

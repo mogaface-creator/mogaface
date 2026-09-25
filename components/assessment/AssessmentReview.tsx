@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { StepNav } from "./StepNav";
 import { GENDER_OPTIONS } from "./ProfileStep";
@@ -20,6 +21,8 @@ import { buildMogaFaceAnalysis } from "@/lib/observation/build.ts";
 import type { MogaFaceAnalysis } from "@/lib/observation/types.ts";
 import { analyzeVideoFile } from "@/lib/facial-analysis/video/capture.ts";
 import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
+import { saveSnapshot } from "@/lib/results/store.ts";
+import { SNAPSHOT_VERSION } from "@/lib/results/types.ts";
 import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
 import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
 
@@ -110,11 +113,15 @@ function buildSections(assessment: Assessment): SummarySection[] {
 interface AssessmentReviewProps {
   assessment: Assessment;
   sessionFiles: SessionFiles;
+  /** The optional expression video (from the camera recorder or a chosen file) — held in memory by the shell, never persisted. */
+  videoFile: File | null;
+  onVideoFileChange: (file: File | null) => void;
   onBack: () => void;
   onStartOver: () => void;
 }
 
-export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver }: AssessmentReviewProps) {
+export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoFileChange, onBack, onStartOver }: AssessmentReviewProps) {
+  const router = useRouter();
   const validation = validateAssessment(assessment);
   const uploadedSlots = new Set(assessment.photos.map((p) => p.slot));
 
@@ -122,7 +129,6 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
   const [analysis, setAnalysis] = useState<MultiPhotoFacialAnalysis | null>(null);
   const [mogaFaceAnalysis, setMogaFaceAnalysis] = useState<MogaFaceAnalysis | null>(null);
   // The optional expression video lives in memory only, like the photo files — never persisted.
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoAnalysis, setVideoAnalysis] = useState<VideoExpressionAnalysis | null>(null);
   const [videoProgress, setVideoProgress] = useState<{ done: number; total: number } | null>(null);
   const analyzedVideoRef = useRef<File | null>(null);
@@ -180,6 +186,26 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
     setTreatmentOpportunities(evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis }));
     setProgress(null);
     setIsRunning(false);
+  };
+
+  /**
+   * Hands the analysis to the consumer results page. The front photo is passed
+   * as a fresh blob URL (the assessment's own preview URLs are revoked when
+   * this wizard unmounts); no image bytes are stored.
+   */
+  const openResults = () => {
+    if (!mogaFaceAnalysis) return;
+    const frontRecord = records.find((r) => r.slot === "front");
+    const frontFile = sessionFiles.front?.file;
+    const saved = saveSnapshot({
+      version: SNAPSHOT_VERSION,
+      createdAt: new Date().toISOString(),
+      assessment,
+      analysis: mogaFaceAnalysis,
+      opportunities: treatmentOpportunities,
+      frontPhoto: frontFile ? { ref: URL.createObjectURL(frontFile), qualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true } : null,
+    });
+    if (saved) router.push("/results");
   };
 
   return (
@@ -253,10 +279,17 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
           accept="video/*"
           aria-label="Expression video"
           disabled={isRunning}
-          onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
           className="mt-3 block text-sm"
         />
-        {videoFile && <p className="mt-2 text-xs text-muted">Selected: {videoFile.name}</p>}
+        {videoFile && (
+          <p className="mt-2 text-xs text-muted">
+            {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`}{" "}
+            <button type="button" onClick={() => onVideoFileChange(null)} className="underline">
+              Remove
+            </button>
+          </p>
+        )}
       </div>
 
       {videoProgress && (
@@ -284,6 +317,17 @@ export function AssessmentReview({ assessment, sessionFiles, onBack, onStartOver
             isRunning={isRunning}
             progress={progress}
           />
+        </div>
+      )}
+
+      {mogaFaceAnalysis && !isRunning && (
+        <div className="mt-8 rounded-2xl border border-accent px-6 py-6 text-center">
+          <p className="text-sm text-muted">Analysis complete. The section above is the developer view.</p>
+          <div className="mt-4 flex justify-center">
+            <Button type="button" onClick={openResults}>
+              View My Results
+            </Button>
+          </div>
         </div>
       )}
 

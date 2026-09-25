@@ -17,9 +17,9 @@
 import type { ConsistencyMetric, ConsistencyResult, PhotoAnalysisRecord } from "./types.ts";
 
 /** Max/min ratio of face-frame-coverage above which we flag inconsistent framing. */
-const FRAME_COVERAGE_RATIO_WARNING = 1.5;
+export const FRAME_COVERAGE_RATIO_WARNING = 1.5;
 /** Max/min absolute difference (0-255 scale) above which we flag inconsistent lighting. */
-const BRIGHTNESS_DIFFERENCE_WARNING = 80;
+export const BRIGHTNESS_DIFFERENCE_WARNING = 80;
 
 function relativeDifferencePct(values: number[]): number {
   if (values.length < 2) return 0;

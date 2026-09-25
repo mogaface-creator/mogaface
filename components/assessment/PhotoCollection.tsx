@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { StepNav } from "./StepNav";
 import { Button } from "@/components/ui/Button";
-import { PHOTO_SLOTS, type AssessmentPhoto, type PhotoSlot } from "@/lib/assessment/types.ts";
+import { PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type AssessmentPhoto, type PhotoSlot } from "@/lib/assessment/types.ts";
+import { photoMetadataFor } from "@/lib/assessment/photoMeta.ts";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -50,13 +51,7 @@ export function PhotoCollection({
     const previewUrl = URL.createObjectURL(file);
     onSessionFilesChange({ ...sessionFiles, [slot]: { file, previewUrl } });
 
-    const entry: AssessmentPhoto = {
-      slot,
-      fileName: file.name,
-      sizeBytes: file.size,
-      uploadedAt: new Date().toISOString(),
-    };
-    onPhotosChange([...photos.filter((p) => p.slot !== slot), entry]);
+    onPhotosChange([...photos.filter((p) => p.slot !== slot), photoMetadataFor(slot, file)]);
   };
 
   const removeSlot = (slot: PhotoSlot) => {
@@ -73,14 +68,14 @@ export function PhotoCollection({
     <div>
       <h2 className="font-serif text-2xl tracking-tight">Upload your photos</h2>
       <p className="mt-2 text-sm text-muted">
-        {uploadedCount} / {PHOTO_SLOTS.length} uploaded
+        {uploadedCount} / {PHOTO_SLOTS.length} uploaded — front and both 45° photos are required; profile photos are optional.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {PHOTO_SLOTS.map(({ slot, label }) => (
           <PhotoSlotCard
             key={slot}
-            label={label}
+            label={REQUIRED_PHOTO_SLOTS.includes(slot) ? label : `${label} (optional)`}
             hasStoredMetadata={photos.some((p) => p.slot === slot)}
             session={sessionFiles[slot]}
             error={errors[slot]}

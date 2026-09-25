@@ -1,6 +1,6 @@
 # Visual Calibration
 
-**Status: engineering calibration has NOT been performed.** The infrastructure to do it is built and tested; no real face photos or videos were available in the project, so no real-data sample has been run. `VISUAL_OBSERVATIONS_CALIBRATED = false` and stays false until the workflow below is completed and recorded.
+**Status: engineering calibration has NOT been performed.** The infrastructure to do it — including a real-sample session workflow (below) — is built and tested; no real face photos or videos were available in the project, so no real-data sample has been run. `VISUAL_OBSERVATIONS_CALIBRATED = false` and stays false until the workflow below is completed and recorded.
 
 > **Thresholds are engineering heuristics and have not been clinically validated.**
 
@@ -151,6 +151,121 @@ Never change a threshold silently, and never change one only to make a test or a
 4. **Run selected.** Inspect: `detection` (must be `detected`), the quality/roll/yaw gates, the under-eye ratios and their band, the video frame table (are the frames you performed the expression in classified as that state? what did `best frame` reach?), and the line-contrast neutral/expression values.
 5. Set an evaluator label on each observation or decision you have a view on, **before** re-reading the system's verdict where possible.
 6. **Download samples**, and tally per matrix category: labels by threshold id.
+
+## Real-sample calibration workflow
+
+> **This is an engineering calibration workflow, not clinical validation.** Your labels are a person's visual opinion, not ground truth; the samples are few; nothing here says anything about any person's skin, face, health or suitability for any treatment.
+
+Open `http://localhost:3000/dev/calibration` (development builds only; production returns 404) → **Real sample sessions**. Code: `lib/facial-analysis/calibration/{expectations,session,comparison,report,proposals,export}.ts`, `components/dev/{CalibrationWorkbench,RealSampleSessions,SessionView,AggregatePanel}.tsx`. It reuses the existing pipeline (`analyzeSinglePhoto`, `analyzeVideoFile`), threshold decisions (`decisions.ts`) and registry (`thresholds.ts`); it adds no computer-vision feature and changes no threshold.
+
+### How to create a real calibration sample
+
+1. **Consent first.** Only use people who have agreed to be used for engineering testing. Do not record their name, email, phone, address or date of birth anywhere — including free-text notes.
+2. **Create a session** with an anonymous **Sample ID** such as `REAL-001`. Ids that look like an email, a phone number or a date are refused. Optionally record engineering metadata: approximate age band (prefer *not recorded*), lighting, camera, glasses, makeup. Nothing is inferred from the image.
+3. **Choose inputs** and press **Run analysis**. The chosen files exist only in the page's memory and are **discarded automatically as soon as the analysis finishes**; only numbers and your labels remain.
+4. **Read the input quality** for each photo and the video. Failed samples are never hidden — the reason is stated ("Face not detected.", "Image too dark.", "Head rotation outside the expected range.", "Face too small in frame.").
+5. **Record your engineering expectations**, ideally before you read the MogaFace column.
+6. Read **Expected vs MogaFace**, the **margins table**, **multi-view consistency**, and (expandable) the **raw output**.
+7. Add notes (engineering observations only), repeat for more people, then read the **calibration summary**, record any **threshold proposals**, and **export**.
+
+### Required photo views and video
+
+| Input | Status | Notes |
+|---|---|---|
+| Front | **Required for a baseline** | Camera at eye level, neutral expression, even light, whole face in frame. |
+| Left 45° | **Required for a baseline** | Head turned about 45° to the subject's left. |
+| Right 45° | **Required for a baseline** | Head turned about 45° to the subject's right. |
+| Left / right profile | Optional | The layer only checks detection/quality on profiles; it computes no profile geometry. |
+| Video | Optional | About 10–20 s, front-facing, steady, well lit. **Start with a still, relaxed face for a second or two** (this becomes the neutral baseline), then raise the eyebrows, frown, smile and squint, returning to neutral between them. |
+
+Not every view is required. Missing views simply produce "not evaluated" rows.
+
+### Engineering expectation labels
+
+Recorded per domain; **not recorded** rows are skipped. One scale, worded per domain:
+
+| Domain | clearly | subtle | absent | unclear |
+|---|---|---|---|---|
+| Facial lines (forehead / glabellar / lateral eye) | clearly visible | somewhat visible | not visibly apparent | unclear |
+| Facial contour | contour difference clearly visible | subtle | not visibly apparent | unclear |
+| Under-eye | dark-looking appearance clearly visible | subtle | not visibly apparent | unclear |
+| Expression movement (brow raise / frown / smile / squint) | clearly present | subtle | absent | unclear |
+| Input quality (each supplied view and the video) | usable / borderline / unusable | | | |
+
+Describe **only what you can see**. Do not label a cause or condition (no tear trough, pigmentation disorder, cause of puffiness, or medical condition) — the form has no place for it and rejects unknown fields.
+
+### Reading MATCH / MISS / FALSE POSITIVE / UNCLEAR
+
+"Actual" comes from the layer's own threshold decisions: **detected**, **not detected**, **withheld (borderline)**, or **not evaluated** (the inputs did not exist — no video, no neutral baseline, the expression was not performed or not identified).
+
+| You expected | detected | not detected / withheld | not evaluated |
+|---|---|---|---|
+| **clearly** | MATCH | **MISS** ("Potential miss") | UNCLEAR |
+| **subtle** | MATCH | UNCLEAR (a subtle feature may legitimately sit under a conservative threshold) | UNCLEAR |
+| **absent** | **FALSE POSITIVE** ("Potential false positive") | MATCH | UNCLEAR |
+| **unclear** | UNCLEAR | UNCLEAR | UNCLEAR |
+
+Input quality: same label → MATCH; you expected *unusable* but the layer accepted it → potential false positive; you expected *usable* but it rejected it → potential miss; borderline mismatches → UNCLEAR.
+
+"MISS" and "FALSE POSITIVE" always mean **potential** ones *against your expectation* — a prompt to look closer at the raw output, never a measured error. A **withheld (borderline)** result counts as "not detected" for comparison and is flagged BORDERLINE so it stands out.
+
+**Known gap — contour.** Contour observations are relative geometry (angles and ratios). The layer has **no detection threshold** for "a visible contour difference", so an expectation cannot be compared against anything: contour rows are always UNCLEAR, with that explanation. What *can* be calibrated for contour is (a) whether it is measurable at all (front + a usable 45° photo) and (b) **multi-view consistency**: the left/right 45° angle spread against the `contour.viewDisagreementDeg` guard, plus lighting and face-size differences across photos. If you want contour expectations to be testable, a detection rule must be designed first (not done here).
+
+**Line patterns need a video.** A single photo cannot establish dynamic lines, so no photo produces a line observation; lines are compared only through the video's within-clip contrast, and only when the matching expression (brow raise → forehead, frown → glabellar, smile/squint → lateral eye) was identified. Otherwise the row is "not evaluated" → UNCLEAR, and the reason says why.
+
+### Borderline cases
+
+The **Threshold decisions and margins** table lists every observation-type decision with its metric, source view/video, value, threshold, signed margin (value − threshold, and as % of the threshold), the borderline band, the decision and the reason. Borderline ones are highlighted and listed first, e.g.:
+
+```
+Threshold 1.30 · Observed 1.27 · margin −0.03 (−2.3%) · band 1.43 / 1.17 · BORDERLINE / WITHHELD
+reason: Close to the threshold; not used as evidence.
+```
+
+Nothing here modifies a threshold.
+
+### The summary and what the statistics mean
+
+Each session shows: photos submitted/processed, quality counts, and one cautious line per recorded expectation ("Frown: expected clearly present · not detected — Potential miss"). The **calibration summary** aggregates every session in the current page (per observation type: expected-positive, detected-positive, potential misses, expected-absent, potential false positives, unclear).
+
+- It is labelled **ENGINEERING CALIBRATION STATISTIC** and is **not** accuracy, **not** sensitivity or specificity, and **not** clinical validation: the "expected" side is a developer's opinion, and the samples are few.
+- **Rates are withheld** until there are at least **10** clearly labelled, *evaluable* samples in a category (10 is an engineering choice, not a statistical guarantee). Samples the layer could not evaluate never count toward a rate.
+- *Subtle* and *unclear* expectations are excluded from rates; they only appear in the *unclear* count.
+- Even a rate over 10 samples from one lab, one camera and a few faces says little. Follow §9 (overfitting) before acting on it.
+
+### Threshold proposal workflow
+
+Under **Threshold change proposals** a developer records: the threshold (from the registry; the current value is read from it, never typed), a proposed value, a reason (≥ 10 characters) and the evidence sessions. Status starts **PROPOSED**; a later reviewer may mark it **APPROVED** or **REJECTED** — a decision note is required, and a decided proposal is final. Proposals based on fewer than 3 samples carry an overfitting warning.
+
+**A proposal never changes a threshold** — there is no code path from the proposal to any constant, and no automatic tuning exists. After an approval, a developer must still edit the constant, bump `CALIBRATION_VERSION`, and add a dated row to the change log in §8. `VISUAL_OBSERVATIONS_CALIBRATED` stays `false` until the sign-off criteria below are met and someone on the team decides.
+
+### Export
+
+**Export calibration JSON** downloads structured metadata only: sample ids, engineering metadata, expectations, actual observations (with their sources), comparison results, threshold decisions, notes, proposals, the aggregate, and version ids (calibration, analysis, observation engine, video analysis, multi-photo). Optionally, raw numeric metrics (measurements — still no media). It **never** contains photos, video, base64, blob/object URLs, file names or media-like fields; the exporter scans its own output and **refuses** to produce a file if anything like that is found (including in free-text notes, so don't mention file names). Nothing is uploaded — the browser hands you the file.
+
+### Privacy behaviour
+
+- The session id is anonymous; there is no field for a name, contact detail or date of birth, and a session cannot hold any field beyond the listed ones.
+- Photos/video live only in a component's memory while the analysis runs, then are **discarded automatically**; the file inputs are reset. Only metrics and labels are kept, in memory.
+- No `localStorage`, `sessionStorage`, IndexedDB, cookie, network request or `FileReader`/data-URL use exists in the calibration code (a test scans the source; a runtime test spies on storage). In a real browser run: zero storage keys and zero upload requests, and after a refresh no sessions, no results and no selected files remain.
+- *Note:* in `next dev`, Next.js itself creates an IndexedDB database called `__next_debug_channel` on every page. That is the framework's dev tooling, not this feature (verified against a control page); it holds no media.
+- Prefer not to keep exports of identifiable people's data lying around: a JSON of face-derived measurements is still personal data. Keep exports out of the repository unless anonymised, and delete them when done.
+
+### First manual test (one real person)
+
+See the exact steps in the project report / below; in short: consent → `npm run dev` → `/dev/calibration` → create `REAL-001` → front + left/right 45° (+ video) → **Run analysis** → check quality → record expectations → read the comparison and margins → export → refresh and confirm nothing remains.
+
+1. Get the person's agreement to be used for engineering testing. Take: a neutral front photo, a left-45° and a right-45° photo (same light, same distance), and a 10–20 s front video that starts with a relaxed face and then raises the eyebrows, frowns, smiles and squints.
+2. `npm run dev`, open `http://localhost:3000/dev/calibration`.
+3. **Sample ID** `REAL-001` → **Create session**. Set lighting/camera/glasses/makeup if you like; leave age band *not recorded*.
+4. Choose Front, Left 45°, Right 45° and the video → **Run analysis** (a 15 s video takes roughly 20–60 s). The files are discarded when it finishes.
+5. **Input quality**: every photo should show *face detected: yes*, landmarks *complete*. If a photo failed, read the reason, retake it, create `REAL-001b` and repeat — don't tune anything to rescue a bad photo.
+6. **Before** reading the MogaFace column, look at the media and fill in **Engineering expectation** (forehead/glabellar/lateral-eye lines, under-eye, each expression, and input quality per view).
+7. Read **Expected vs MogaFace**. For every MISS, FALSE POSITIVE or BORDERLINE row open **Raw output** and the **margins** table and write down *why* in Notes (e.g. "glabellar pattern not evaluated: frown was not identified — see frame table").
+8. Read **Video calibration** (per-expression strength/movement, line-contrast values) and **Multi-view consistency**.
+9. **Export calibration JSON**; open the file and confirm it contains no image or video data.
+10. Refresh the page and confirm the session, the results and the chosen files are gone.
+11. Repeat with more people, in different light, with and without glasses. Only after many samples read the calibration summary — and treat it as described above.
 
 ## Test-case matrix
 

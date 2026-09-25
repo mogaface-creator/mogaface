@@ -145,6 +145,13 @@ export const PHOTO_SLOTS: { slot: PhotoSlot; label: string }[] = [
 ];
 
 /**
+ * Photos the assessment cannot run without. Profile photos are optional: the
+ * analysis computes no profile geometry, so requiring them only made the flow
+ * harder. Uploads and the guided camera capture both map onto these same slots.
+ */
+export const REQUIRED_PHOTO_SLOTS: readonly PhotoSlot[] = ["front", "leftFortyFive", "rightFortyFive"];
+
+/**
  * Persisted photo metadata only — never the image bytes (see lib/assessment/storage.ts
  * for why). The actual File/preview for the current session lives in
  * component state, keyed by slot, and does not survive a reload.

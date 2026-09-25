@@ -13,7 +13,8 @@ import { FacialHairStep } from "./FacialHairStep";
 import { LifestyleStep } from "./LifestyleStep";
 import { StyleStep } from "./StyleStep";
 import { PhotoInstructions } from "./PhotoInstructions";
-import { PhotoCollection, type SessionFiles } from "./PhotoCollection";
+import { PhotoCaptureStep } from "./PhotoCaptureStep";
+import type { SessionFiles } from "./PhotoCollection";
 import { AssessmentReview } from "./AssessmentReview";
 import { createEmptyAssessment } from "@/lib/assessment/defaults.ts";
 import { loadAssessment, saveAssessment, clearAssessment } from "@/lib/assessment/storage.ts";
@@ -58,6 +59,8 @@ export function AssessmentShell() {
   const [assessment, setAssessment] = useState<Assessment>(initialAssessment);
   const [stepId, setStepId] = useState<StepId>("intro");
   const [sessionFiles, setSessionFiles] = useState<SessionFiles>({});
+  // The optional expression video (camera recording or chosen file) — in memory only, never persisted.
+  const [sessionVideo, setSessionVideo] = useState<File | null>(null);
 
   useEffect(() => {
     saveAssessment(assessment);
@@ -91,6 +94,7 @@ export function AssessmentShell() {
     clearAssessment();
     Object.values(sessionFiles).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
     setSessionFiles({});
+    setSessionVideo(null);
     setAssessment(createEmptyAssessment());
     setStepId("intro");
   };
@@ -156,18 +160,19 @@ export function AssessmentShell() {
           {stepId === "photoInstructions" && <PhotoInstructions onNext={goNext} onBack={goBack} />}
 
           {stepId === "photoCollection" && (
-            <PhotoCollection
+            <PhotoCaptureStep
               photos={assessment.photos}
               sessionFiles={sessionFiles}
               onSessionFilesChange={setSessionFiles}
               onPhotosChange={(photos) => patch({ photos })}
+              onVideoFileChange={setSessionVideo}
               onNext={goNext}
               onBack={goBack}
             />
           )}
 
           {stepId === "review" && (
-            <AssessmentReview assessment={assessment} sessionFiles={sessionFiles} onBack={goBack} onStartOver={handleStartOver} />
+            <AssessmentReview assessment={assessment} sessionFiles={sessionFiles} videoFile={sessionVideo} onVideoFileChange={setSessionVideo} onBack={goBack} onStartOver={handleStartOver} />
           )}
         </div>
       </main>

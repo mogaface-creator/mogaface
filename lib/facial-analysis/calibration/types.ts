@@ -120,6 +120,16 @@ export interface RawVideoMetrics {
   baseline: { frames: number[]; stable: boolean; maxSpread: number | null; features: ExpressionFeatures } | null;
   neutralFrameCandidates: number[];
   stateCandidates: Record<ActiveExpressionState, StateCandidate>;
+  /** Per-expression evidence as the analysis reported it (status, strength, mean movement, reason). Optional: absent in older exports. */
+  expressionEvidence?: {
+    expression: ActiveExpressionState;
+    status: "observed" | "insufficient_evidence";
+    strength: "low" | "moderate" | "high" | null;
+    movementPct: number | null;
+    neutralFrames: number[];
+    expressionFrames: number[];
+    reason: string;
+  }[];
   linePatterns: {
     kind: LinePatternKind;
     expression: ActiveExpressionState;

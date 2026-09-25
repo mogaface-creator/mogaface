@@ -114,6 +114,15 @@ export function collectRawVideoMetrics(video: VideoExpressionAnalysis): RawVideo
       : null,
     neutralFrameCandidates: video.classifications.filter((c) => c.state === "NEUTRAL").map((c) => c.index),
     stateCandidates,
+    expressionEvidence: video.expressions.map((e) => ({
+      expression: e.expression,
+      status: e.status,
+      strength: e.strength,
+      movementPct: e.evidence.movementPct,
+      neutralFrames: e.evidence.neutralFrames,
+      expressionFrames: e.evidence.expressionFrames,
+      reason: e.reason,
+    })),
     linePatterns: video.linePatterns.map((p) => ({
       kind: p.kind,
       expression: p.expression,
