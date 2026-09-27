@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { photoMetadataFor } from "@/lib/assessment/photoMeta.ts";
+import { putMedia } from "@/lib/assessment/mediaStore.ts";
 import type { AssessmentPhoto, PhotoSlot } from "@/lib/assessment/types.ts";
 import { GuidedCameraCapture } from "./GuidedCameraCapture";
 import { PhotoCollection, type SessionFiles } from "./PhotoCollection";
@@ -16,6 +17,7 @@ import { PhotoCollection, type SessionFiles } from "./PhotoCollection";
 export function PhotoCaptureStep({
   photos,
   sessionFiles,
+  mediaHydrated,
   onSessionFilesChange,
   onPhotosChange,
   onVideoFileChange,
@@ -24,6 +26,7 @@ export function PhotoCaptureStep({
 }: {
   photos: AssessmentPhoto[];
   sessionFiles: SessionFiles;
+  mediaHydrated: boolean;
   onSessionFilesChange: (next: SessionFiles) => void;
   onPhotosChange: (next: AssessmentPhoto[]) => void;
   onVideoFileChange: (file: File | null) => void;
@@ -37,6 +40,7 @@ export function PhotoCaptureStep({
     if (previous?.previewUrl) URL.revokeObjectURL(previous.previewUrl);
     onSessionFilesChange({ ...sessionFiles, [slot]: { file, previewUrl: URL.createObjectURL(file) } });
     onPhotosChange([...photos.filter((p) => p.slot !== slot), photoMetadataFor(slot, file)]);
+    void putMedia(slot, file);
   };
 
   if (mode === "upload") {
@@ -47,7 +51,15 @@ export function PhotoCaptureStep({
             Use camera
           </Button>
         </div>
-        <PhotoCollection photos={photos} sessionFiles={sessionFiles} onSessionFilesChange={onSessionFilesChange} onPhotosChange={onPhotosChange} onNext={onNext} onBack={onBack} />
+        <PhotoCollection
+          photos={photos}
+          sessionFiles={sessionFiles}
+          mediaHydrated={mediaHydrated}
+          onSessionFilesChange={onSessionFilesChange}
+          onPhotosChange={onPhotosChange}
+          onNext={onNext}
+          onBack={onBack}
+        />
       </div>
     );
   }

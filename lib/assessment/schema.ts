@@ -192,6 +192,20 @@ function sanitizePhotos(value: unknown): Assessment["photos"] | null {
   return photos;
 }
 
+/**
+ * Sanitizes `raw.video`. Returns `undefined` (a sentinel distinct from the
+ * valid `null` state) when the field is present but malformed, so the caller
+ * can discard the whole assessment like every other malformed section.
+ */
+function sanitizeVideoMeta(value: unknown): Assessment["video"] | undefined {
+  if (value === null) return null;
+  if (!isObject(value)) return undefined;
+  if (!isNonEmptyString(value.fileName)) return undefined;
+  if (typeof value.sizeBytes !== "number" || !Number.isFinite(value.sizeBytes)) return undefined;
+  if (!isNonEmptyString(value.uploadedAt)) return undefined;
+  return { fileName: value.fileName, sizeBytes: value.sizeBytes, uploadedAt: value.uploadedAt };
+}
+
 /** Returns a valid Assessment, or null if `raw` is malformed or from an incompatible schema version. */
 export function sanitizeAssessment(raw: unknown): Assessment | null {
   if (!isObject(raw)) return null;
@@ -209,8 +223,12 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
   const lifestyle = sanitizeLifestyle(raw.lifestyle);
   const style = sanitizeStyle(raw.style);
   const photos = sanitizePhotos(raw.photos);
+  // Absent on assessments saved before this field existed → no video, same as appearanceConcerns above.
+  const video = raw.video === undefined ? null : sanitizeVideoMeta(raw.video);
 
-  if (!profile || !goals || !appearanceConcerns || !hair || !facialHair || !lifestyle || !style || !photos) return null;
+  if (!profile || !goals || !appearanceConcerns || !hair || !facialHair || !lifestyle || !style || !photos || video === undefined) {
+    return null;
+  }
 
   return {
     id: raw.id,
@@ -225,6 +243,7 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
     lifestyle,
     style,
     photos,
+    video,
   };
 }
 

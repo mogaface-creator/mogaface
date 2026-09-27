@@ -2,12 +2,12 @@
  * localStorage persistence for the in-progress assessment.
  *
  * Only the Assessment record itself is stored — that's questionnaire
- * answers plus lightweight photo *metadata* (slot, filename, size,
- * timestamp), never image bytes. Photo previews for the current session
- * live in component state (see PhotoCollection.tsx) and are intentionally
- * not persisted: base64-encoding five full-resolution photos into
- * localStorage would risk the ~5-10MB per-origin quota and isn't needed
- * for this step, which only collects information for a future engine.
+ * answers plus lightweight photo/video *metadata* (slot, filename, size,
+ * timestamp), never the media bytes: base64-encoding full-resolution photos
+ * into localStorage would risk the ~5-10MB per-origin quota. The actual File
+ * objects are cached in IndexedDB instead (see mediaStore.ts) and
+ * reconstructed from that cache using this metadata — see
+ * mediaAvailability.ts for how the UI tells "restored" apart from "gone".
  */
 
 import { sanitizeAssessment } from "./schema.ts";

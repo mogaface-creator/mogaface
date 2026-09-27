@@ -29,5 +29,6 @@ export function createEmptyAssessment(): Assessment {
     },
     style: { currentStyle: null, styleGoals: [], monthlySpend: null },
     photos: [],
+    video: null,
   };
 }

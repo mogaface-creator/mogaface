@@ -69,6 +69,22 @@ test("appearance concerns persist through storage and reload correctly", () => {
   assert.deepEqual(loadAssessment()?.appearanceConcerns, assessment.appearanceConcerns);
 });
 
+test("video metadata persists through storage and reload correctly", () => {
+  const assessment = createEmptyAssessment();
+  assessment.video = { fileName: "expression.webm", sizeBytes: 999, uploadedAt: new Date().toISOString() };
+  saveAssessment(assessment);
+  assert.deepEqual(loadAssessment()?.video, assessment.video);
+});
+
+test("removing the video (set back to null) persists correctly", () => {
+  const assessment = createEmptyAssessment();
+  assessment.video = { fileName: "expression.webm", sizeBytes: 999, uploadedAt: new Date().toISOString() };
+  saveAssessment(assessment);
+  assessment.video = null;
+  saveAssessment(assessment);
+  assert.equal(loadAssessment()?.video, null);
+});
+
 test("an older stored assessment without appearanceConcerns still loads (with empty concerns)", () => {
   const older: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
   delete older.appearanceConcerns;

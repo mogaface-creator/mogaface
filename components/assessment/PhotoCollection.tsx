@@ -5,6 +5,7 @@ import { StepNav } from "./StepNav";
 import { Button } from "@/components/ui/Button";
 import { PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type AssessmentPhoto, type PhotoSlot } from "@/lib/assessment/types.ts";
 import { photoMetadataFor } from "@/lib/assessment/photoMeta.ts";
+import { deleteMedia, putMedia } from "@/lib/assessment/mediaStore.ts";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -21,6 +22,8 @@ function validateFile(file: File): string | null {
 interface PhotoCollectionProps {
   photos: AssessmentPhoto[];
   sessionFiles: SessionFiles;
+  /** Whether the initial restore-from-IndexedDB pass has finished — while false, a slot with metadata but no session file is "checking", not "unavailable". */
+  mediaHydrated: boolean;
   onSessionFilesChange: (next: SessionFiles) => void;
   onPhotosChange: (next: AssessmentPhoto[]) => void;
   onNext: () => void;
@@ -30,12 +33,15 @@ interface PhotoCollectionProps {
 export function PhotoCollection({
   photos,
   sessionFiles,
+  mediaHydrated,
   onSessionFilesChange,
   onPhotosChange,
   onNext,
   onBack,
 }: PhotoCollectionProps) {
-  const uploadedCount = photos.length;
+  // The actual file count, not the metadata count — a slot can have metadata
+  // from before a reload without an actual file being available (see mediaAvailability.ts).
+  const uploadedCount = Object.keys(sessionFiles).length;
   const [errors, setErrors] = useState<Partial<Record<PhotoSlot, string>>>({});
 
   const setSlot = (slot: PhotoSlot, file: File) => {
@@ -52,6 +58,7 @@ export function PhotoCollection({
     onSessionFilesChange({ ...sessionFiles, [slot]: { file, previewUrl } });
 
     onPhotosChange([...photos.filter((p) => p.slot !== slot), photoMetadataFor(slot, file)]);
+    void putMedia(slot, file);
   };
 
   const removeSlot = (slot: PhotoSlot) => {
@@ -62,6 +69,7 @@ export function PhotoCollection({
     onSessionFilesChange(nextSessionFiles);
     onPhotosChange(photos.filter((p) => p.slot !== slot));
     setErrors((prev) => ({ ...prev, [slot]: undefined }));
+    void deleteMedia(slot);
   };
 
   return (
@@ -77,6 +85,7 @@ export function PhotoCollection({
             key={slot}
             label={REQUIRED_PHOTO_SLOTS.includes(slot) ? label : `${label} (optional)`}
             hasStoredMetadata={photos.some((p) => p.slot === slot)}
+            mediaHydrated={mediaHydrated}
             session={sessionFiles[slot]}
             error={errors[slot]}
             onSelect={(file) => setSlot(slot, file)}
@@ -93,13 +102,16 @@ export function PhotoCollection({
 interface PhotoSlotCardProps {
   label: string;
   hasStoredMetadata: boolean;
+  mediaHydrated: boolean;
   session?: SessionFile;
   error?: string;
   onSelect: (file: File) => void;
   onRemove: () => void;
 }
 
-function PhotoSlotCard({ label, hasStoredMetadata, session, error, onSelect, onRemove }: PhotoSlotCardProps) {
+function PhotoSlotCard({ label, hasStoredMetadata, mediaHydrated, session, error, onSelect, onRemove }: PhotoSlotCardProps) {
+  const unavailable = hasStoredMetadata && !session && mediaHydrated;
+  const checking = hasStoredMetadata && !session && !mediaHydrated;
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -109,8 +121,10 @@ function PhotoSlotCard({ label, hasStoredMetadata, session, error, onSelect, onR
         <span className="text-sm font-medium">{label}</span>
         {session?.previewUrl ? (
           <span className="text-xs text-accent">Uploaded</span>
-        ) : hasStoredMetadata ? (
-          <span className="text-xs text-muted">Previously uploaded</span>
+        ) : unavailable ? (
+          <span className="text-xs text-amber-600 dark:text-amber-400">Unavailable — re-select</span>
+        ) : checking ? (
+          <span className="text-xs text-muted">Checking…</span>
         ) : (
           <span className="text-xs text-muted">Not uploaded</span>
         )}
@@ -142,10 +156,10 @@ function PhotoSlotCard({ label, hasStoredMetadata, session, error, onSelect, onR
         {session?.previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={session.previewUrl} alt={`${label} preview`} className="h-full w-full object-cover" />
-        ) : hasStoredMetadata ? (
-          <p className="px-4 text-center text-xs text-muted">
-            Uploaded earlier — preview isn&apos;t kept after a reload. Tap to replace.
-          </p>
+        ) : unavailable ? (
+          <p className="px-4 text-center text-xs text-muted">Not available after reloading — tap to re-select.</p>
+        ) : checking ? (
+          <p className="px-4 text-center text-xs text-muted">Checking for a previously saved photo…</p>
         ) : (
           <p className="px-4 text-center text-xs text-muted">Tap or drag a photo here</p>
         )}
@@ -163,7 +177,7 @@ function PhotoSlotCard({ label, hasStoredMetadata, session, error, onSelect, onR
 
       {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
 
-      {(session?.previewUrl || hasStoredMetadata) && (
+      {(session?.previewUrl || unavailable) && (
         <div className="mt-3 flex justify-center">
           <Button type="button" variant="ghost" onClick={onRemove}>
             Remove

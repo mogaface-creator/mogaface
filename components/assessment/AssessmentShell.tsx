@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AssessmentProgress } from "./AssessmentProgress";
@@ -18,7 +18,9 @@ import type { SessionFiles } from "./PhotoCollection";
 import { AssessmentReview } from "./AssessmentReview";
 import { createEmptyAssessment } from "@/lib/assessment/defaults.ts";
 import { loadAssessment, saveAssessment, clearAssessment } from "@/lib/assessment/storage.ts";
-import type { Assessment } from "@/lib/assessment/types.ts";
+import { clearAllMedia, deleteMedia, getMedia, putMedia } from "@/lib/assessment/mediaStore.ts";
+import { mediaMetadataFor } from "@/lib/assessment/photoMeta.ts";
+import { PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 
 const STEP_ORDER = [
   "intro",
@@ -59,22 +61,75 @@ export function AssessmentShell() {
   const [assessment, setAssessment] = useState<Assessment>(initialAssessment);
   const [stepId, setStepId] = useState<StepId>("intro");
   const [sessionFiles, setSessionFiles] = useState<SessionFiles>({});
-  // The optional expression video (camera recording or chosen file) — in memory only, never persisted.
+  // The optional expression video (camera recording or a chosen file). Its bytes are
+  // cached in IndexedDB (see mediaStore.ts) so it survives a reload like the photos do.
   const [sessionVideo, setSessionVideo] = useState<File | null>(null);
+  // False until the initial restore-from-IndexedDB pass below has run — see mediaAvailability.ts.
+  const [mediaHydrated, setMediaHydrated] = useState(false);
 
   useEffect(() => {
     saveAssessment(assessment);
   }, [assessment]);
 
+  // Restores actual File objects cached from a previous session (see mediaStore.ts) using
+  // the metadata loaded at mount. Runs once: later photo/video changes update sessionFiles
+  // directly, they don't need to go through IndexedDB again.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const restoredFiles: SessionFiles = {};
+      for (const { slot } of PHOTO_SLOTS) {
+        const meta = assessment.photos.find((p) => p.slot === slot);
+        if (!meta) continue;
+        const blob = await getMedia(slot);
+        if (!blob) continue;
+        const file = new File([blob], meta.fileName, { type: blob.type, lastModified: Date.parse(meta.uploadedAt) || Date.now() });
+        restoredFiles[slot] = { file, previewUrl: URL.createObjectURL(file) };
+      }
+      if (cancelled) return;
+      if (Object.keys(restoredFiles).length > 0) setSessionFiles((prev) => ({ ...restoredFiles, ...prev }));
+
+      if (assessment.video) {
+        const blob = await getMedia("video");
+        if (!cancelled && blob) {
+          const meta = assessment.video;
+          setSessionVideo(new File([blob], meta.fileName, { type: blob.type, lastModified: Date.parse(meta.uploadedAt) || Date.now() }));
+        }
+      }
+      if (!cancelled) setMediaHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once, from the assessment loaded at mount
+  }, []);
+
+  // sessionFiles changes often; the unmount cleanup below needs the latest value without
+  // re-running the effect (and its cleanup) on every change.
+  const sessionFilesRef = useRef(sessionFiles);
+  useEffect(() => {
+    sessionFilesRef.current = sessionFiles;
+  }, [sessionFiles]);
+
   useEffect(() => {
     return () => {
-      Object.values(sessionFiles).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
+      Object.values(sessionFilesRef.current).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup only runs on unmount
   }, []);
 
   const patch = (partial: Partial<Assessment>) => {
     setAssessment((prev) => ({ ...prev, ...partial, updatedAt: new Date().toISOString() }));
+  };
+
+  const handleVideoFileChange = (file: File | null) => {
+    setSessionVideo(file);
+    if (file) {
+      void putMedia("video", file);
+      patch({ video: mediaMetadataFor(file) });
+    } else {
+      void deleteMedia("video");
+      patch({ video: null });
+    }
   };
 
   const stepIndex = STEP_ORDER.indexOf(stepId);
@@ -92,10 +147,12 @@ export function AssessmentShell() {
       return;
     }
     clearAssessment();
+    void clearAllMedia();
     Object.values(sessionFiles).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
     setSessionFiles({});
     setSessionVideo(null);
     setAssessment(createEmptyAssessment());
+    setMediaHydrated(true); // a fresh assessment has no metadata to restore, so there's nothing left to check
     setStepId("intro");
   };
 
@@ -163,16 +220,25 @@ export function AssessmentShell() {
             <PhotoCaptureStep
               photos={assessment.photos}
               sessionFiles={sessionFiles}
+              mediaHydrated={mediaHydrated}
               onSessionFilesChange={setSessionFiles}
               onPhotosChange={(photos) => patch({ photos })}
-              onVideoFileChange={setSessionVideo}
+              onVideoFileChange={handleVideoFileChange}
               onNext={goNext}
               onBack={goBack}
             />
           )}
 
           {stepId === "review" && (
-            <AssessmentReview assessment={assessment} sessionFiles={sessionFiles} videoFile={sessionVideo} onVideoFileChange={setSessionVideo} onBack={goBack} onStartOver={handleStartOver} />
+            <AssessmentReview
+              assessment={assessment}
+              sessionFiles={sessionFiles}
+              mediaHydrated={mediaHydrated}
+              videoFile={sessionVideo}
+              onVideoFileChange={handleVideoFileChange}
+              onBack={goBack}
+              onStartOver={handleStartOver}
+            />
           )}
         </div>
       </main>

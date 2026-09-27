@@ -96,3 +96,33 @@ test("profile photos are optional: front + both 45° photos are enough, and a mi
   const missing45 = { ...base, photos: [stamp("front"), stamp("leftFortyFive"), stamp("leftProfile"), stamp("rightProfile")] };
   assert.deepEqual(validateAssessment(missing45).missing, ["Right 45° photo"]);
 });
+
+test("sanitizeAssessment accepts valid video metadata, and null (no video)", () => {
+  const empty = createEmptyAssessment();
+  assert.equal(sanitizeAssessment(empty)?.video, null);
+
+  const withVideo: Record<string, unknown> = {
+    ...empty,
+    video: { fileName: "expression.webm", sizeBytes: 54321, uploadedAt: new Date().toISOString() },
+  };
+  const sanitized = sanitizeAssessment(withVideo);
+  assert.notEqual(sanitized, null);
+  assert.equal(sanitized?.video?.fileName, "expression.webm");
+});
+
+test("sanitizeAssessment rejects malformed video metadata (whole assessment discarded, like every other section)", () => {
+  const empty = createEmptyAssessment();
+  const badVideo: Record<string, unknown> = { ...empty, video: { fileName: "expression.webm" } };
+  assert.equal(sanitizeAssessment(badVideo), null);
+
+  const wrongType: Record<string, unknown> = { ...empty, video: "expression.webm" };
+  assert.equal(sanitizeAssessment(wrongType), null);
+});
+
+test("an older stored assessment without a video field still loads (with no video, not an error)", () => {
+  const older: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
+  delete older.video;
+  const sanitized = sanitizeAssessment(older);
+  assert.notEqual(sanitized, null);
+  assert.equal(sanitized?.video, null);
+});

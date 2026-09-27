@@ -11,8 +11,9 @@ import { STYLE_OPTIONS as FACIAL_HAIR_STYLE_OPTIONS } from "./FacialHairStep";
 import { SLEEP_OPTIONS, EXERCISE_OPTIONS, ACTIVITY_OPTIONS } from "./LifestyleStep";
 import { CURRENT_STYLE_OPTIONS } from "./StyleStep";
 import type { SessionFiles } from "./PhotoCollection";
-import { PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
+import { PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 import { validateAssessment } from "@/lib/assessment/schema.ts";
+import { canStartAnalysis, slotsMissingActualFile } from "@/lib/assessment/mediaAvailability.ts";
 import { APPEARANCE_CONCERN_CATALOG, normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns.ts";
 import { MultiPhotoDevResults } from "@/components/facial-analysis/MultiPhotoDevResults";
 import { analyzeSinglePhoto, buildMultiPhotoAnalysis } from "@/lib/facial-analysis/multiPhoto/coordinator.ts";
@@ -41,7 +42,7 @@ interface SummarySection {
   rows: { label: string; value: string }[];
 }
 
-function buildSections(assessment: Assessment): SummarySection[] {
+function buildSections(assessment: Assessment, availablePhotoCount: number): SummarySection[] {
   return [
     {
       title: "Profile",
@@ -104,8 +105,9 @@ function buildSections(assessment: Assessment): SummarySection[] {
       rows: [{ label: "Current style", value: labelFor(CURRENT_STYLE_OPTIONS, assessment.style.currentStyle) }],
     },
     {
+      // Counts actual available files, not just metadata — see mediaAvailability.ts.
       title: "Photos",
-      rows: [{ label: "Uploaded", value: `${assessment.photos.length} / ${PHOTO_SLOTS.length}` }],
+      rows: [{ label: "Uploaded", value: `${availablePhotoCount} / ${PHOTO_SLOTS.length}` }],
     },
   ];
 }
@@ -113,17 +115,19 @@ function buildSections(assessment: Assessment): SummarySection[] {
 interface AssessmentReviewProps {
   assessment: Assessment;
   sessionFiles: SessionFiles;
-  /** The optional expression video (from the camera recorder or a chosen file) — held in memory by the shell, never persisted. */
+  /** Whether the initial restore-from-IndexedDB pass has finished — see AssessmentShell. */
+  mediaHydrated: boolean;
+  /** The optional expression video (from the camera recorder or a chosen file), cached in IndexedDB by the shell. */
   videoFile: File | null;
   onVideoFileChange: (file: File | null) => void;
   onBack: () => void;
   onStartOver: () => void;
 }
 
-export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoFileChange, onBack, onStartOver }: AssessmentReviewProps) {
+export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, videoFile, onVideoFileChange, onBack, onStartOver }: AssessmentReviewProps) {
   const router = useRouter();
   const validation = validateAssessment(assessment);
-  const uploadedSlots = new Set(assessment.photos.map((p) => p.slot));
+  const availableSlots = new Set(PHOTO_SLOTS.filter(({ slot }) => sessionFiles[slot]?.file).map((p) => p.slot));
 
   const [records, setRecords] = useState<PhotoAnalysisRecord[]>([]);
   const [analysis, setAnalysis] = useState<MultiPhotoFacialAnalysis | null>(null);
@@ -141,7 +145,11 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
   // (Step 15) — completed/blocked results for an unchanged file are kept.
   const analyzedFileRef = useRef<Partial<Record<PhotoSlot, File>>>({});
 
-  const missingSessionFiles = PHOTO_SLOTS.filter(({ slot }) => uploadedSlots.has(slot) && !sessionFiles[slot]?.file);
+  // Fails closed while the IndexedDB restore is still running: nothing is reported
+  // missing until we've actually checked, and nothing is reported available before then either.
+  const missingSessionFiles = mediaHydrated ? slotsMissingActualFile(assessment, availableSlots) : [];
+  const missingRequiredFiles = missingSessionFiles.filter((s) => REQUIRED_PHOTO_SLOTS.includes(s.slot));
+  const missingOptionalFiles = missingSessionFiles.filter((s) => !REQUIRED_PHOTO_SLOTS.includes(s.slot));
 
   const runAnalysis = async () => {
     setIsRunning(true);
@@ -213,7 +221,7 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
       <h2 className="font-serif text-2xl tracking-tight">Your assessment</h2>
 
       <div className="mt-8 space-y-4">
-        {buildSections(assessment).map((section) => (
+        {buildSections(assessment, availableSlots.size).map((section) => (
           <div key={section.title} className="rounded-2xl border border-border bg-surface p-6">
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted">{section.title}</h3>
             <dl className="mt-4 space-y-2">
@@ -225,16 +233,24 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
               ))}
               {section.title === "Photos" && (
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {PHOTO_SLOTS.map(({ slot, label }) => (
-                    <span
-                      key={slot}
-                      className={`rounded-full border px-3 py-1 text-xs ${
-                        uploadedSlots.has(slot) ? "border-accent text-accent" : "border-border text-muted"
-                      }`}
-                    >
-                      {label} {uploadedSlots.has(slot) ? "✓" : "—"}
-                    </span>
-                  ))}
+                  {PHOTO_SLOTS.map(({ slot, label }) => {
+                    const available = availableSlots.has(slot);
+                    const unavailable = mediaHydrated && !available && missingSessionFiles.some((s) => s.slot === slot);
+                    return (
+                      <span
+                        key={slot}
+                        className={`rounded-full border px-3 py-1 text-xs ${
+                          available
+                            ? "border-accent text-accent"
+                            : unavailable
+                              ? "border-amber-400 text-amber-600 dark:text-amber-400"
+                              : "border-border text-muted"
+                        }`}
+                      >
+                        {label} {available ? "✓" : unavailable ? "!" : "—"}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
             </dl>
@@ -253,17 +269,34 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
         </div>
       )}
 
-      {validation.isComplete && missingSessionFiles.length > 0 && (
+      {validation.isComplete && !mediaHydrated && (
+        <p role="status" className="mt-6 text-sm text-muted">
+          Checking your previously saved photos…
+        </p>
+      )}
+
+      {validation.isComplete && mediaHydrated && missingRequiredFiles.length > 0 && (
         <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
           <p>
-            {missingSessionFiles.map((s) => s.label).join(", ")} {missingSessionFiles.length === 1 ? "was" : "were"} uploaded
+            {missingRequiredFiles.map((s) => s.label).join(", ")} {missingRequiredFiles.length === 1 ? "was" : "were"} uploaded
             before this page reloaded, so the photo itself isn&apos;t available anymore — go back to Photos and re-select{" "}
-            {missingSessionFiles.length === 1 ? "it" : "them"} to run analysis.
+            {missingRequiredFiles.length === 1 ? "it" : "them"} to run analysis.
           </p>
         </div>
       )}
 
-      {validation.isComplete && missingSessionFiles.length === 0 && (
+      {validation.isComplete && mediaHydrated && missingRequiredFiles.length === 0 && missingOptionalFiles.length > 0 && (
+        <div className="mt-6 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted">
+          <p>
+            {missingOptionalFiles.map((s) => s.label).join(", ")} {missingOptionalFiles.length === 1 ? "isn't" : "aren't"} available
+            after reloading. {missingOptionalFiles.length === 1 ? "It's" : "They're"} optional, so analysis can still run — go back to
+            Photos and re-select {missingOptionalFiles.length === 1 ? "it" : "them"} if you&apos;d like{" "}
+            {missingOptionalFiles.length === 1 ? "it" : "them"} included.
+          </p>
+        </div>
+      )}
+
+      {validation.isComplete && mediaHydrated && missingSessionFiles.length === 0 && (
         <p role="status" className="mt-6 text-sm font-medium text-accent">
           Assessment ready for analysis.
         </p>
@@ -290,6 +323,12 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
             </button>
           </p>
         )}
+        {mediaHydrated && !videoFile && assessment.video && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            Your previously recorded video isn&apos;t available after reloading — re-record or select it again if you&apos;d like it
+            included.
+          </p>
+        )}
       </div>
 
       {videoProgress && (
@@ -301,7 +340,7 @@ export function AssessmentReview({ assessment, sessionFiles, videoFile, onVideoF
       <StepNav
         onBack={onBack}
         onNext={runAnalysis}
-        nextDisabled={!validation.isComplete || missingSessionFiles.length > 0 || isRunning}
+        nextDisabled={!validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning}
         nextLabel={isRunning ? "Analyzing…" : "Start Analysis"}
       />
 

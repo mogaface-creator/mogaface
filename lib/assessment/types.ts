@@ -152,12 +152,22 @@ export const PHOTO_SLOTS: { slot: PhotoSlot; label: string }[] = [
 export const REQUIRED_PHOTO_SLOTS: readonly PhotoSlot[] = ["front", "leftFortyFive", "rightFortyFive"];
 
 /**
- * Persisted photo metadata only — never the image bytes (see lib/assessment/storage.ts
- * for why). The actual File/preview for the current session lives in
- * component state, keyed by slot, and does not survive a reload.
+ * Persisted metadata only — never the image/video bytes (see
+ * lib/assessment/storage.ts for why). The actual File objects are cached
+ * client-side in IndexedDB (see lib/assessment/mediaStore.ts) and
+ * reconstructed from that cache using this metadata; if the cache entry is
+ * gone, this metadata alone must never be read as "uploaded" (see
+ * lib/assessment/mediaAvailability.ts).
  */
 export interface AssessmentPhoto {
   slot: PhotoSlot;
+  fileName: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
+/** Metadata for the optional expression video — same rules as AssessmentPhoto, minus the slot. */
+export interface AssessmentVideoMeta {
   fileName: string;
   sizeBytes: number;
   uploadedAt: string;
@@ -183,4 +193,6 @@ export interface Assessment {
   lifestyle: LifestyleProfile;
   style: StyleProfile;
   photos: AssessmentPhoto[];
+  /** null means no expression video has been recorded/selected (or it was removed). */
+  video: AssessmentVideoMeta | null;
 }
