@@ -11,8 +11,9 @@
 
 import type { EvidenceRef } from "../interpretation/types.ts";
 import type { TreatmentCategory, TreatmentOpportunity } from "../treatment-opportunities/types.ts";
+import { findUnsafeVisualText } from "./safety.ts";
 import type { ExcludedChange, IneligibleReason, VisualizationChange, VisualizationCategory, VisualizationPlan } from "./types.ts";
-import { PRESERVATION_RULES, VISUALIZATION_DISCLAIMER } from "./types.ts";
+import { APPROVED_VISUAL_CHANGES, PRESERVATION_RULES, VISUALIZATION_DISCLAIMER } from "./types.ts";
 import { VISUALIZATION_PLAN_VERSION } from "./versions.ts";
 
 export interface FrontPhotoRef {
@@ -27,12 +28,9 @@ export interface PlanInput {
   opportunities: TreatmentOpportunity[];
 }
 
-const APPROVED: Partial<Record<TreatmentCategory, { category: VisualizationCategory; description: string }>> = {
-  FACIAL_CONTOURING: { category: "facial_contour", description: "Subtle visual emphasis of facial contour and definition" },
-  NEUROMODULATOR: {
-    category: "expression_lines",
-    description: "Subtle reduction in the visible appearance of expression-related forehead lines",
-  },
+const APPROVED: Partial<Record<TreatmentCategory, { category: VisualizationCategory }>> = {
+  FACIAL_CONTOURING: { category: "facial_contour" },
+  NEUROMODULATOR: { category: "expression_lines" },
 };
 
 const EXCLUDED_REASON: Partial<Record<TreatmentCategory, { category: string; reason: string }>> = {
@@ -42,6 +40,39 @@ const EXCLUDED_REASON: Partial<Record<TreatmentCategory, { category: string; rea
   HAIR_SCALP_ASSESSMENT: { category: "hair_and_scalp", reason: "Hair and scalp are not illustrated." },
   CLINIC_CONSULTATION: { category: "general_consultation", reason: "A general consultation has nothing to illustrate." },
 };
+
+/**
+ * Builds/merges the VisualizationChange for one category from one
+ * opportunity's evidence, using the fixed APPROVED_VISUAL_CHANGES template.
+ * Exported so the development-only composite fixture
+ * (lib/image-generation/devIllustrationFixture.ts) can build a plausible
+ * multi-area VisualizationChange[] from its own synthetic opportunities using
+ * the exact same construction as a real plan — never new wording, a new
+ * evidence shape, or new fields.
+ */
+export function buildChangeFromOpportunity(category: VisualizationCategory, opp: TreatmentOpportunity, existing?: VisualizationChange): VisualizationChange {
+  const fixed = APPROVED_VISUAL_CHANGES[category];
+  const ids = [opp.id, ...opp.evidenceObservationIds, ...opp.evidenceQuestionIds];
+  const refs: EvidenceRef[] = [
+    { sourceType: "treatment_opportunity", sourceId: opp.id },
+    ...opp.evidenceObservationIds.map((id) => ({ sourceType: "visual_observation" as const, sourceId: id })),
+    ...opp.evidenceQuestionIds.map((id) => ({ sourceType: "questionnaire" as const, sourceId: id })),
+  ];
+  return {
+    changeId: `change.${category}`,
+    category,
+    targetRegion: fixed.targetRegion,
+    description: fixed.description,
+    visualInstruction: fixed.visualInstruction,
+    intensity: "subtle",
+    intensityLimit: "subtle",
+    evidenceIds: [...new Set([...(existing?.evidenceIds ?? []), ...ids])],
+    evidenceRefs: [...new Map([...(existing?.evidenceRefs ?? []), ...refs].map((r) => [`${r.sourceType}:${r.sourceId}`, r])).values()],
+    sourceOpportunityId: existing?.sourceOpportunityId ?? opp.id,
+    consumerReady: true,
+    safetyStatus: "approved",
+  };
+}
 
 function notEligible(reason: IneligibleReason, sourcePhoto: VisualizationPlan["sourcePhoto"], excluded: ExcludedChange[]): VisualizationPlan {
   return {
@@ -82,14 +113,13 @@ export function buildVisualizationPlan(input: PlanInput): VisualizationPlan {
       noteExcluded(approved.category, "There is no visual evidence for this area to base an illustration on.");
       continue;
     }
-    const ids = [opp.id, ...opp.evidenceObservationIds, ...opp.evidenceQuestionIds];
+    const fixed = APPROVED_VISUAL_CHANGES[approved.category];
+    if (findUnsafeVisualText(fixed.visualInstruction).length > 0) {
+      noteExcluded(approved.category, "The rendering instruction for this area did not pass the safety check.");
+      continue;
+    }
     const existing = changes.get(approved.category);
-    changes.set(approved.category, {
-      category: approved.category,
-      description: approved.description,
-      intensity: "subtle",
-      evidenceIds: [...new Set([...(existing?.evidenceIds ?? []), ...ids])],
-    });
+    changes.set(approved.category, buildChangeFromOpportunity(approved.category, opp, existing));
     evidence.push({ sourceType: "treatment_opportunity", sourceId: opp.id });
     for (const id of opp.evidenceObservationIds) evidence.push({ sourceType: "visual_observation", sourceId: id });
     for (const id of opp.evidenceQuestionIds) evidence.push({ sourceType: "questionnaire", sourceId: id });

@@ -8,9 +8,16 @@
 
 import { findForbiddenLanguage } from "../safety/language.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
-import { VISUALIZATION_CATEGORIES, VISUALIZATION_DISCLAIMER, VISUALIZATION_INTENSITIES } from "./types.ts";
+import { findUnsafeVisualText } from "./safety.ts";
+import {
+  APPROVED_VISUAL_CHANGES,
+  VISUALIZATION_CATEGORIES,
+  VISUALIZATION_CATEGORY_TREATMENT_CATEGORY,
+  VISUALIZATION_DISCLAIMER,
+  VISUALIZATION_INTENSITIES,
+} from "./types.ts";
+import type { VisualizationCategory } from "./types.ts";
 
-const CATEGORY_FOR_OPPORTUNITY: Record<string, string> = { facial_contour: "FACIAL_CONTOURING", expression_lines: "NEUROMODULATOR" };
 const DISCLAIMER_TEXT = [VISUALIZATION_DISCLAIMER.label, VISUALIZATION_DISCLAIMER.notice];
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -48,9 +55,26 @@ export function validateVisualizationPlan(value: unknown, opportunities?: Treatm
         const found = findForbiddenLanguage(c.description);
         if (found.length > 0) problems.push(`${where}: forbidden language (${found.join(", ")})`);
       }
+      // The rendering fields are fixed per category — a plan can never carry different instructions.
+      const fixed = APPROVED_VISUAL_CHANGES[c.category as VisualizationCategory];
+      if (fixed) {
+        if (c.visualInstruction !== fixed.visualInstruction) problems.push(`${where}: visualInstruction is not the approved instruction for this category`);
+        if (c.targetRegion !== fixed.targetRegion) problems.push(`${where}: targetRegion is not the approved region for this category`);
+      }
+      if (isText(c.visualInstruction)) {
+        const unsafe = findUnsafeVisualText(c.visualInstruction);
+        if (unsafe.length > 0) problems.push(`${where}: unsafe instruction (${unsafe.join(", ")})`);
+      } else problems.push(`${where}: visualInstruction must be a non-empty string`);
+      if (!isText(c.changeId)) problems.push(`${where}: changeId must be a non-empty string`);
+      if (c.intensityLimit !== "subtle") problems.push(`${where}: intensityLimit must be "subtle"`);
+      if (c.safetyStatus !== "approved") problems.push(`${where}: safetyStatus must be "approved"`);
+      if (c.consumerReady !== true) problems.push(`${where}: a change must rest on a consumer-ready opportunity`);
+      if (!isText(c.sourceOpportunityId)) problems.push(`${where}: sourceOpportunityId must be a non-empty string`);
+      else if (opportunities && !opportunities.some((o) => o.id === c.sourceOpportunityId)) problems.push(`${where}: sourceOpportunityId does not match a supplied opportunity`);
+      if (!Array.isArray(c.evidenceRefs) || c.evidenceRefs.length === 0) problems.push(`${where}: evidenceRefs must be a non-empty array (unsupported evidence)`);
       if (!Array.isArray(c.evidenceIds) || c.evidenceIds.length === 0 || !c.evidenceIds.every(isText)) problems.push(`${where}: evidenceIds must be a non-empty array (unsupported change)`);
       else if (opportunities) {
-        const need = CATEGORY_FOR_OPPORTUNITY[String(c.category)];
+        const need = VISUALIZATION_CATEGORY_TREATMENT_CATEGORY[c.category as VisualizationCategory];
         const backed = opportunities.some((o) => c.evidenceIds && (c.evidenceIds as string[]).includes(o.id) && o.status === "potential_opportunity" && o.consumerReady && o.category === need);
         if (!backed) problems.push(`${where}: not backed by a consumer-ready ${need ?? "approved"} opportunity`);
       }

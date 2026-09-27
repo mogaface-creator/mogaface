@@ -14,6 +14,8 @@ import type { BuildOptions } from "../interpretation/build.ts";
 import { interpretWithFallback, localRulesProvider } from "../interpretation/provider.ts";
 import type { InterpretationProvider } from "../interpretation/types.ts";
 import { buildVisualizationPlan } from "../visualization/build.ts";
+import { decideIllustrationEligibility } from "../visualization/eligibility.ts";
+import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import type { AssessmentSnapshot, MogaFaceResult, ResultStage } from "./types.ts";
 
 export interface PipelineOptions {
@@ -22,8 +24,10 @@ export interface PipelineOptions {
   interpretationProvider?: InterpretationProvider;
   onStage?: (stage: ResultStage) => void;
   timeoutMs?: number;
-  /** Override the visual-calibration flag (tests only). */
+  /** Override the visual-calibration flag (tests and the development demo only). */
   calibrated?: BuildOptions["calibrated"];
+  /** Passed to the image provider, which refuses to send a photo to a third party unless "granted". */
+  photoConsent?: PhotoVisualizationConsent;
 }
 
 /** Yields to the event loop so a UI can paint a stage before the next (synchronous) step runs. Not a delay. */
@@ -41,17 +45,22 @@ export async function runResultPipeline(snapshot: AssessmentSnapshot, options: P
   const { result: interpretation } = await interpretWithFallback(options.interpretationProvider ?? localRulesProvider, input, { calibrated: options.calibrated });
 
   const plan = buildVisualizationPlan({ frontPhoto: snapshot.frontPhoto, opportunities: snapshot.opportunities });
+  // A separate, stricter decision: may an image model be called at all? (see lib/visualization/eligibility.ts)
+  const illustration = decideIllustrationEligibility(plan, snapshot.opportunities, { calibrated: options.calibrated });
 
+  // The app passes NO provider here: an image is generated only after an explicit click (see IllustrationPanel), never on render.
+  // A provider may be supplied by tests; even then it is called only for an eligible decision, with only the approved changes.
   let visualization: Visualization;
-  if (plan.status === "planned") {
+  if (illustration.eligible) {
     options.onStage?.("preparing_visualization");
     await tick();
     visualization = await generateVisualization({
       sourceImage: plan.sourcePhoto ? { url: plan.sourcePhoto.ref, slot: "front" } : null,
-      plan,
+      plan: { ...plan, changes: illustration.approvedChanges },
       provider: options.imageProvider,
       opportunities: snapshot.opportunities,
       timeoutMs: options.timeoutMs,
+      photoConsent: options.photoConsent,
     });
   } else {
     visualization = { status: "unavailable", errorCode: "not_eligible" };
@@ -65,6 +74,7 @@ export async function runResultPipeline(snapshot: AssessmentSnapshot, options: P
     interpretation,
     treatmentOpportunities: snapshot.opportunities,
     visualizationPlan: plan,
+    illustration,
     visualization,
     status: visualization.status === "ready" ? "visualization_ready" : "visualization_unavailable",
     limitations: interpretation.limitations,

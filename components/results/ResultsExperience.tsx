@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { requestIllustration } from "@/lib/image-generation/client.ts";
 import { createMockProvider } from "@/lib/image-generation/mockProvider.ts";
-import type { ImageGenerationProvider } from "@/lib/image-generation/types.ts";
+import { generateVisualization } from "@/lib/image-generation/provider.ts";
+import { isPhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 import { DEFAULT_INTERPRETATION_CONSENT, isInterpretationConsent } from "@/lib/interpretation/consent.ts";
 import { chooseInterpretationProvider } from "@/lib/interpretation/remote.ts";
 import { toReportView, type ReportView } from "@/lib/results/reportView.ts";
@@ -16,12 +18,13 @@ import { loadSnapshot } from "@/lib/results/store.ts";
 import { loadAnalysisResult } from "@/lib/facial-analysis/resultStore.ts";
 import type { ResultStage } from "@/lib/results/types.ts";
 import { Report } from "./Report";
+import type { IllustrationControls } from "./IllustrationPanel";
 import { LegacyResults } from "./LegacyResults";
 import { LoadingState } from "./LoadingState";
 
 type Mode =
   | { kind: "running"; stage: ResultStage }
-  | { kind: "done"; view: ReportView; isDemo: boolean }
+  | { kind: "done"; view: ReportView; isDemo: boolean; illustration: IllustrationControls; devIllustrationTest: { photoUrl: string; photoQualityValid: boolean } | null }
   | { kind: "legacy" }
   | { kind: "empty" }
   | { kind: "error" };
@@ -31,12 +34,15 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 /**
  * Loads the assessment snapshot, runs interpretation → visualization plan →
- * (mock/none) image, and renders the MogaFace report. Development-only URL
- * switches, ignored in production builds:
- *   ?demo=1            synthetic demo assessment + mock image (never a real result)
- *   ?demo=1&image=none       no image provider configured (visualization "unavailable")
- *   ?demo=1&image=noevidence no front photo, so the plan is not eligible (the "not enough evidence" card)
- *   ?demo=1&image=fail the illustration provider fails (the non-blocking message)
+ * illustration eligibility, and renders the MogaFace report. NO image is
+ * generated here: the pipeline gets no image provider, and generation happens
+ * only from the button in IllustrationPanel (never on render, refresh or a timer).
+ * Development-only URL switches, ignored in production builds:
+ *   ?demo=1            synthetic demo assessment; its button produces a MOCK image, nothing is sent anywhere
+ *   ?demo=1&image=none       illustration generation is switched off (placeholder only)
+ *   ?demo=1&image=noevidence no front photo, so it is not eligible
+ *   ?demo=1&image=fail the (mock) generation fails when the button is pressed
+ *   ?demo=1&image=consent the demo asks for photo consent first, like a real photo would (still a mock; nothing is sent)
  */
 export function ResultsExperience() {
   const [mode, setMode] = useState<Mode>({ kind: "running", stage: "analyzing" });
@@ -63,15 +69,10 @@ export function ResultsExperience() {
       const snapshot = imageMode === "noevidence" ? { ...base, frontPhoto: null } : base;
 
       await tick();
-      let provider: ImageGenerationProvider | null;
-      if (imageMode === "none") provider = null;
-      else if (imageMode === "fail") provider = createMockProvider({ behavior: "fail", latencyMs: 400 });
-      else if (demo) provider = createMockProvider({ render: () => demoAfterImage() });
-      else provider = null; // a real assessment never gets a mock image; the report shows the placeholder until a real provider is connected
 
       try {
         const result = await runResultPipeline(snapshot, {
-          imageProvider: provider,
+          imageProvider: null, // never generate on render — see IllustrationPanel
           // Local deterministic wording unless the operator opted in AND the person consented (see lib/interpretation/consent.ts).
           // Development only: ?consent=granted stands in for the consent screen that does not exist yet.
           interpretationProvider: chooseInterpretationProvider({
@@ -82,7 +83,30 @@ export function ResultsExperience() {
           calibrated: demo ? true : undefined, // the demo alone opens the calibration gate — see lib/results/demo.ts
           onStage: (stage) => set({ kind: "running", stage }),
         });
-        set({ kind: "done", view: toReportView(result, snapshot.frontPhoto?.ref ?? null), isDemo: snapshot.isDemo === true });
+
+        const front = snapshot.frontPhoto;
+        const illustration: IllustrationControls = {
+          generationEnabled: demo ? imageMode !== "none" : process.env.NEXT_PUBLIC_ILLUSTRATION_GENERATION === "1",
+          isDemo: demo && imageMode !== "consent", // only controls whether the consent step is shown; a demo never sends anything
+          initialConsent: isPhotoVisualizationConsent(snapshot.photoVisualizationConsent) ? snapshot.photoVisualizationConsent : undefined,
+          onGenerate: async (consent) => {
+            if (!front) return { status: "not_eligible" };
+            if (demo) {
+              // A mock image from the browser: no network, no photo leaves the page.
+              const made = await generateVisualization({
+                sourceImage: { url: front.ref, slot: "front" },
+                plan: { ...result.visualizationPlan, changes: result.illustration.approvedChanges },
+                provider: createMockProvider({ behavior: imageMode === "fail" ? "fail" : "success", latencyMs: 600, render: () => demoAfterImage() }),
+                opportunities: snapshot.opportunities,
+              });
+              return made.status === "ready" && made.imageUrl ? { status: "ready", afterUrl: made.imageUrl, isMock: true } : { status: "failed" };
+            }
+            const made = await requestIllustration({ photoUrl: front.ref, photoQualityValid: front.qualityValid, opportunities: snapshot.opportunities, consent });
+            return made.status === "ready" ? { status: "ready", afterUrl: made.afterUrl, isMock: false } : { status: made.status };
+          },
+        };
+        const devIllustrationTest = front ? { photoUrl: front.ref, photoQualityValid: front.qualityValid } : null;
+        set({ kind: "done", view: toReportView(result, front?.ref ?? null), isDemo: snapshot.isDemo === true, illustration, devIllustrationTest });
       } catch {
         set({ kind: "error" });
       }
@@ -105,7 +129,7 @@ export function ResultsExperience() {
               Demo data — development only. Synthetic evidence and placeholder images; this is not a real assessment.
             </p>
           )}
-          <Report view={mode.view} cta={cta} />
+          <Report view={mode.view} cta={cta} illustration={mode.illustration} devIllustrationTest={mode.devIllustrationTest} />
         </>
       )}
 

@@ -415,7 +415,7 @@ test("19. No API key reaches the client: only server modules read it, no NEXT_PU
     }
   };
   walk(root);
-  assert.deepEqual(readers.sort(), ["lib/interpretation/select.ts"], "the key is read in exactly one server module (docs/comments aside)");
+  assert.deepEqual(readers.sort(), ["lib/image-generation/handler.ts", "lib/interpretation/select.ts"], "the key is read only in the two server-side handlers/selectors");
   assert.ok(![...publicVars].some((v) => /KEY|SECRET|TOKEN/.test(v)), [...publicVars].join());
   const example = readFileSync(join(root, ".env.example"), "utf8");
   assert.ok(!example.includes("NEXT_PUBLIC_OPENAI_API_KEY"));

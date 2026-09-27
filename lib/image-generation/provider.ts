@@ -5,17 +5,18 @@
  * retries: a failed illustration comes back as a status, so it can never fail
  * the assessment.
  *
- * Real providers: NONE is connected. `RemoteImageApi` + `createRemoteImageProvider`
- * are the adapter structure a future integration fills in. A real provider must
- * run server-side (its key must never reach the browser) and must not receive a
- * user's photo without an explicit consent flow — neither exists yet, which is
- * why no concrete adapter is registered.
+ * The real provider is OpenAI's image-edit API (openaiImages.ts): server-side
+ * only (its key must never reach the browser), and it refuses to send a photo
+ * unless the photo-processing consent is "granted". `RemoteImageApi` +
+ * `createRemoteImageProvider` remain the generic adapter structure for other vendors.
  */
 
 import type { VisualizationPlan } from "../visualization/types.ts";
 import { validateVisualizationPlan } from "../visualization/validate.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import { createMockProvider } from "./mockProvider.ts";
+import { validateIllustrationPrompt } from "../visualization/safety.ts";
+import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import { ImageGenerationError } from "./types.ts";
 import type { ImageGenerationProvider, ImageGenerationRequest, ImageGenerationResult, SourceImage, Visualization } from "./types.ts";
 
@@ -23,19 +24,31 @@ import type { ImageGenerationProvider, ImageGenerationRequest, ImageGenerationRe
 export const MAX_IMAGE_REFERENCE_LENGTH = 2_000_000;
 export const DEFAULT_TIMEOUT_MS = 30_000;
 
-/** The instruction an image model would receive: only approved changes, everything else preserved. */
+/**
+ * The instruction an image model receives — built ONLY from the validated plan's
+ * fixed, approved fields (never from user text, a request, or a model). The
+ * whole prompt is scanned by validateIllustrationPrompt before any call.
+ * It says what to preserve and the approved change(s); it never says why a
+ * change was chosen, names a treatment, or asks the model to improve anything.
+ * A plan may carry more than one approved change (see visualization/types.ts);
+ * every one of them is listed, each still individually safety-checked.
+ */
 export function buildIllustrationPrompt(plan: VisualizationPlan): string {
-  const changes = plan.changes.map((c, i) => `${i + 1}. ${c.description} (intensity: ${c.intensity}).`);
+  if (plan.changes.length === 0) return "";
   return [
-    "Edit the supplied front-facing portrait to create a subtle, realistic ILLUSTRATION.",
-    "Apply ONLY these approved changes:",
-    ...changes,
-    "",
-    `Preserve exactly: ${plan.preserve.join("; ")}.`,
-    "Do not make any other change. Do not alter the person's identity or make them look like a different person.",
-    "Keep every change subtle and plausible. No dramatic transformation, no celebrity-like result, no beautification beyond the approved changes.",
-    "",
-    `The image will be shown labelled "${plan.disclaimer.label}. ${plan.disclaimer.notice}"`,
+    "Edit the supplied portrait of the same person.",
+    "Keep the same photo and the same real-world situation: the same pose, framing, camera angle and setting.",
+    "Create a clearly visible, natural-looking illustrative visualization of the approved MogaFace visual change(s) listed below.",
+    "The output must look like a real, unretouched photograph — not a stylized, filtered, or generically enhanced image.",
+    "Preserve the person's identity and every facial characteristic that is unrelated to the approved change(s).",
+    "Do not retouch, stylize, smooth, apply generic photo enhancement, or otherwise alter any unrelated feature.",
+    `Do not change any of the following unless it is explicitly part of an approved change: ${plan.preserve.join("; ")}.`,
+    "Apply only the following approved visual change(s) — nothing else:",
+    ...plan.changes.map((c) => `- ${c.visualInstruction} (region: ${c.targetRegion.replace(/_/g, " ")}; strength: ${c.intensityLimit}).`),
+    "Each change should be clearly visible in a side-by-side comparison — not so subtle it is hard to see — while still looking natural, moderate and anatomically plausible.",
+    "Do not create a dramatic transformation.",
+    "Do not introduce any change beyond what is explicitly listed above.",
+    "The output must remain recognizably the same person.",
   ].join("\n");
 }
 
@@ -113,6 +126,10 @@ export interface GenerateVisualizationInput {
   /** When given, each change must also be backed by a consumer-ready opportunity. */
   opportunities?: TreatmentOpportunity[];
   timeoutMs?: number;
+  /** Passed through to the provider, which refuses to send a photo to a third party unless "granted". */
+  photoConsent?: PhotoVisualizationConsent;
+  /** Largest image reference accepted (default MAX_IMAGE_REFERENCE_LENGTH). A server returning inline image data raises it. */
+  maxImageChars?: number;
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -140,16 +157,19 @@ export async function generateVisualization(input: GenerateVisualizationInput): 
   if (plan.status !== "planned" || !sourceImage) return { status: "unavailable", errorCode: "not_eligible" };
   if (!provider) return { status: "unavailable", errorCode: "provider_not_configured" };
 
+  // The prompt is checked BEFORE any provider is called: unsafe wording never leaves this function.
+  if (validateIllustrationPrompt(buildIllustrationPrompt(plan)).length > 0) return { status: "failed", errorCode: "unsafe_prompt" };
+
   try {
-    const request: ImageGenerationRequest = { sourceImage, visualizationPlan: plan };
+    const request: ImageGenerationRequest = { sourceImage, visualizationPlan: plan, photoConsent: input.photoConsent };
     const result: ImageGenerationResult = await withTimeout(provider.generateIllustration(request), input.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-    if (typeof result?.imageUrl !== "string" || result.imageUrl.length === 0 || result.imageUrl.length > MAX_IMAGE_REFERENCE_LENGTH) {
+    if (typeof result?.imageUrl !== "string" || result.imageUrl.length === 0 || result.imageUrl.length > (input.maxImageChars ?? MAX_IMAGE_REFERENCE_LENGTH)) {
       return { status: "failed", provider: provider.id, errorCode: "invalid_result" };
     }
     return { status: "ready", provider: result.provider || provider.id, imageUrl: result.imageUrl, createdAt: result.createdAt, isMock: provider.isMock };
   } catch (e) {
     if (e instanceof ImageGenerationError) {
-      return e.code === "provider_not_configured"
+      return e.code === "provider_not_configured" || e.code === "no_consent"
         ? { status: "unavailable", provider: provider.id, errorCode: e.code }
         : { status: "failed", provider: provider.id, errorCode: e.code };
     }

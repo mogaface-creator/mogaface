@@ -7,7 +7,7 @@ Assessment → facial analysis → observation layer → treatment opportunity e
 
 Everything on the right of the opportunity engine **builds on** the existing evidence; none of it recomputes a measurement, changes a threshold, or adds a treatment rule. The clinician is the final decision-maker, and every result says so.
 
-> **Status.** The pipeline runs end to end with a **mock** image provider and a deterministic local interpretation. A server-side AI *wording* provider exists (`INTERPRETATION_PROVIDER=openai`) but has only been tested against a stubbed API — it has not been run against the live service. No real image-generation provider is connected. Real assessments currently produce very little consumer-facing visual content, because the visual observation layer is uncalibrated and its opportunities are gated (see "Why real results are sparse today").
+> **Status.** The pipeline runs end to end with a deterministic local interpretation; the image step is built but **disabled by default and not eligible for any real assessment** (see "Illustrative image generation"). A server-side AI *wording* provider exists (`INTERPRETATION_PROVIDER=openai`) but has only been tested against a stubbed API — it has not been run against the live service. No live OpenAI call (text or image) has been made from this repository. Real assessments currently produce very little consumer-facing visual content, because the visual observation layer is uncalibrated and its opportunities are gated (see "Why real results are sparse today").
 
 ## Interpretation (`lib/interpretation/`)
 
@@ -84,22 +84,52 @@ Decides **what an image generator may show**; the image model never decides what
 
 Approved changes (first version): `facial_contour` (from contouring) and `expression_lines` (from the neuromodulator opportunity). Filler, lifting, skin, hair and consultation are **excluded**, each with a recorded reason. Intensity must be `subtle` (or `light`); anything stronger fails validation. Every plan — planned or not — carries the fixed disclaimer **"Illustrative visualization" / "Not a prediction of treatment outcome."**, and the validator rejects a plan whose disclaimer is missing or altered.
 
-## Image generation (`lib/image-generation/`)
+## Illustrative image generation (`lib/visualization/`, `lib/image-generation/`)
 
-`ImageGenerationProvider.generateIllustration({ sourceImage, visualizationPlan })`. `generateVisualization` **never throws and never retries**: it validates the plan, makes at most one attempt with a timeout, refuses empty or image-sized results (no binaries in storage), and returns `ready`, `unavailable` (no eligible plan / no provider) or `failed`. `buildIllustrationPrompt` names only the approved changes and instructs the model to preserve identity, proportions, skin tone, hair, facial hair and background, with no dramatic or celebrity-like change.
+**The image model is a renderer.** MogaFace decides what may be visualized; the clinician decides what is appropriate; the image is illustrative only.
 
-- **Mock provider** (`mockProvider.ts`): no key, no network, generates nothing — it returns the source image (or a supplied placeholder) and is badged "Mock image — development only".
-- **Provider selection** (`selectImageGenerationProvider`): env unset → mock in development, **no provider in production**; `mock`; `none`; any other name → a provider that reports `provider_not_configured` unless a registered adapter and key exist. **No vendor adapter is registered** (`REMOTE_IMAGE_APIS` is empty), so no real provider can be silently active.
-- A real provider must run **server-side** (the key must never reach the browser) and must not receive a user's photo without a **consent flow**. Neither exists, which is why no adapter was written.
+```
+photo → analysis → treatment opportunities → visualization PLAN → GENERATION ELIGIBILITY → safety-checked prompt → image API → output validation → "Illustrative After"
+```
 
-### Environment variables for a real provider
+**Plan** (`build.ts`, unchanged rules): each change now also carries `changeId`, `targetRegion`, `visualInstruction` (fixed per category in `APPROVED_VISUAL_CHANGES`), `evidenceRefs`, `sourceOpportunityId`, `consumerReady`, `intensityLimit: "subtle"` and `safetyStatus: "approved"`. `validate.ts` rejects any change whose instruction/region differs from the approved one.
+
+**Generation eligibility** (`eligibility.ts`) — a separate, stricter decision that can only approve or block what the plan already contains:
+- expression-line illustration: approved by policy, and only when its source opportunity is consumer-ready **and** re-checked against the calibration gate (uncalibrated video evidence → not eligible);
+- facial-contour illustration: **blocked by policy** (`ILLUSTRATION_POLICY.facial_contour = false`). Front-geometry contouring can make an opportunity consumer-ready, but that does not by itself authorise rendering a face; the evidence policy is pending an explicit decision. Flipping this value is the only switch;
+- filler/volume, lifting, skin, under-eye, hair: no approved visual change exists.
+So today **no real assessment is eligible**; only the demo (open gate) is, for expression lines.
+
+**Safety** (`safety.ts`): the whole prompt — fixed template plus fixed instructions — is scanned before any call for beauty/age edits, attractiveness, named treatments, procedures, quantities, reshaping language and promises. Unsafe → no call.
+
+**Prompt** (`buildIllustrationPrompt`): built only from the approved changes: "Edit the supplied portrait of the same person… Preserve the person's identity… Do not retouch, stylize, smooth or otherwise alter any unrelated feature… Apply only the following approved visual change: …subtle, realistic, anatomically plausible… recognizably the same person." Never a treatment name, category, goal or evidence.
+
+**Consent.** `PhotoVisualizationConsent = pending | granted | declined` (`consent.ts`). Only `granted` may send a photo: checked in the browser client, the server handler, and the OpenAI provider itself. The panel asks in plain product language ("your front photo will be sent to an external AI image service (OpenAI)…"). **Undecided (product owner / legal):** final consent wording, retention terms with the provider, region, and any regulatory review — nothing here claims compliance.
+
+**Server** (`app/api/generate-illustration` → `handler.ts`), each check stopping the request: provider enabled → same origin → authenticated → entitlement hook → rate limit (the same `RateLimiter` as interpretation) → bounded multipart (`photo` + `payload`, nothing else) → consent → photo validated (real PNG/JPEG/WebP, matching type, sensible size) → **plan and eligibility rebuilt on the server from the opportunities** (client plans/prompts/descriptions/`consumerReady` are never used; readiness is re-derived against the gate) → prompt built and checked → OpenAI `POST /v1/images/edits` (multipart: model, the untouched photo, prompt, n, size, output_format, optional quality/input_fidelity) bounded by a timeout → output validated (real image, plausible size/dimensions, not the source returned unchanged) → `{ status: "ready", image, illustrativeAfter }`. Everything after the body check answers HTTP 200 with a status (`not_eligible`, `failed`), never a technical error. Authentication: none exists — production refuses (401); rate limiting: none in production (503). The server cannot verify the evidence itself (no server-side analysis exists); it re-derives what it can and requires authentication.
+
+**What is sent to OpenAI:** the front photo (as uploaded, untouched), the fixed prompt, and the model/size/format parameters. **Not sent:** findings, observations, opportunities, categories, goals, questionnaire data, ids, scores, age, gender, height, weight, contact details, assessment/interpretation text.
+
+**Storage / retention.** The photo is read into memory for one request and discarded; never written to disk, storage or logs. The generated image is returned to the browser and held as an in-memory blob URL (released when the panel unmounts); never in localStorage/sessionStorage. Logs are one line of metadata (request id, provider, model, outcome, reason, duration). The provider's own retention of the uploaded photo is governed by its terms (undecided; see above).
+
+**Output.** Named `illustrativeAfter` (never a prediction/expected/guaranteed/treatment result), labelled "Illustrative After" with "AI-generated visualization" and "AI-generated visualization. This is illustrative only and is not a prediction or guarantee of treatment results.", with the clinician context beside it. It is never fed back into analysis (a test scans the analysis layers for any import).
+
+**Cost control.** Generation happens only from the button "Generate My Illustrative View" — never on render, refresh or a timer; the results page passes **no** image provider to the pipeline. Rate limit per subject (development default 3/hour, in memory); an `EntitlementCheck` hook exists for a future plan/credits model (none built).
+
+**UI states.** Not eligible (a calm note: "An illustrative visualization isn't available from the current analysis." + a brief reason) · eligible (button) · consent · pending · failed ("…isn't available for this analysis.") · ready.
+
+**Providers.** `openaiImages.ts` is the real one (server-only; refuses without consent; no key or image data in any error). `mockProvider.ts` backs the demo only (a browser-side mock; nothing is sent). `RemoteImageApi` remains the generic structure for other vendors.
+
+### Environment variables
 
 | Variable | Purpose | Notes |
 |---|---|---|
-| `IMAGE_GENERATION_PROVIDER` | provider name (`mock`, `none`, or a registered adapter) | unset → mock in dev, none in production |
-| `IMAGE_GENERATION_API_KEY` | the provider's credential | **server-side only**; never commit; use `.env.local` |
-| `NEXT_PUBLIC_CONSULTATION_URL` | consultation button destination (public) | `https://`, `mailto:`, `tel:` or a site path; default `/` |
-| `NEXT_PUBLIC_CONSULTATION_CTA_LABEL` | button text (public) | default "Discuss My Results" |
+| `IMAGE_GENERATION_PROVIDER` | `openai` to enable | unset → off |
+| `OPENAI_API_KEY` | credential (shared with the wording provider) | server-side only; `.env.local` |
+| `IMAGE_GENERATION_MODEL` | image model id | default constant in `openaiImages.ts` — confirm at the supervised call |
+| `IMAGE_GENERATION_SIZE` / `_QUALITY` / `_INPUT_FIDELITY` / `_TIMEOUT_MS` | optional tuning | size defaults from the photo's orientation; fidelity defaults to `high` for the default model |
+| `NEXT_PUBLIC_ILLUSTRATION_GENERATION` | public flag: show the button | `1` to show; non-secret |
+| `NEXT_PUBLIC_CONSULTATION_URL` / `_CTA_LABEL` | consultation button | public |
 
 `.env.example` lists these commented and blank; a test asserts no variable there has a value.
 
@@ -131,11 +161,11 @@ A real result never receives an image: the results page passes no image provider
 
 Outside production builds only:
 
-- `/results?demo=1` — synthetic evidence through the real engine, opportunities marked consumer-ready **for the demo only**, placeholder SVG "photos", mock image, and a visible "Demo data — development only" banner.
+- `/results?demo=1` — synthetic evidence through the real engine, opportunities marked consumer-ready **for the demo only**, placeholder SVG "photos", a mock image (only after the button is pressed), and a visible "Demo data — development only" banner.
 - `&image=none` — no provider configured · `&image=noevidence` — no front photo, plan not eligible · `&image=fail` — the provider fails.
 
 The demo does not touch the real gate (tested) and production builds ignore these switches. It tests UI and pipeline behavior only and says nothing about any real face or outcome.
 
 ## Not implemented
 
-A live-tested AI provider; a real authenticator, shared-store rate limiter and consent screen; a real image-generation provider and its server route; a photo-upload consent flow; server-side result persistence; a real consultation destination; visualization for filler, lifting or skin; using profile/45° photos as visualization sources.
+A live-tested AI provider; a real authenticator, shared-store rate limiter and consent screens; a live-tested image provider; the contour evidence policy decision; server-side result persistence; a real consultation destination; visualization for filler, lifting or skin; using profile/45° photos as visualization sources.

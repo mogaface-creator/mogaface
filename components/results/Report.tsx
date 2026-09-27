@@ -1,6 +1,9 @@
 import type { ConsultationCta } from "@/lib/results/config.ts";
 import type { ReportSectionView, ReportView } from "@/lib/results/reportView.ts";
-import { VisualizationPanel } from "./VisualizationPanel";
+import { IllustrationPanel, type IllustrationControls } from "./IllustrationPanel";
+import { DevIllustrationTest } from "./DevIllustrationTest";
+import { ResultsSummary } from "./ResultsSummary";
+import { StickyMobileCta } from "./StickyMobileCta";
 
 /**
  * The MogaFace report. Presentation only: it receives plain copy from
@@ -67,19 +70,33 @@ function DomainGroup({ sections }: { sections: ReportSectionView[] }) {
   );
 }
 
-export function Report({ view, cta }: { view: ReportView; cta: ConsultationCta }) {
+export function Report({
+  view,
+  cta,
+  illustration,
+  devIllustrationTest,
+}: {
+  view: ReportView;
+  cta: ConsultationCta;
+  illustration: IllustrationControls;
+  /** Development-only supervised test fixture (see DevIllustrationTest.tsx). Null outside the results page's own dev flow. */
+  devIllustrationTest?: { photoUrl: string; photoQualityValid: boolean } | null;
+}) {
   const external = /^https?:/i.test(cta.href);
   const observed = view.sections.filter((s) => s.key === "facialStructure" || s.key === "eyeArea" || s.key === "expression");
   const aboutYou = view.sections.filter((s) => !observed.includes(s));
 
   return (
     <article className="space-y-20 sm:space-y-28">
-      <header className="pb-4">
+      <ResultsSummary view={view} />
+      <StickyMobileCta cta={cta} />
+
+      <header id="full-report" className="pb-4">
         <div className="flex items-center justify-between gap-4">
           <p className={EYEBROW}>{view.cover.eyebrow}</p>
           <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">{view.cover.badge}</span>
         </div>
-        <h1 className="mt-14 font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl">{view.cover.title}</h1>
+        <h2 className="mt-14 font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl">{view.cover.title}</h2>
         <p className="mt-8 max-w-2xl text-lg leading-8 text-muted">{view.cover.intro}</p>
         {view.cover.dateLabel && <p className="mt-10 text-sm text-muted">Prepared {view.cover.dateLabel}</p>}
       </header>
@@ -167,7 +184,8 @@ export function Report({ view, cta }: { view: ReportView; cta: ConsultationCta }
       </Section>
 
       <Section id="visualization" eyebrow="Illustrative visualization" title="Before and illustrative after">
-        <VisualizationPanel view={view.visualization} />
+        <IllustrationPanel view={view.visualization} controls={illustration} />
+        {devIllustrationTest && <DevIllustrationTest photoUrl={devIllustrationTest.photoUrl} photoQualityValid={devIllustrationTest.photoQualityValid} />}
       </Section>
 
       <Section id="limits" eyebrow="What MogaFace can and cannot tell you" title="Good to know">
@@ -180,7 +198,7 @@ export function Report({ view, cta }: { view: ReportView; cta: ConsultationCta }
         </ul>
       </Section>
 
-      <section aria-labelledby="next-step" className="rounded-[2rem] bg-accent px-7 py-14 text-accent-foreground sm:px-14 sm:py-20">
+      <section id="next-step-section" aria-labelledby="next-step" className="rounded-[2rem] bg-accent px-7 py-14 text-accent-foreground sm:px-14 sm:py-20">
         <p className="text-xs font-medium uppercase tracking-[0.18em] opacity-70">Your next step</p>
         <h2 id="next-step" className="mt-4 max-w-2xl font-serif text-3xl leading-tight tracking-tight sm:text-5xl">
           {view.cta.heading}

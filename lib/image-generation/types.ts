@@ -5,21 +5,27 @@
  * visualization is simply "unavailable"; the assessment always still works.
  */
 
+import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import type { VisualizationPlan } from "../visualization/types.ts";
 
 export interface SourceImage {
   /** URL of the FRONT photo (a blob URL in the local architecture). Image bytes are never stored in the result. */
   url: string;
   slot: "front";
+  /** Server-side only: the photo bytes for a provider that must upload them. Held in memory for one request, never stored or logged. */
+  bytes?: Uint8Array;
+  mimeType?: string;
 }
 
 export interface ImageGenerationRequest {
   sourceImage: SourceImage;
   visualizationPlan: VisualizationPlan;
+  /** A provider that sends the photo to a third party must refuse unless this is "granted". */
+  photoConsent?: PhotoVisualizationConsent;
 }
 
 export interface ImageGenerationResult {
-  /** A reference to the generated image. Large image binaries must not be persisted in localStorage. */
+  /** A reference to the generated image. Large image binaries must not be persisted in browser storage. */
   imageUrl: string;
   provider: string;
   createdAt: string;
@@ -39,7 +45,10 @@ export type ImageGenerationErrorCode =
   | "provider_not_configured"
   | "provider_failed"
   | "timeout"
-  | "invalid_result";
+  | "invalid_result"
+  | "no_consent"
+  | "unsafe_prompt"
+  | "invalid_source";
 
 export class ImageGenerationError extends Error {
   code: ImageGenerationErrorCode;

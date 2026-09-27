@@ -7,8 +7,10 @@
  */
 
 import type { ReportSection, ReportStatement, SectionBasis } from "../interpretation/types.ts";
-import { consumerVisualization, safe, keepSafe } from "./consumer.ts";
-import type { ConsumerVisualization } from "./consumer.ts";
+import { safe, keepSafe } from "./consumer.ts";
+import { ILLUSTRATION_FAILED_MESSAGE, ILLUSTRATION_UNAVAILABLE_MESSAGE } from "../visualization/eligibility.ts";
+import { visualizedAreaFor } from "../visualization/present.ts";
+import type { VisualizedArea } from "../visualization/present.ts";
 import type { MogaFaceResult } from "./types.ts";
 
 export type StatementKind = "observed" | "reported" | "limitation";
@@ -41,6 +43,17 @@ export interface ReportAreaView {
   clinicianCanEvaluate: string;
 }
 
+/**
+ * The Before → Illustrative After section. Five distinct states (the last two are
+ * runtime states the panel adds while it works): a section that is not eligible is
+ * a calm note, never an error.
+ */
+export type ReportVisualization =
+  | { state: "not_eligible"; title: string; body: string; detail: string | null; beforeUrl: string | null }
+  | { state: "eligible"; beforeUrl: string; areas: VisualizedArea[] }
+  | { state: "ready"; beforeUrl: string; afterUrl: string; areas: VisualizedArea[]; isMock: boolean }
+  | { state: "failed"; title: string; body: string; beforeUrl: string | null };
+
 export interface ReportView {
   cover: { eyebrow: string; title: string; intro: string; dateLabel: string | null; badge: string };
   overview: string;
@@ -48,7 +61,7 @@ export interface ReportView {
   sections: ReportSectionView[];
   areas: ReportAreaView[];
   notEstablished: { title: string; body: string }[];
-  visualization: ConsumerVisualization;
+  visualization: ReportVisualization;
   limitations: string[];
   clinicianReview: string;
   cta: { heading: string; supportingText: string };
@@ -86,6 +99,28 @@ export const REPORT_FOOTER = {
 export function formatReportDate(iso: string | undefined): string | null {
   const t = iso ? Date.parse(iso) : Number.NaN;
   return Number.isNaN(t) ? null : new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+const INELIGIBLE_DETAIL: Record<string, string> = {
+  no_front_photo: "A front photo is needed to create an illustration.",
+  front_photo_quality: "Your front photo didn't meet the quality needed for an illustration.",
+  policy_not_approved: "Illustrations for this area aren't enabled yet.",
+  evidence_not_consumer_ready: "The available evidence doesn't support an illustration yet.",
+  no_supported_change: "The available evidence doesn't support an illustration yet.",
+};
+
+function reportVisualization(result: MogaFaceResult, beforeUrl: string | null): ReportVisualization {
+  const v = result.visualization;
+  const d = result.illustration;
+  // Re-scanned here too, per-area: an area whose description somehow fails the
+  // safety filter is dropped entirely (never shown half-labelled), same as
+  // every other consumer-facing string in this module.
+  const areas = d.approvedChanges.map(visualizedAreaFor).filter((a) => safe(a.description));
+  if (v.status === "ready" && v.imageUrl && beforeUrl) return { state: "ready", beforeUrl, afterUrl: v.imageUrl, areas, isMock: v.isMock === true };
+  if (v.status === "failed") return { state: "failed", title: "Illustrative visualization", body: ILLUSTRATION_FAILED_MESSAGE, beforeUrl };
+  if (d.eligible && beforeUrl) return { state: "eligible", beforeUrl, areas };
+  const reason = d.eligible ? "no_front_photo" : (d.planReason ?? d.reason ?? "");
+  return { state: "not_eligible", title: "Illustrative visualization", body: ILLUSTRATION_UNAVAILABLE_MESSAGE, detail: INELIGIBLE_DETAIL[reason] ?? null, beforeUrl };
 }
 
 export function toReportView(result: MogaFaceResult, beforeUrl: string | null): ReportView {
@@ -152,7 +187,7 @@ export function toReportView(result: MogaFaceResult, beforeUrl: string | null): 
     sections: sectionViews,
     areas,
     notEstablished,
-    visualization: consumerVisualization(result, beforeUrl, areas.length > 0),
+    visualization: reportVisualization(result, beforeUrl),
     limitations: keepSafe(report.limitations),
     clinicianReview: safe(report.clinicianReview) ? report.clinicianReview : "A qualified clinician should assess you in person.",
     cta: { heading: report.cta.heading, supportingText: report.cta.supportingText },

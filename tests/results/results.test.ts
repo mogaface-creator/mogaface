@@ -104,10 +104,8 @@ test("consumer view: ready state has before, illustrative after, 'what changed',
   assert.equal(view.visualization.label, "Illustrative visualization");
   assert.equal(view.visualization.notice, "Not a prediction of treatment outcome.");
   assert.equal(view.visualization.isMock, true);
-  assert.deepEqual(view.visualization.changes, [
-    "Subtle reduction in the visible appearance of expression-related forehead lines",
-    "Subtle visual emphasis of facial contour and definition",
-  ]);
+  // only what was approved for generation: the contour change is blocked by the illustration policy (see lib/visualization/eligibility.ts)
+  assert.deepEqual(view.visualization.changes, ["Visible, natural-looking reduction of the observed expression-related forehead lines"]);
   assert.equal(view.clinicianNote, CLINICIAN_NOTE);
 });
 

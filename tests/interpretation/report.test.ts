@@ -311,21 +311,25 @@ test("report view: the date comes from assessment metadata only, and the visuali
   assert.equal(formatReportDate("nonsense"), null);
 
   const { snapshot } = demoInput();
-  const placeholderOf = (v: ReturnType<typeof toReportView>["visualization"]) => {
-    assert.notEqual(v.state, "ready");
-    return v as Exclude<typeof v, { state: "ready" }>;
-  };
-  const planned = placeholderOf(toReportView(await runResultPipeline(snapshot, { imageProvider: null, calibrated: true }), "blob:front").visualization);
-  assert.equal(planned.state, "unavailable");
-  assert.equal(planned.placeholder, "Your illustrative visualization will appear here.");
-  assert.equal(planned.beforeUrl, "blob:front");
-  assert.ok(planned.plannedChanges.length > 0);
-
-  const notEligible = placeholderOf(toReportView(await runResultPipeline({ ...snapshot, frontPhoto: null }, { imageProvider: null, calibrated: true }), null).visualization);
-  assert.equal(notEligible.placeholder, "An illustrative visualization needs more visual evidence.");
-  assert.deepEqual(notEligible.plannedChanges, []);
+  // demo (gate open): the expression-line illustration is eligible — the panel shows a button, nothing is generated
+  const eligible = toReportView(await runResultPipeline(snapshot, { imageProvider: null, calibrated: true }), "blob:front").visualization;
+  assert.equal(eligible.state, "eligible");
+  if (eligible.state === "eligible") {
+    assert.equal(eligible.beforeUrl, "blob:front");
+    assert.deepEqual(
+      eligible.areas.map((a) => a.area),
+      ["Expression lines"],
+      "only what is approved for generation; the contour change is blocked",
+    );
+    assert.equal(eligible.areas[0].treatmentFamily, "Neuromodulator");
+  }
+  // no front photo: not eligible, calmly
+  const none = toReportView(await runResultPipeline({ ...snapshot, frontPhoto: null }, { imageProvider: null, calibrated: true }), null).visualization;
+  assert.equal(none.state, "not_eligible");
+  if (none.state === "not_eligible") assert.deepEqual([none.body, none.detail], ["An illustrative visualization isn't available from the current analysis.", "A front photo is needed to create an illustration."]);
+  // a real result with the closed gate: not eligible
   const real = toReportView(await runResultPipeline(snapshotFor(assessmentWith({ selected: ["SKIN_TONE"] })), { imageProvider: null }), "blob:front");
-  assert.equal(real.visualization.state, "unavailable");
+  assert.equal(real.visualization.state, "not_eligible");
 });
 
 // ---- the AI provider ----

@@ -63,7 +63,8 @@ export function consumerVisualization(result: MogaFaceResult, beforeUrl: string 
       state: "ready",
       beforeUrl,
       afterUrl: v.imageUrl,
-      changes: keepSafe(plan.changes.map((c) => c.description)),
+      // What was actually rendered: only the changes approved for generation, never every change in the plan.
+      changes: keepSafe((result.illustration?.approvedChanges ?? plan.changes).map((c) => c.description)),
       label: VISUALIZATION_DISCLAIMER.label,
       notice: VISUALIZATION_DISCLAIMER.notice,
       isMock: v.isMock === true,

@@ -215,9 +215,9 @@ test("a real result is not a demo: no demo markers, the real photo, no image, no
   assert.equal(r.assessmentId, snap.assessment.id);
   assert.equal(r.assessmentCreatedAt, snap.assessment.createdAt);
   assert.doesNotMatch(JSON.stringify(view), /demo|synthetic|placeholder photo|not a real photo|mock/i);
-  assert.ok(view.visualization.state !== "ready", "a real result never shows a generated (or mock) image");
+  assert.equal(view.visualization.state, "not_eligible", "a real result (closed gate) is not eligible: no image, no button");
   assert.equal(view.visualization.beforeUrl, FRONT_URL);
-  assert.equal(view.visualization.placeholder, r.visualizationPlan.status === "planned" ? "Your illustrative visualization will appear here." : "An illustrative visualization needs more visual evidence.");
+  assert.equal(r.illustration.eligible, false);
   assert.equal(r.visualization.imageUrl, undefined);
   assert.equal(r.visualization.isMock, undefined);
 });

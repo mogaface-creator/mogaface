@@ -6,6 +6,8 @@
 
 import type { Assessment } from "../assessment/types.ts";
 import type { InterpretationConsent } from "../interpretation/consent.ts";
+import type { IllustrationDecision } from "../visualization/eligibility.ts";
+import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import type { Visualization } from "../image-generation/types.ts";
 import type { InterpretationResult } from "../interpretation/types.ts";
 import type { MogaFaceAnalysis } from "../observation/types.ts";
@@ -31,6 +33,8 @@ export interface MogaFaceResult {
   interpretation: InterpretationResult;
   treatmentOpportunities: TreatmentOpportunity[];
   visualizationPlan: VisualizationPlan;
+  /** Whether an image model may be called at all — decided by MogaFace before any generation. */
+  illustration: IllustrationDecision;
   visualization: Visualization;
   status: ResultStage;
   limitations: string[];
@@ -49,6 +53,8 @@ export interface AssessmentSnapshot {
   isDemo?: boolean;
   /** Consent to third-party interpretation. Absent means "pending": no consent screen exists yet, so real results stay on the local provider. */
   interpretationConsent?: InterpretationConsent;
+  /** Consent to send the front photo to an external AI image service. Absent means "pending": nothing is sent until the person agrees. */
+  photoVisualizationConsent?: PhotoVisualizationConsent;
   assessment: Assessment;
   analysis: MogaFaceAnalysis;
   opportunities: TreatmentOpportunity[];

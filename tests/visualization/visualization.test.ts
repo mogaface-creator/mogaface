@@ -2,9 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildVisualizationPlan } from "../../lib/visualization/build.ts";
 import { validateVisualizationPlan } from "../../lib/visualization/validate.ts";
-import { VISUALIZATION_CATEGORIES, VISUALIZATION_DISCLAIMER, PRESERVATION_RULES } from "../../lib/visualization/types.ts";
+import { VISUALIZATION_CATEGORIES, VISUALIZATION_CATEGORY_TREATMENT_CATEGORY, VISUALIZATION_DISCLAIMER, PRESERVATION_RULES } from "../../lib/visualization/types.ts";
 import { VISUALIZATION_PLAN_VERSION } from "../../lib/visualization/versions.ts";
 import { buildIllustrationPrompt } from "../../lib/image-generation/provider.ts";
+import { findUnsafeVisualText, validateIllustrationPrompt } from "../../lib/visualization/safety.ts";
+import { decideIllustrationEligibility, ILLUSTRATION_POLICY } from "../../lib/visualization/eligibility.ts";
+import { visualizedAreaFor } from "../../lib/visualization/present.ts";
+import {
+  buildDevMultiAreaPlan,
+  DEV_FULL_ILLUSTRATION_POLICY,
+  DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST,
+} from "../../lib/image-generation/devIllustrationFixture.ts";
 import { assessmentWith, inputFor, opened } from "../results/fixtures.ts";
 import type { VisualizationPlan } from "../../lib/visualization/types.ts";
 
@@ -38,9 +46,9 @@ test("unsupported categories are never planned: filler, lifting and skin are exc
   const plan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: opps });
   assert.ok(plan.excludedChanges.some((e) => e.category === "skin_appearance"));
   assert.ok(!plan.changes.some((c) => !(VISUALIZATION_CATEGORIES as readonly string[]).includes(c.category)));
-  // A plan that tries to include one is rejected.
+  // A plan that tries to include a category outside the whole taxonomy is rejected.
   const bad = clone(plan);
-  bad.changes.push({ category: "skin_appearance" as never, description: "Subtle change", intensity: "subtle", evidenceIds: ["x"] });
+  bad.changes.push({ category: "unsupported_visualization", description: "Subtle change", intensity: "subtle", evidenceIds: ["x"] } as never);
   assert.match(validateVisualizationPlan(bad).join(), /not an approved visualization category/);
 });
 
@@ -123,16 +131,125 @@ test("plan structure rules: planned needs a change and a front source; not-eligi
   for (const v of [null, undefined, 3, "x", []]) assert.ok(validateVisualizationPlan(v).length > 0);
 });
 
-test("the image prompt lists only approved changes, preserves identity, and forbids dramatic results", () => {
+test("the image prompt is built from the approved fields only: instructions, preservation rules, subtle limits — and passes the safety validator", () => {
   const plan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: plannable() });
   const prompt = buildIllustrationPrompt(plan);
-  for (const c of plan.changes) assert.ok(prompt.includes(c.description));
+  for (const c of plan.changes) assert.ok(prompt.includes(c.visualInstruction));
   for (const rule of PRESERVATION_RULES) assert.ok(prompt.includes(rule), rule);
-  assert.match(prompt, /ONLY these approved changes/);
-  assert.match(prompt, /Do not alter the person's identity/);
-  assert.match(prompt, /No dramatic transformation, no celebrity-like result/);
-  assert.match(prompt, /Illustrative visualization\. Not a prediction of treatment outcome\./);
+  assert.match(prompt, /^Edit the supplied portrait of the same person\./);
+  assert.match(prompt, /Apply only the following approved visual change\(s\) — nothing else:/);
+  assert.match(prompt, /Preserve the person's identity and every facial characteristic that is unrelated/);
+  assert.match(prompt, /clearly visible in a side-by-side comparison.*natural, moderate and anatomically plausible/);
+  assert.match(prompt, /Do not create a dramatic transformation\./);
+  assert.match(prompt, /recognizably the same person\./);
   assert.ok(!/skin_appearance|fullness|lifting/i.test(prompt), "excluded changes never reach the model");
+  assert.deepEqual(validateIllustrationPrompt(prompt), []);
+  assert.equal(buildIllustrationPrompt({ ...plan, changes: [] }), "", "no approved change → no prompt");
+});
+
+// =====================================================================================
+// Multi-area plan representation, the new categories' production fail-closed
+// behavior, and the dev-only composite fixture (see devIllustrationFixture.ts).
+// =====================================================================================
+
+test("A: a single plan can represent multiple independently evidence-backed visual areas", () => {
+  const plan = buildDevMultiAreaPlan("blob:front");
+  assert.equal(plan.status, "planned");
+  assert.equal(plan.changes.length, 5);
+  assert.deepEqual(
+    plan.changes.map((c) => c.category).sort(),
+    [...VISUALIZATION_CATEGORIES].sort(),
+  );
+  // every item independently carries what the image-generation layer needs
+  for (const c of plan.changes) {
+    assert.ok(c.targetRegion, c.category);
+    assert.ok(c.evidenceRefs.length > 0, `${c.category} evidenceRefs`);
+    assert.ok(c.evidenceIds.length > 0, `${c.category} evidenceIds`);
+    assert.equal(c.consumerReady, true);
+    assert.equal(c.safetyStatus, "approved");
+  }
+  assert.deepEqual(validateVisualizationPlan(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST), []);
+  // and the UI-facing shape carries an area name, description and (where one applies) a treatment family
+  const areas = plan.changes.map(visualizedAreaFor);
+  assert.deepEqual(
+    areas.map((a) => a.area).sort(),
+    ["Expression lines", "Facial contour", "Jawline definition", "Skin appearance", "Under-eye appearance"],
+  );
+  assert.ok(areas.every((a) => a.description.length > 0));
+  assert.ok(areas.every((a) => typeof a.treatmentFamily === "string"));
+});
+
+test("B: production eligibility rejects every category the real policy hasn't approved, including the three new ones", () => {
+  assert.deepEqual(ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: false, jawline_definition: false, under_eye: false, skin_appearance: false });
+  const plan = buildDevMultiAreaPlan("blob:front");
+  // the REAL policy/calibration state (no dev override at all)
+  const real = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST);
+  assert.equal(real.eligible, false, "not even expression_lines survives without the calibration override");
+  assert.deepEqual(real.approvedChanges, []);
+  // even calibrated (the closed gate opened), the real policy alone still blocks the other four
+  const calibratedOnly = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true });
+  assert.deepEqual(calibratedOnly.approvedChanges.map((c) => c.category), ["expression_lines"]);
+  assert.deepEqual(
+    calibratedOnly.blocked.map((b) => b.category).sort(),
+    ["facial_contour", "jawline_definition", "skin_appearance", "under_eye"],
+  );
+  // jawline_definition and under_eye can never even be BUILT from a real opportunity — no rule produces them
+  const real45 = inputFor(assessmentWith({ selected: ["FACIAL_DEFINITION", "FACIAL_VOLUME", "FACIAL_LIFTING", "UNDER_EYE", "SKIN_TONE"] }), { withVideoLines: true, open: true }).opportunities;
+  const realPlan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: real45 });
+  assert.ok(!realPlan.changes.some((c) => c.category === "jawline_definition" || c.category === "under_eye"));
+});
+
+test("C: the dev-only composite fixture represents five categories without touching the real production policy or calibration objects", () => {
+  const beforePolicy = { ...ILLUSTRATION_POLICY };
+  const plan = buildDevMultiAreaPlan("blob:front");
+  decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true, policy: DEV_FULL_ILLUSTRATION_POLICY });
+  // the real policy object is untouched by exercising the dev-only override
+  assert.deepEqual(ILLUSTRATION_POLICY, beforePolicy);
+  assert.notEqual(DEV_FULL_ILLUSTRATION_POLICY, ILLUSTRATION_POLICY);
+  // the dev override opens exactly the taxonomy, all true — a separate object, never mutating the real one
+  assert.deepEqual(DEV_FULL_ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: true, jawline_definition: true, under_eye: true, skin_appearance: true });
+});
+
+test("D–E: the multi-area prompt contains only the five approved instructions, in the approved fixed wording, and no beautification language", () => {
+  const plan = buildDevMultiAreaPlan("blob:front");
+  const decision = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true, policy: DEV_FULL_ILLUSTRATION_POLICY });
+  assert.equal(decision.approvedChanges.length, 5);
+  const prompt = buildIllustrationPrompt({ ...plan, changes: decision.approvedChanges });
+  for (const c of decision.approvedChanges) assert.ok(prompt.includes(c.visualInstruction), c.category);
+  assert.equal(prompt.split("\n").filter((l) => l.startsWith("- ")).length, 5);
+  assert.deepEqual(findUnsafeVisualText(prompt), []);
+  assert.deepEqual(validateIllustrationPrompt(prompt), []);
+  for (const bad of ["beautif", "flawless", "attractive", "perfect", "ideal", "glow up", "flaw", "imperfection", "botox", "filler", "inject", "guarantee"]) {
+    assert.doesNotMatch(prompt, new RegExp(bad, "i"), bad);
+  }
+});
+
+test("F: identity- and scene-preservation requirements are present in the multi-area prompt", () => {
+  const plan = buildDevMultiAreaPlan("blob:front");
+  const prompt = buildIllustrationPrompt(plan);
+  for (const rule of PRESERVATION_RULES) assert.ok(prompt.includes(rule), rule);
+  for (const must of ["eye shape", "nose shape", "lip shape", "facial structure", "head position and camera angle", "lighting", "hairstyle", "ethnicity and gender presentation", "apparent age"]) {
+    assert.ok(prompt.includes(must), must);
+  }
+  assert.match(prompt, /recognizably the same person/);
+});
+
+test("G: a fabricated 'jawline_definition' change still needs a real, matching, consumer-ready opportunity — the validator is not bypassed for the new categories", () => {
+  const plan = buildDevMultiAreaPlan("blob:front");
+  const jawlineChange = plan.changes.find((c) => c.category === "jawline_definition")!;
+  // without the matching opportunity supplied, the validator refuses it — same rule as every existing category
+  assert.match(validateVisualizationPlan(plan, []).join(), /not backed by a consumer-ready/);
+  // the category's declared treatment family must be the one actually checked
+  assert.equal(VISUALIZATION_CATEGORY_TREATMENT_CATEGORY.jawline_definition, "FACIAL_CONTOURING");
+  assert.ok(DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST.some((o) => o.id === jawlineChange.sourceOpportunityId && o.category === "FACIAL_CONTOURING"));
+});
+
+test("H: existing expression_lines-only production behavior is unchanged by the new categories", () => {
+  const opps = plannable();
+  const plan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: opps });
+  assert.deepEqual(plan.changes.map((c) => c.category).sort(), ["expression_lines", "facial_contour"]);
+  const decision = decideIllustrationEligibility(plan, opps, { calibrated: true });
+  assert.deepEqual(decision.approvedChanges.map((c) => c.category), ["expression_lines"]);
 });
 
 test("opened() opportunities in the fixtures are the only source of the demo/calibrated path", () => {
