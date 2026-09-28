@@ -81,6 +81,27 @@ test("Report.tsx wires the summary CTA, the sticky CTA and the final CTA section
   assert.match(src, /<ResultsSummary view={view} \/>/);
 });
 
+// =====================================================================================
+// Sticky CTA must never cover page content: it reserves its own footprint
+// =====================================================================================
+
+test("StickyMobileCta reserves its own footprint: it measures its real rendered height (so env(safe-area-inset-bottom) is included) rather than a hardcoded constant, and sizes an in-flow spacer from that measurement", () => {
+  const src = read("components/results/StickyMobileCta.tsx");
+  assert.match(src, /barRef\.current\.offsetHeight/, "height comes from the real DOM node, so it always matches the actual footprint including safe-area padding");
+  assert.match(src, /useState\(0\)/, "a barHeight state backs the reserved spacer");
+  assert.match(src, /style=\{\{\s*height:\s*barHeight\s*\}\}/, "the spacer's height comes from the measured state, not a fixed value");
+  assert.doesNotMatch(src, /height:\s*["'`]?\d+px/, "no hardcoded pixel height standing in for the real footprint");
+  assert.match(src, /if \(!visible\) return null;/, "nothing is rendered, including the spacer, while hidden — no permanent padding is added");
+});
+
+test("StickyMobileCta is rendered after the report's footer, not inside <article>, so its spacer can never shift the summary/final-CTA sentinels it measures visibility against", () => {
+  const src = read("components/results/Report.tsx");
+  const footerMarker = src.indexOf("MogaFace</p>");
+  const ctaIndex = src.indexOf("<StickyMobileCta cta={cta} />");
+  assert.ok(footerMarker > 0 && ctaIndex > 0, "both markers must be present");
+  assert.ok(ctaIndex > footerMarker, "StickyMobileCta must be placed after the report's footer, never earlier in the document flow");
+});
+
 test("ResultsSummary's CTA points at the full report and carries the id StickyMobileCta watches to hide itself", () => {
   const src = read("components/results/ResultsSummary.tsx");
   assert.match(src, /id="summary-cta"/);

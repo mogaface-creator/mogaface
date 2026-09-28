@@ -122,11 +122,11 @@ export function Report({
   ];
 
   return (
-    <article className="space-y-20 sm:space-y-28">
-      <ResultsSummary view={view} />
-      <StickyMobileCta cta={cta} />
+    <>
+      <article className="space-y-20 sm:space-y-28">
+        <ResultsSummary view={view} />
 
-      <header id="full-report" className="pb-4">
+        <header id="full-report" className="pb-4">
         <div className="flex items-center justify-between gap-4">
           <p className={EYEBROW}>{view.cover.eyebrow}</p>
           <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">{view.cover.badge}</span>
@@ -257,6 +257,19 @@ export function Report({
         <p className="mt-2">{view.footer.tagline}</p>
         <p className="mt-1">{view.footer.disclaimer}</p>
       </footer>
-    </article>
+      </article>
+
+      {/*
+        Rendered as a sibling AFTER </article>, not inside it: its own
+        space-reserving spacer (see StickyMobileCta.tsx) must sit after
+        next-step-section in the DOM, so appearing/disappearing never shifts
+        the getBoundingClientRect() position that component measures against
+        to decide its own visibility (which would otherwise be a feedback
+        loop: show → spacer added → sentinel moves → recompute → jump).
+        position: fixed on the CTA bar itself is unaffected by DOM order, so
+        moving it here doesn't change where it visually renders.
+      */}
+      <StickyMobileCta cta={cta} />
+    </>
   );
 }
