@@ -21,7 +21,7 @@ export function Header() {
             How it works
           </Link>
           <Link
-            href="/analyze"
+            href="/assessment"
             className="rounded-full bg-accent px-4 py-2 text-accent-foreground hover:opacity-90 transition-opacity"
           >
             Start analysis

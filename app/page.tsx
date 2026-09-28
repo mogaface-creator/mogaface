@@ -50,7 +50,7 @@ export default function Home() {
               Explore measurable facial proportions, symmetry and features using computer vision.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/analyze">
+              <Link href="/assessment">
                 <Button>Start analysis</Button>
               </Link>
               <Link href="#what-we-measure">
@@ -149,7 +149,7 @@ export default function Home() {
               Ready to explore your facial geometry?
             </h2>
             <div className="mt-8 flex justify-center">
-              <Link href="/analyze">
+              <Link href="/assessment">
                 <Button>Start analysis</Button>
               </Link>
             </div>
