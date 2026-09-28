@@ -44,7 +44,11 @@ export const SNAPSHOT_VERSION = "0.1.0";
 
 /**
  * What the assessment/analysis screen hands to the results page. Everything
- * needed to build a result, with no image bytes. Kept in sessionStorage only.
+ * needed to build a result, with no image bytes. `frontPhoto` here is a
+ * RESOLVED reference (a URL good for display right now) — the demo fixture
+ * builds this shape directly with a data: URI; a real assessment's snapshot
+ * is resolved into this shape from a StoredAssessmentSnapshot (see below) by
+ * ResultsExperience, never persisted in it.
  */
 export interface AssessmentSnapshot {
   version: typeof SNAPSHOT_VERSION;
@@ -60,3 +64,25 @@ export interface AssessmentSnapshot {
   opportunities: TreatmentOpportunity[];
   frontPhoto: FrontPhotoRef | null;
 }
+
+/**
+ * A stable reference to the front photo's bytes in
+ * lib/assessment/mediaStore.ts's IndexedDB cache — never a blob: URL. A
+ * blob: URL is only valid in the document that created it, so persisting one
+ * in sessionStorage would leave a dead reference the moment this page's
+ * document reloads (backgrounding, memory pressure, or just hitting
+ * reload — common on mobile). "front" is the only slot this concerns: it is
+ * MogaFace's required front-facing photo.
+ */
+export interface StoredFrontPhotoRef {
+  mediaKey: "front";
+  qualityValid: boolean;
+}
+
+/**
+ * What saveSnapshot/loadSnapshot actually persist to sessionStorage: identical
+ * to AssessmentSnapshot except the front photo is a durable media key, not a
+ * resolved (and possibly stale) URL. See lib/results/store.ts's
+ * resolveStoredFrontPhoto for how this becomes an AssessmentSnapshot again.
+ */
+export type StoredAssessmentSnapshot = Omit<AssessmentSnapshot, "frontPhoto"> & { frontPhoto: StoredFrontPhotoRef | null };

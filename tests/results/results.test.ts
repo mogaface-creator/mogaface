@@ -180,13 +180,18 @@ class MemoryStorage {
 const storage = new MemoryStorage();
 Object.assign(globalThis, { window: { sessionStorage: storage } });
 
-test("snapshot store: round-trips, and refuses a photo reference that looks like image data", () => {
+test("snapshot store: round-trips a stable media key, never a blob: URL or image data", () => {
   const snap = snapshotFor(assessmentWith({ selected: ["SKIN_TONE"] }));
-  assert.equal(saveSnapshot(snap), true);
+  const stored = { ...snap, frontPhoto: { mediaKey: "front" as const, qualityValid: true } };
+  assert.equal(saveSnapshot(stored), true);
   const loaded = loadSnapshot()!;
   assert.equal(loaded.assessment.id, snap.assessment.id);
-  assert.equal(loaded.frontPhoto?.ref, "blob:http://localhost/front");
-  assert.equal(saveSnapshot({ ...snap, frontPhoto: { ref: "data:image/jpeg;base64," + "A".repeat(5000), qualityValid: true } }), false);
+  assert.deepEqual(loaded.frontPhoto, { mediaKey: "front", qualityValid: true });
+  // a malformed reference is refused — the typed API can no longer construct
+  // a ref/data URI here at all (see StoredFrontPhotoRef), so this simulates
+  // untrusted/deserialized data reaching saveSnapshot some other way
+  const badMediaKey = { mediaKey: "data:image/jpeg;base64," + "A".repeat(5000), qualityValid: true } as unknown as typeof stored.frontPhoto;
+  assert.equal(saveSnapshot({ ...stored, frontPhoto: badMediaKey }), false);
   clearSnapshot();
   assert.equal(loadSnapshot(), null);
 });

@@ -197,9 +197,11 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   };
 
   /**
-   * Hands the analysis to the consumer results page. The front photo is passed
-   * as a fresh blob URL (the assessment's own preview URLs are revoked when
-   * this wizard unmounts); no image bytes are stored.
+   * Hands the analysis to the consumer results page. The front photo is
+   * referenced by its stable IndexedDB key ("front" — already written there
+   * by the photo-capture step, see mediaStore.ts/PhotoCaptureStep.tsx), not
+   * by blob URL: a blob URL is only valid in this document, and /results
+   * loads in a fresh one. No image bytes are stored in the snapshot itself.
    */
   const openResults = () => {
     if (!mogaFaceAnalysis) return;
@@ -211,7 +213,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       assessment,
       analysis: mogaFaceAnalysis,
       opportunities: treatmentOpportunities,
-      frontPhoto: frontFile ? { ref: URL.createObjectURL(frontFile), qualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true } : null,
+      frontPhoto: frontFile ? { mediaKey: "front", qualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true } : null,
     });
     if (saved) router.push("/results");
   };

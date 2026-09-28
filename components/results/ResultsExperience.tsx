@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { requestIllustration } from "@/lib/image-generation/client.ts";
@@ -14,9 +14,9 @@ import { getConsultationCta } from "@/lib/results/config.ts";
 import { buildDemoSnapshot, demoAfterImage } from "@/lib/results/demo.ts";
 import { runResultPipeline } from "@/lib/results/pipeline.ts";
 import { chooseResultSource } from "@/lib/results/source.ts";
-import { loadSnapshot } from "@/lib/results/store.ts";
+import { loadSnapshot, resolveStoredFrontPhoto } from "@/lib/results/store.ts";
 import { loadAnalysisResult } from "@/lib/facial-analysis/resultStore.ts";
-import type { ResultStage } from "@/lib/results/types.ts";
+import type { AssessmentSnapshot, ResultStage } from "@/lib/results/types.ts";
 import { Report } from "./Report";
 import type { IllustrationControls } from "./IllustrationPanel";
 import { LegacyResults } from "./LegacyResults";
@@ -47,6 +47,11 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 export function ResultsExperience() {
   const [mode, setMode] = useState<Mode>({ kind: "running", stage: "analyzing" });
   const cta = getConsultationCta();
+  // The fresh object URL resolved for the front photo (see
+  // lib/results/store.ts's resolveStoredFrontPhoto), created in THIS
+  // document — revoked below. Never the stored reference itself: a stored
+  // snapshot only carries a stable IndexedDB key, never a blob: URL.
+  const frontPhotoUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +70,26 @@ export function ResultsExperience() {
         set(source === "legacy" ? { kind: "legacy" } : { kind: "empty" });
         return;
       }
-      const base = demo ? buildDemoSnapshot() : stored!;
+
+      // The demo fixture's front photo is already a self-contained data: URI
+      // (see lib/results/demo.ts) — nothing to resolve. A real snapshot only
+      // carries a stable IndexedDB key (see lib/results/store.ts): resolve it
+      // into a fresh object URL, created here, now, in this document. Missing
+      // media (private browsing, quota, a device that never persisted it)
+      // resolves to null — the report's existing "no photo" state, not a
+      // broken image.
+      let base: AssessmentSnapshot;
+      if (demo) {
+        base = buildDemoSnapshot();
+      } else {
+        const frontPhoto = await resolveStoredFrontPhoto(stored!.frontPhoto);
+        if (cancelled) {
+          if (frontPhoto) URL.revokeObjectURL(frontPhoto.ref);
+          return;
+        }
+        if (frontPhoto) frontPhotoUrlRef.current = frontPhoto.ref;
+        base = { ...stored!, frontPhoto };
+      }
       const snapshot = imageMode === "noevidence" ? { ...base, frontPhoto: null } : base;
 
       await tick();
@@ -115,6 +139,10 @@ export function ResultsExperience() {
     void run();
     return () => {
       cancelled = true;
+      if (frontPhotoUrlRef.current) {
+        URL.revokeObjectURL(frontPhotoUrlRef.current);
+        frontPhotoUrlRef.current = null;
+      }
     };
   }, []);
 

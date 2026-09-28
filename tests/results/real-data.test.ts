@@ -17,7 +17,7 @@ import { runResultPipeline } from "../../lib/results/pipeline.ts";
 import { toReportView } from "../../lib/results/reportView.ts";
 import { chooseResultSource } from "../../lib/results/source.ts";
 import { buildDemoSnapshot } from "../../lib/results/demo.ts";
-import { clearSnapshot, loadSnapshot, saveSnapshot } from "../../lib/results/store.ts";
+import { clearSnapshot, loadSnapshot, resolveStoredFrontPhoto, saveSnapshot } from "../../lib/results/store.ts";
 import { SNAPSHOT_VERSION } from "../../lib/results/types.ts";
 import type { AssessmentSnapshot, MogaFaceResult } from "../../lib/results/types.ts";
 import { selectInterpretationProvider } from "../../lib/interpretation/select.ts";
@@ -39,7 +39,12 @@ Object.assign(globalThis, { window: { sessionStorage: new MemoryStorage() } });
 const FRONT_URL = "blob:http://localhost/real-front-photo";
 const ALL_CONCERNS = ["FACIAL_DEFINITION", "FACIAL_LINES", "FACIAL_VOLUME", "FACIAL_LIFTING", "UNDER_EYE", "SKIN_TONE"] as const;
 
-/** A snapshot exactly as AssessmentReview.openResults builds it, from a given analysis. */
+/**
+ * The pipeline-facing shape (a resolved front-photo URL), i.e. what
+ * ResultsExperience hands to runResultPipeline after resolving the stored
+ * media key — not what AssessmentReview.openResults persists (see
+ * lib/results/store.ts's StoredFrontPhotoRef for that).
+ */
 function realSnapshot(assessment: Assessment, analysis: MogaFaceAnalysis): AssessmentSnapshot {
   return {
     version: SNAPSHOT_VERSION,
@@ -179,7 +184,10 @@ test("Demo content appears ONLY when demo mode is explicitly requested", async (
   const src = readFileSync(join(root, "components/results/ResultsExperience.tsx"), "utf8");
   assert.match(src, /const demo = !IS_PRODUCTION && params\.get\("demo"\) === "1";/);
   assert.equal(src.match(/buildDemoSnapshot\(\)/g)?.length, 1);
-  assert.match(src, /const base = demo \? buildDemoSnapshot\(\) : stored!;/);
+  assert.match(src, /if \(demo\) \{\s*base = buildDemoSnapshot\(\);\s*\} else \{/);
+  // the non-demo branch resolves the front photo from the STORED snapshot's own key — never invents one
+  assert.match(src, /resolveStoredFrontPhoto\(stored!\.frontPhoto\)/);
+  assert.match(src, /base = \{ \.\.\.stored!, frontPhoto \};/);
   assert.match(src, /source === "legacy" \? \{ kind: "legacy" \} : \{ kind: "empty" \}/);
   assert.match(src, /chooseInterpretationProvider\(\{\s*demo,/); // the demo never takes the third-party path (checked in chooseInterpretationProvider's tests)
   assert.match(src, /calibrated: demo \? true : undefined/);
@@ -224,10 +232,19 @@ test("a real result is not a demo: no demo markers, the real photo, no image, no
 
 test("the persisted path is lossless: saving and loading the snapshot yields the same report", async () => {
   const snap = frontOnly(assessmentWith({ selected: ["SKIN_TONE", "FACIAL_DEFINITION", "UNDER_EYE"], priorities: ["SKIN_TONE"] }));
-  assert.equal(saveSnapshot(snap), true);
+  const stored = { ...snap, frontPhoto: { mediaKey: "front" as const, qualityValid: true } };
+  assert.equal(saveSnapshot(stored), true);
   const loaded = loadSnapshot()!;
   clearSnapshot();
-  assert.deepEqual((await run(loaded)).interpretation.report, (await run(snap)).interpretation.report);
+  // No real IndexedDB in this Node test environment, so resolution correctly
+  // degrades to "no photo" (see resolveStoredFrontPhoto's own tests for the
+  // resolved case) — this instead proves the interpretation report doesn't
+  // depend on the photo bytes/reference at all, only on the persisted
+  // analysis data, whether or not the photo resolves.
+  const resolvedFrontPhoto = await resolveStoredFrontPhoto(loaded.frontPhoto);
+  assert.equal(resolvedFrontPhoto, null);
+  const resolved = { ...loaded, frontPhoto: resolvedFrontPhoto };
+  assert.deepEqual((await run(resolved)).interpretation.report, (await run(snap)).interpretation.report);
 });
 
 test("report limitations describe what is actually missing in THIS report", async () => {

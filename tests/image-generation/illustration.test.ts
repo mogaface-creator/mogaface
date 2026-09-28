@@ -612,9 +612,12 @@ test("19. No photo or generated-image bytes are ever written to localStorage or 
   const out = await requestIllustration({ photoUrl: "blob:front", photoQualityValid: true, opportunities: expressionOpps(), consent: "granted", fetchImpl, createObjectUrl: (b) => (made.push(b), "blob:generated") });
   assert.deepEqual([out.status, made.length, made[0].type], ["ready", 1, "image/png"]);
   assert.deepEqual(writes, [], "nothing was written to browser storage");
-  // the snapshot store refuses anything image-sized
+  // the snapshot store refuses a malformed front-photo reference (defense in
+  // depth: the typed API can no longer construct a ref/data URI here at all —
+  // see StoredFrontPhotoRef — so this simulates untrusted/deserialized data)
   const snap = snapshotFor(assessmentWith({ selected: ["SKIN_TONE"] }));
-  assert.equal(saveSnapshot({ ...snap, frontPhoto: { ref: `data:image/jpeg;base64,${"A".repeat(5000)}`, qualityValid: true } }), false);
+  const badSnapshot = { ...snap, frontPhoto: { mediaKey: `data:image/jpeg;base64,${"A".repeat(5000)}`, qualityValid: true } } as unknown as Parameters<typeof saveSnapshot>[0];
+  assert.equal(saveSnapshot(badSnapshot), false);
   assert.deepEqual(writes, []);
   // and no source file that handles photos writes to storage
   for (const f of [...sources(["lib/image-generation", "lib/visualization"]), ...sources(["components/results"]).filter((x) => /IllustrationPanel|Report\.tsx|ResultsExperience/.test(x.path))]) assert.doesNotMatch(f.src, /localStorage|sessionStorage|indexedDB/, f.path);
