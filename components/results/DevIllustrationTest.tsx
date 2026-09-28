@@ -7,7 +7,7 @@ import { DEV_MULTI_AREA_PREVIEW, DEV_SINGLE_AREA_PREVIEW } from "@/lib/image-gen
 import { ILLUSTRATIVE_AFTER } from "@/lib/visualization/types.ts";
 import type { PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 import type { VisualizedArea } from "@/lib/visualization/present.ts";
-import { VisualizedAreaCards } from "./IllustrationPanel";
+import { BeforeAfterFrames, VisualizedAreaCards } from "./IllustrationPanel";
 
 /**
  * Developer-only supervised test of the REAL illustration pipeline (see
@@ -130,19 +130,8 @@ export function DevIllustrationTest({ photoUrl, photoQualityValid }: { photoUrl:
       )}
 
       {phase.kind === "ready" && (
-        <div className="mt-4">
-          <div className="grid max-w-xl grid-cols-2 gap-4">
-            <figure>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="Before" className="aspect-[4/5] w-full rounded-2xl border border-border object-cover" />
-              <figcaption className="mt-2 text-xs uppercase tracking-wide text-muted">Before</figcaption>
-            </figure>
-            <figure>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={phase.url} alt="Illustrative after (AI-generated visualization)" className="aspect-[4/5] w-full rounded-2xl border border-border object-cover" />
-              <figcaption className="mt-2 text-xs uppercase tracking-wide text-muted">{ILLUSTRATIVE_AFTER.label}</figcaption>
-            </figure>
-          </div>
+        <div className="mt-4 max-w-xl">
+          <BeforeAfterFrames before={photoUrl} after={{ kind: "image", url: phase.url }} />
           <VisualizedAreaCards areas={previewFor(phase.fixture)} title="What this illustrates (dev fixture, not real evidence)" />
           <p className="mt-3 max-w-xl text-xs text-muted">{ILLUSTRATIVE_AFTER.notice}</p>
         </div>

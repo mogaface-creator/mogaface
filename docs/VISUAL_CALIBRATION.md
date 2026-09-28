@@ -1,8 +1,24 @@
 # Visual Calibration
 
-**Status: engineering calibration has NOT been performed.** The infrastructure to do it — including a real-sample session workflow (below) — is built and tested; no real face photos or videos were available in the project, so no real-data sample has been run. `VISUAL_OBSERVATIONS_CALIBRATED = false` and stays false until the workflow below is completed and recorded.
+**Status: engineering calibration has NOT been performed, for any category.** The infrastructure to do it — including a real-sample session workflow (below) — is built and tested; no real face photos or videos were available in the project, so no real-data sample has been run. Calibration state is per-category (see "Calibration is scoped per category" below); every category is `false` and stays false until the workflow below is completed and recorded, for that category specifically.
 
 > **Thresholds are engineering heuristics and have not been clinically validated.**
+
+## Calibration is scoped per category
+
+Calibration state is **not** a single global switch. `lib/facial-analysis/calibration/status.ts` defines `CALIBRATION_STATE`, one boolean per `CalibrationCategory`:
+
+| Category | Governs observation prefixes | State today |
+|---|---|---|
+| `expression` | `expression.*` (brow raise, frown, smile, squint, and the three visible-line-pattern observations) | `false` |
+| `facialStructure.contour` | `facialStructure.contour.*` (cheek/jaw outline angles and ratios, front + 45°) | `false` |
+| `eyeArea.underEye` | `eyeArea.underEye*`, `eyeArea.visibleUnderEye*` (under-eye brightness ratio and the darkness observation derived from it) | `false` |
+
+This exists because the intended first real-data milestone is **`expression` alone** (it is the only category with both a real evidence path to a treatment opportunity and pre-approved visualization policy — see `docs/TREATMENT_OPPORTUNITY_ENGINE.md` and `lib/visualization/eligibility.ts`'s `ILLUSTRATION_POLICY`). Calibrating `expression` must never make `facialStructure.contour` or `eyeArea.underEye` look consumer-ready as a side effect — each category's real-data sign-off (below) is independent, and `isConsumerReady` (`lib/facial-analysis/calibration/status.ts`) checks each observation against its OWN category, never a blanket flag.
+
+`VISUAL_OBSERVATIONS_CALIBRATED` still exists, as a derived, backward-compatible alias equal to "every category calibrated" (`Object.values(CALIBRATION_STATE).every(Boolean)`) — today still `false`, since no category is calibrated. Existing call sites that check it directly keep working unchanged. New code that needs to reason about one category should use `CALIBRATION_STATE` / `isCategoryCalibrated(category)` instead, since the alias cannot distinguish "nothing calibrated" from "only some categories calibrated."
+
+**No category is calibrated today.** This document's workflow, sign-off criteria and change log below apply per category: a change log entry, a `CALIBRATION_VERSION` bump and a `CALIBRATION_STATE[category] = true` edit are each scoped to the one category the real-data work actually covered.
 
 Three different things must not be confused:
 
@@ -267,6 +283,68 @@ See the exact steps in the project report / below; in short: consent → `npm ru
 10. Refresh the page and confirm the session, the results and the chosen files are gone.
 11. Repeat with more people, in different light, with and without glasses. Only after many samples read the calibration summary — and treat it as described above.
 
+## Expression calibration workflow (developer-only infrastructure)
+
+**This section is preparation infrastructure only. No calibration has happened. Nothing here sets `CALIBRATION_STATE.expression` to `true`.**
+
+The general real-sample workflow above (sessions, expectations, comparison, export) already covers every calibration category the layer produces. This section documents the additional structure built specifically to run that workflow toward the `expression` milestone with real sign-off discipline: a tuning/held-out split, independent review, and an automated readiness check. It changes nothing about how `expression` is measured or thresholded — only how evidence FOR eventually calibrating it is organised and validated.
+
+### Purpose
+
+The calibration gap audit established that `expression` (movement + the three line-pattern observations) is the only category with both a real evidence path to a treatment opportunity and pre-approved visualization policy (see `docs/TREATMENT_OPPORTUNITY_ENGINE.md` and `lib/visualization/eligibility.ts`'s `ILLUSTRATION_POLICY`) — so it is the intended first real-data milestone. `facialStructure.contour` and `eyeArea.underEye` are explicitly out of scope for this infrastructure; calibrating `expression` must never make them look ready.
+
+### Sample structure
+
+A `CalibrationSession` (`lib/facial-analysis/calibration/session.ts`) — the same "REAL-001"-style container the general workflow already uses — now additionally carries:
+
+- `calibrationCategory: CalibrationCategory | null` — which category (`"expression"`, `"facialStructure.contour"`, or `"eyeArea.underEye"`) this session's evidence targets. Null until a developer assigns it; never guessed.
+- `datasetSplit: "tuning" | "held_out" | null` — which side of the split this session belongs to. Null until assigned. A session has exactly one value here, never both — the type makes the invalid state unrepresentable, not just disallowed by a runtime check.
+- `reviewerStatus: "not_reviewed" | "reviewed" | "approved" | "rejected"` — defaults to `"not_reviewed"`. Nothing else in the codebase advances this: recording expectations, running the pipeline, or adding notes never touches it. Only `withReviewerStatus` does, and only along `not_reviewed → reviewed → approved | rejected` — a session cannot jump straight to `approved`, so whoever entered the MogaFace result is never assumed to also be the independent reviewer.
+- `reviewerNote: string | null`.
+
+All four fields are additive to the existing type: every session already created via `createSession` continues to validate and behave exactly as before.
+
+### Test matrix (expression only)
+
+Conditions: **neutral/relaxed, brow raise, frown, smile, squint** — the existing `EXPRESSIONS` states (`BROW_RAISE`, `FROWN`, `SMILE`, `SQUINT`) in `expectations.ts`, compared against the existing observations `expression.browRaise/frown/smile/squintMovementPct` and `expression.visibleForeheadLinePattern` / `visibleGlabellarLinePattern` / `visibleLateralEyeLinePattern`. No additional facial observation is introduced. `lib/facial-analysis/calibration/expressionValidation.ts`'s `EXPRESSION_DOMAINS` names exactly these seven comparison domains and nothing else.
+
+### Human expectation, MogaFace result, and agreement — kept distinct
+
+This was already true of the general workflow and remains true here: `session.expectations` (the human judgement, recorded before reading MogaFace's output) is a different object from `session.photoSamples`/`videoSample` (MogaFace's raw thresholdDecisions/generatedObservations). `compareSession` (`comparison.ts`) derives a third, separate thing — agreement or disagreement (`MATCH`/`MISS`/`FALSE_POSITIVE`/`UNCLEAR`/`NOT_RECORDED`) — from the two. Nothing treats MogaFace's output as ground truth.
+
+### Tuning vs held-out
+
+- Thresholds may only be tuned using `tuning`-split evidence.
+- `createProposal` (`proposals.ts`) now accepts `heldOutSessionIds` and REJECTS any evidence id found there — held-out evidence cannot be cited to produce a threshold proposal, only to validate one afterward.
+- `evaluateExpressionReadiness` (`expressionReadiness.ts`) computes its tuning and held-out aggregates from strictly separate session lists; a session's split can only be set explicitly via `withDatasetSplit`, never as a side effect of any other operation.
+
+### False-positive / validation structure
+
+`lib/facial-analysis/calibration/expressionValidation.ts` derives true positive / false positive / true negative / false negative counts and an agreement rate, per condition, directly from `compareSession`'s existing MATCH/MISS/FALSE_POSITIVE vocabulary — it recomputes nothing about what the layer measured. An empty or all-`NOT_RECORDED`/`UNCLEAR` dataset produces all-zero counts and a **null** agreement rate, never a misleading 0% or 100%.
+
+### Independent review
+
+Reviewer states: `not_reviewed → reviewed → approved | rejected`. A session counts toward sign-off only once `approved`. The workflow (both the library functions and the intended UI flow) never assumes the person who ran the analysis or entered expectations is the same person who reviews and approves it.
+
+### Threshold proposal process
+
+Unchanged in spirit, extended in one way: a proposal (`ThresholdProposal`) may now record an optional `author` (a free-text engineer/reviewer identifier — never a data subject). Approving a proposal still only records a decision (`APPROVED`/`REJECTED`); there remains no code path from a proposal to a threshold constant. A developer must still hand-edit `thresholds.ts`, bump `CALIBRATION_VERSION`, and log the change in §8 above.
+
+### Sign-off requirements
+
+`evaluateExpressionReadiness` reports, never decides, readiness against the SAME criteria as the general sign-off list (§"Sign-off criteria" below), scoped to `expression`:
+
+- ≥ 30 real, consenting people's sessions recorded for the `expression` category;
+- every session assigned a dataset split, with both `tuning` and `held_out` represented;
+- human expectations recorded, in both splits, before results were read;
+- held-out detection/false-positive rates available (gated by the existing `MIN_LABELLED_FOR_RATE` = 10);
+- ≥ 30 sessions independently reviewed and `approved`;
+- every threshold proposal decided (none left `PROPOSED`);
+- every session's `calibrationVersion` matching the current registry version;
+- a developer's explicit confirmation that consumer-facing wording has been reviewed (this cannot be computed from data, so it is never inferred or defaulted to true).
+
+**Why calibration cannot be declared yet:** with zero real sessions, every one of the above is unmet by construction — `evaluateExpressionReadiness([])` reports `ready: false` and explains exactly which requirements are missing. This function never sets `CALIBRATION_STATE.expression`; a human still edits that constant by hand, once every requirement is genuinely met and reviewed.
+
 ## Test-case matrix
 
 "Expected" is what a healthy, conservative layer should do — **not** every category should yield an observation. `IE` = `insufficient_evidence` / no observation.
@@ -315,14 +393,16 @@ These come from **reading the code and from synthetic behaviour, not from real d
 
 See `docs/VISUAL_OBSERVATION_LAYER.md` → "Video status". In short: a `MediaRecorder` recording (WebM/VP8, and MP4/H.264) loaded in the available Chromium 153 with a **finite duration** and seeks correctly, so the earlier note that recorded video has no duration metadata was **not confirmed** for this browser; an undecodable file is rejected cleanly. `.mov`/HEVC (typical of iPhone) is **not** playable in that Chromium build, and no real phone-recorded file or face was available to test — that path is unverified.
 
-## Sign-off criteria for setting `VISUAL_OBSERVATIONS_CALIBRATED = true`
+## Sign-off criteria for setting a category's `CALIBRATION_STATE` entry to `true`
 
-Only when **all** hold, recorded in the change log and a dated summary:
+Calibration state is per category (see "Calibration is scoped per category" above), so sign-off is decided and recorded **per category**, one at a time — completing it for `expression` says nothing about `facialStructure.contour` or `eyeArea.underEye`, and vice versa. Only when **all** of the following hold, for THAT category specifically, recorded in the change log and a dated summary:
 
-1. the matrix above has been run on ≥ 30 distinct consenting people with the variety in §9;
-2. false-positive counts on held-out negatives (categories C, I and the "should be IE" categories) are acceptably low **as decided and written down in advance**, and per-condition results are reported;
-3. every threshold change is in the change log, with `CALIBRATION_VERSION` bumped;
+1. the matrix above has been run, for that category's observations, on ≥ 30 distinct consenting people with the variety in §9;
+2. false-positive counts on held-out negatives (categories C, I and the "should be IE" categories relevant to it) are acceptably low **as decided and written down in advance**, and per-condition results are reported;
+3. every threshold change for that category is in the change log, with `CALIBRATION_VERSION` bumped;
 4. someone other than the person who tuned it has reviewed the samples;
-5. the wording of every consumer surface that shows an opportunity has been reviewed as "may be worth discussing with a clinician", with clinician review still required.
+5. the wording of every consumer surface that shows an opportunity depending on that category has been reviewed as "may be worth discussing with a clinician", with clinician review still required.
 
-This is engineering sign-off. It is not, and must not be described as, clinical validation.
+Only once a category's criteria are met does a developer edit `CALIBRATION_STATE[category]` in `lib/facial-analysis/calibration/status.ts` — never `VISUAL_OBSERVATIONS_CALIBRATED` directly (it is derived, not settable). This is engineering sign-off. It is not, and must not be described as, clinical validation.
+
+Per the calibration gap audit, the intended first milestone is `expression` alone — no other category is expected to reach sign-off at the same time, and reaching it for `expression` must not be read as progress toward `facialStructure.contour` or `eyeArea.underEye`.

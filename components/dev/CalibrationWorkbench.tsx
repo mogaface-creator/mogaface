@@ -1,18 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { ExpressionCalibrationWorkbench } from "./ExpressionCalibrationWorkbench";
 import { RealSampleSessions } from "./RealSampleSessions";
 import { VisualCalibrationPanel } from "./VisualCalibrationPanel";
 
 /**
- * Entry point for /dev/calibration (development builds only). Two tools:
- *   Real sample sessions — the engineering calibration workflow for consenting people.
- *   Quick inspect        — the original single-file inspector, unchanged.
- * Both run entirely in this tab; neither stores or uploads any media.
+ * Entry point for /dev/calibration (development builds only). Three tools:
+ *   Real sample sessions — the general engineering calibration workflow for consenting people.
+ *   Expression calibration — preparation infrastructure for the FIRST real-data milestone
+ *                            (expression only — see docs/VISUAL_CALIBRATION.md). Never sets
+ *                            any calibration flag; only reports whether real evidence recorded
+ *                            here would satisfy the documented sign-off criteria.
+ *   Quick inspect         — the original single-file inspector, unchanged.
+ * All three run entirely in this tab; none stores or uploads any media.
  */
 
 export function CalibrationWorkbench() {
-  const [tab, setTab] = useState<"real" | "quick">("real");
+  const [tab, setTab] = useState<"real" | "expression" | "quick">("real");
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-6 py-10 text-sm">
       <header>
@@ -22,6 +27,7 @@ export function CalibrationWorkbench() {
           {(
             [
               ["real", "Real sample sessions"],
+              ["expression", "Expression calibration"],
               ["quick", "Quick inspect (single files)"],
             ] as const
           ).map(([id, label]) => (
@@ -31,7 +37,7 @@ export function CalibrationWorkbench() {
           ))}
         </div>
       </header>
-      {tab === "real" ? <RealSampleSessions /> : <VisualCalibrationPanel />}
+      {tab === "real" ? <RealSampleSessions /> : tab === "expression" ? <ExpressionCalibrationWorkbench /> : <VisualCalibrationPanel />}
     </main>
   );
 }

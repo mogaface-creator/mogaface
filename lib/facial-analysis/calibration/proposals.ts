@@ -33,6 +33,8 @@ export interface ThresholdProposal {
   reason: string;
   /** Session ids (e.g. REAL-001) that motivated the proposal. */
   evidenceSampleIds: string[];
+  /** Optional free-text engineer/team identifier — who is proposing this, not a data subject. Never required. */
+  author: string | null;
   status: ProposalStatus;
   createdAt: string;
   decidedAt: string | null;
@@ -49,13 +51,19 @@ export interface ProposalInput {
   proposedValue: number;
   reason: string;
   evidenceSampleIds: string[];
+  author?: string;
 }
+
+export const MAX_AUTHOR_LENGTH = 100;
 
 function newId(): string {
   return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? `proposal-${crypto.randomUUID().slice(0, 8)}` : `proposal-${Date.now().toString(36)}`;
 }
 
-export function createProposal(input: ProposalInput, options: { registry?: ThresholdDefinition[]; knownSessionIds?: string[]; now?: () => string } = {}): ProposalResult {
+export function createProposal(
+  input: ProposalInput,
+  options: { registry?: ThresholdDefinition[]; knownSessionIds?: string[]; heldOutSessionIds?: string[]; now?: () => string } = {},
+): ProposalResult {
   const registry = options.registry ?? VISUAL_THRESHOLDS;
   const problems: string[] = [];
   const def = registry.find((t) => t.id === input.thresholdId);
@@ -63,12 +71,16 @@ export function createProposal(input: ProposalInput, options: { registry?: Thres
   if (typeof input.proposedValue !== "number" || !Number.isFinite(input.proposedValue) || input.proposedValue <= 0) problems.push("Proposed value must be a positive number.");
   else if (def && input.proposedValue === def.value) problems.push("Proposed value equals the current value.");
   if (typeof input.reason !== "string" || input.reason.trim().length < MIN_REASON_LENGTH) problems.push(`A reason of at least ${MIN_REASON_LENGTH} characters is required.`);
+  if (input.author !== undefined && (typeof input.author !== "string" || input.author.length > MAX_AUTHOR_LENGTH)) problems.push(`author must be a string of at most ${MAX_AUTHOR_LENGTH} characters.`);
 
   const ids = [...new Set((input.evidenceSampleIds ?? []).map((s) => String(s).trim()).filter(Boolean))];
   if (ids.length === 0) problems.push("At least one evidence sample id is required.");
   for (const id of ids) {
     if (validateSessionId(id).length > 0) problems.push(`Evidence id "${id}" is not a valid anonymous sample id.`);
     else if (options.knownSessionIds && !options.knownSessionIds.includes(id)) problems.push(`Evidence sample "${id}" is not in this session.`);
+    // Held-out evidence may VALIDATE a proposal but must never be what PRODUCES one — see
+    // docs/VISUAL_CALIBRATION.md's tuning/held-out split. Rejected here, not just by convention.
+    else if (options.heldOutSessionIds?.includes(id)) problems.push(`Evidence sample "${id}" is a held-out sample: held-out evidence cannot be used to propose a threshold change.`);
   }
   if (problems.length > 0 || !def) return { ok: false, problems };
 
@@ -85,6 +97,7 @@ export function createProposal(input: ProposalInput, options: { registry?: Thres
       proposedValue: input.proposedValue,
       reason: input.reason.trim(),
       evidenceSampleIds: ids,
+      author: input.author?.trim() || null,
       status: "PROPOSED",
       createdAt: (options.now ?? (() => new Date().toISOString()))(),
       decidedAt: null,
@@ -111,6 +124,7 @@ export function validateProposal(value: unknown): string[] {
   for (const k of ["currentValue", "proposedValue"] as const) if (typeof p[k] !== "number" || !Number.isFinite(p[k])) problems.push(`${k} must be a finite number`);
   if (typeof p.reason !== "string" || p.reason.trim().length < MIN_REASON_LENGTH) problems.push("reason is too short");
   if (!Array.isArray(p.evidenceSampleIds) || p.evidenceSampleIds.length === 0) problems.push("evidenceSampleIds must be a non-empty array");
+  if (p.author !== null && p.author !== undefined && typeof p.author !== "string") problems.push("author must be a string or null");
   if (!(PROPOSAL_STATUSES as readonly unknown[]).includes(p.status)) problems.push("status is invalid");
   if (p.status !== "PROPOSED" && (typeof p.decisionNote !== "string" || !p.decisionNote)) problems.push("a decided proposal needs a decision note");
   return problems;

@@ -7,8 +7,19 @@ import { CONTOUR_VIEW_DISAGREEMENT_DEG } from "../../lib/treatment-opportunities
 import { TREATMENT_RULES } from "../../lib/treatment-opportunities/rules.ts";
 import { selectConsumerOpportunities, TREATMENT_CONCERNS, createOpportunity } from "../../lib/treatment-opportunities/types.ts";
 import { validateOpportunity } from "../../lib/treatment-opportunities/validate.ts";
-import { isConsumerReady, isUncalibratedVisualObservation, UNCALIBRATED_VISUAL_OBSERVATION_PREFIXES, VISUAL_OBSERVATIONS_CALIBRATED } from "../../lib/facial-analysis/calibration/status.ts";
+import {
+  CALIBRATION_CATEGORIES,
+  CALIBRATION_STATE,
+  categoryOfObservation,
+  isCategoryCalibrated,
+  isConsumerReady,
+  isUncalibratedVisualObservation,
+  UNCALIBRATED_VISUAL_OBSERVATION_PREFIXES,
+  VISUAL_OBSERVATIONS_CALIBRATED,
+} from "../../lib/facial-analysis/calibration/status.ts";
 import { VISUAL_THRESHOLDS } from "../../lib/facial-analysis/calibration/thresholds.ts";
+import { buildVisualizationPlan } from "../../lib/visualization/build.ts";
+import { decideIllustrationEligibility } from "../../lib/visualization/eligibility.ts";
 import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import { createEmptyAppearanceConcerns, type AppearanceConcerns } from "../../lib/assessment/appearanceConcerns.ts";
@@ -78,6 +89,71 @@ test("gating: the validator rejects a consumerReady value that contradicts the c
 test("gating: every gated prefix corresponds to a layer the calibration workflow covers", () => {
   assert.deepEqual([...UNCALIBRATED_VISUAL_OBSERVATION_PREFIXES].sort(), ["expression.", "eyeArea.underEye", "eyeArea.visibleUnderEye", "facialStructure.contour."]);
   assert.ok(VISUAL_THRESHOLDS.some((t) => t.affects.some((a) => a.startsWith("expression"))));
+});
+
+// ---- calibration-gating architecture: per-category state, not one global switch ----
+
+test("A. all calibration categories are false today — no category has been calibrated", () => {
+  assert.deepEqual(CALIBRATION_STATE, { expression: false, "facialStructure.contour": false, "eyeArea.underEye": false });
+  for (const category of CALIBRATION_CATEGORIES) assert.equal(isCategoryCalibrated(category), false, category);
+});
+
+test("B. an expression observation is NOT consumer-ready while expression calibration is false", () => {
+  assert.equal(categoryOfObservation("expression.visibleForeheadLinePattern"), "expression");
+  assert.equal(isConsumerReady(["expression.visibleForeheadLinePattern"]), false);
+});
+
+test("C. a contour observation is NOT consumer-ready while contour calibration is false", () => {
+  assert.equal(categoryOfObservation("facialStructure.contour.cheekContourAngle.front.left"), "facialStructure.contour");
+  assert.equal(isConsumerReady(["facialStructure.contour.cheekContourAngle.front.left"]), false);
+});
+
+test("D. an under-eye observation is NOT consumer-ready while under-eye calibration is false", () => {
+  assert.equal(categoryOfObservation("eyeArea.underEyeBrightnessRatio.right"), "eyeArea.underEye");
+  assert.equal(categoryOfObservation("eyeArea.visibleUnderEyeDarkness"), "eyeArea.underEye");
+  assert.equal(isConsumerReady(["eyeArea.underEyeBrightnessRatio.right"]), false);
+  assert.equal(isConsumerReady(["eyeArea.visibleUnderEyeDarkness"]), false);
+});
+
+test("E. a hypothetical expression=true would NOT automatically calibrate contour", () => {
+  assert.equal(CALIBRATION_STATE.expression, false, "precondition: not actually calibrated");
+  CALIBRATION_STATE.expression = true;
+  try {
+    assert.equal(isConsumerReady(["expression.visibleForeheadLinePattern"]), true, "expression itself would become ready");
+    assert.equal(isConsumerReady(["facialStructure.contour.cheekContourAngle.front.left"]), false, "contour must not inherit expression's calibration");
+  } finally {
+    CALIBRATION_STATE.expression = false; // restore — this test simulates a hypothetical, it does not decide anything
+  }
+  assert.equal(CALIBRATION_STATE.expression, false, "state was restored, not left changed");
+});
+
+test("F. a hypothetical expression=true would NOT automatically calibrate under-eye", () => {
+  assert.equal(CALIBRATION_STATE.expression, false, "precondition: not actually calibrated");
+  CALIBRATION_STATE.expression = true;
+  try {
+    assert.equal(isConsumerReady(["eyeArea.visibleUnderEyeDarkness"]), false, "under-eye must not inherit expression's calibration");
+  } finally {
+    CALIBRATION_STATE.expression = false;
+  }
+  assert.equal(CALIBRATION_STATE.expression, false, "state was restored, not left changed");
+});
+
+test("G. existing production behavior is unchanged today: the VISUAL_OBSERVATIONS_CALIBRATED alias still means 'every category calibrated', and is still false", () => {
+  assert.equal(VISUAL_OBSERVATIONS_CALIBRATED, Object.values(CALIBRATION_STATE).every(Boolean));
+  assert.equal(VISUAL_OBSERVATIONS_CALIBRATED, false);
+  // the exact call shape every production path already uses (no override) behaves exactly as it did under the old global flag
+  assert.equal(isConsumerReady(["expression.x", "facialStructure.contour.cheekContourAngle.front.left", "eyeArea.underEyeBrightnessRatio.right"]), false);
+  assert.equal(isConsumerReady(["facialStructure.jawWidth", "facialStructure.thirdsLower"]), true, "ungated observations are unaffected");
+});
+
+test("H. no visualization becomes eligible merely because the per-category abstraction exists", () => {
+  const [lines] = withVideo(assessmentWith({ selected: ["FACIAL_LINES"] }));
+  assert.equal(lines.category, "NEUROMODULATOR");
+  assert.equal(lines.consumerReady, false, "the opportunity itself is still not consumer-ready");
+  const plan = buildVisualizationPlan({ frontPhoto: { ref: "blob:x", qualityValid: true }, opportunities: [lines] });
+  const decision = decideIllustrationEligibility(plan, [lines]); // no calibrated override — the real production call shape
+  assert.equal(decision.eligible, false, "expression_lines is still not eligible for illustration today");
+  for (const category of CALIBRATION_CATEGORIES) assert.equal(isCategoryCalibrated(category), false, category);
 });
 
 // ---- contour disagreement across views → insufficient ----

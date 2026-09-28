@@ -7,3 +7,5 @@ export * from "./comparison.ts";
 export * from "./report.ts";
 export * from "./proposals.ts";
 export * from "./export.ts";
+export * from "./expressionValidation.ts";
+export * from "./expressionReadiness.ts";

@@ -13,7 +13,8 @@
 import { emptyExpectations, validateExpectations } from "./expectations.ts";
 import type { EngineeringExpectations } from "./expectations.ts";
 import type { PhotoSlot } from "../multiPhoto/types.ts";
-import { CALIBRATION_VERSION } from "./status.ts";
+import { CALIBRATION_CATEGORIES, CALIBRATION_VERSION } from "./status.ts";
+import type { CalibrationCategory } from "./status.ts";
 import { validateCalibrationSample } from "./sample.ts";
 import type { CalibrationSample } from "./types.ts";
 
@@ -48,6 +49,39 @@ export const PHOTO_VIEWS: { slot: PhotoSlot; label: string; required: boolean }[
 
 export const MAX_NOTES_LENGTH = 1000;
 
+/**
+ * Which side of the tuning/held-out split this session belongs to. Thresholds
+ * may only be tuned against `tuning` evidence (see proposals.ts); `held_out`
+ * evidence exists to validate a proposal, never to produce one. A session has
+ * exactly one value here (or none yet) — there is no way to represent "both",
+ * so the "never simultaneously tuning and held-out" rule holds by construction,
+ * not by a runtime check. See docs/VISUAL_CALIBRATION.md §9.
+ */
+export const DATASET_SPLITS = ["tuning", "held_out"] as const;
+export type DatasetSplit = (typeof DATASET_SPLITS)[number];
+
+/**
+ * Independent-review state for a session, distinct from whoever ran the
+ * analysis and recorded expectations. Nothing in this file advances this
+ * automatically: entering expectations, running the pipeline, or adding notes
+ * never changes it. Only `withReviewerStatus` does, and only along the
+ * transitions in REVIEWER_TRANSITIONS below — a session cannot jump straight
+ * from `not_reviewed` to `approved`, so a genuine second look is required.
+ */
+export const REVIEWER_STATUSES = ["not_reviewed", "reviewed", "approved", "rejected"] as const;
+export type ReviewerStatus = (typeof REVIEWER_STATUSES)[number];
+
+const REVIEWER_TRANSITIONS: Record<ReviewerStatus, readonly ReviewerStatus[]> = {
+  not_reviewed: ["reviewed"],
+  reviewed: ["approved", "rejected"],
+  approved: [],
+  rejected: [],
+};
+
+export function canTransitionReviewerStatus(from: ReviewerStatus, to: ReviewerStatus): boolean {
+  return REVIEWER_TRANSITIONS[from].includes(to);
+}
+
 export interface CalibrationSession {
   /** Anonymous engineering id, e.g. "REAL-001". */
   sessionId: string;
@@ -59,6 +93,18 @@ export interface CalibrationSession {
   notes: string;
   calibrationVersion: string;
   createdAt: string;
+  /**
+   * Which calibration category this session's evidence targets, e.g.
+   * "expression" for the first real-data milestone. Null until a developer
+   * assigns it — never guessed or defaulted, since a session's evidence
+   * should only ever count toward the category it was actually collected for.
+   */
+  calibrationCategory: CalibrationCategory | null;
+  /** Null until a developer explicitly assigns it — see DatasetSplit above. */
+  datasetSplit: DatasetSplit | null;
+  /** Defaults to "not_reviewed": see REVIEWER_STATUSES above. */
+  reviewerStatus: ReviewerStatus;
+  reviewerNote: string | null;
 }
 
 /**
@@ -89,6 +135,10 @@ export function createSession(sessionId: string, metadata: SessionMetadata = def
     notes: "",
     calibrationVersion: CALIBRATION_VERSION,
     createdAt: new Date().toISOString(),
+    calibrationCategory: null,
+    datasetSplit: null,
+    reviewerStatus: "not_reviewed",
+    reviewerNote: null,
   };
 }
 
@@ -127,9 +177,19 @@ export function validateSession(value: unknown): string[] {
   }
   if (typeof value.notes !== "string") problems.push("notes must be a string");
   else if (value.notes.length > MAX_NOTES_LENGTH) problems.push(`notes are limited to ${MAX_NOTES_LENGTH} characters`);
+  if (value.calibrationCategory !== null && !(CALIBRATION_CATEGORIES as readonly unknown[]).includes(value.calibrationCategory)) problems.push("calibrationCategory must be a registered calibration category, or null");
+  if (value.datasetSplit !== null && !(DATASET_SPLITS as readonly unknown[]).includes(value.datasetSplit)) problems.push("datasetSplit must be 'tuning', 'held_out', or null");
+  if (!(REVIEWER_STATUSES as readonly unknown[]).includes(value.reviewerStatus)) problems.push("reviewerStatus is invalid");
+  if (value.reviewerNote !== null && typeof value.reviewerNote !== "string") problems.push("reviewerNote must be a string or null");
   // A session may hold ONLY these fields — nothing that could carry media or identity.
   for (const key of Object.keys(value)) {
-    if (!["sessionId", "metadata", "photoSamples", "videoSample", "expectations", "notes", "calibrationVersion", "createdAt"].includes(key)) problems.push(`session field "${key}" is not allowed`);
+    if (
+      ![
+        "sessionId", "metadata", "photoSamples", "videoSample", "expectations", "notes", "calibrationVersion", "createdAt",
+        "calibrationCategory", "datasetSplit", "reviewerStatus", "reviewerNote",
+      ].includes(key)
+    )
+      problems.push(`session field "${key}" is not allowed`);
   }
   if (typeof value.calibrationVersion !== "string" || value.calibrationVersion.length === 0) problems.push("calibrationVersion must be a non-empty string");
   if (typeof value.createdAt !== "string" || Number.isNaN(Date.parse(value.createdAt))) problems.push("createdAt must be a valid ISO date string");
@@ -140,6 +200,21 @@ export const withPhotoSample = (s: CalibrationSession, slot: PhotoSlot, sample: 
 export const withVideoSample = (s: CalibrationSession, sample: CalibrationSample | null): CalibrationSession => ({ ...s, videoSample: sample });
 export const withExpectations = (s: CalibrationSession, expectations: EngineeringExpectations): CalibrationSession => ({ ...s, expectations });
 export const withNotes = (s: CalibrationSession, notes: string): CalibrationSession => ({ ...s, notes: notes.slice(0, MAX_NOTES_LENGTH) });
+export const withCalibrationCategory = (s: CalibrationSession, category: CalibrationCategory | null): CalibrationSession => ({ ...s, calibrationCategory: category });
+/** Reassigning a session's split is a deliberate developer action, never a default. */
+export const withDatasetSplit = (s: CalibrationSession, split: DatasetSplit | null): CalibrationSession => ({ ...s, datasetSplit: split });
+
+/**
+ * Advances reviewer status. Throws on an invalid transition (e.g. straight
+ * from not_reviewed to approved) rather than silently no-op-ing, matching
+ * createSession's existing style for rejected input.
+ */
+export function withReviewerStatus(s: CalibrationSession, status: ReviewerStatus, note: string | null = null): CalibrationSession {
+  if (!canTransitionReviewerStatus(s.reviewerStatus, status)) {
+    throw new Error(`Cannot move reviewer status from "${s.reviewerStatus}" to "${status}".`);
+  }
+  return { ...s, reviewerStatus: status, reviewerNote: note };
+}
 
 /** Which of the baseline-required views are present. */
 export function baselineCoverage(s: CalibrationSession): { present: PhotoSlot[]; missingRequired: PhotoSlot[]; submitted: number } {

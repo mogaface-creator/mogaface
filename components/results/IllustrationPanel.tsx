@@ -69,7 +69,7 @@ function EmptyAfter({ children }: { children: React.ReactNode }) {
   );
 }
 
-type AfterSlot = { kind: "image"; url: string; isMock?: boolean } | { kind: "empty"; content: React.ReactNode };
+export type AfterSlot = { kind: "image"; url: string; isMock?: boolean } | { kind: "empty"; content: React.ReactNode };
 
 function AfterFrame({ slot }: { slot: AfterSlot }) {
   if (slot.kind === "empty") return <EmptyAfter>{slot.content}</EmptyAfter>;
@@ -95,7 +95,8 @@ const TAB_BUTTON = "rounded-full px-5 py-2.5 text-sm font-medium transition-colo
  * below it — comparing two stacked images on a narrow phone means scrolling
  * back and forth, so a toggle reads better than a stack there.
  */
-function BeforeAfterFrames({ before, after }: { before: string | null; after: AfterSlot }) {
+/** Exported so other development-only tools (e.g. IllustrationPreviewWorkbench) can reuse the exact same premium, mobile-first presentation instead of a separate implementation. */
+export function BeforeAfterFrames({ before, after }: { before: string | null; after: AfterSlot }) {
   const [tab, setTab] = useState<"before" | "after">("before");
   return (
     <div>
