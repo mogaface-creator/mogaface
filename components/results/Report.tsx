@@ -12,6 +12,7 @@ import { StickyMobileCta } from "./StickyMobileCta";
  */
 
 const EYEBROW = "text-xs font-medium uppercase tracking-[0.18em] text-muted";
+const UNDERLINE = "mt-4 h-px w-14 bg-accent";
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
@@ -20,8 +21,31 @@ function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string
       <h2 id={id} className="mt-3 font-serif text-3xl tracking-tight sm:text-4xl">
         {title}
       </h2>
+      <div aria-hidden className={UNDERLINE} />
       <div className="mt-10">{children}</div>
     </section>
+  );
+}
+
+/**
+ * A jump-to index for the report: it is long enough (8+ sections) that a
+ * quick contents list earns its place, not just decoration.
+ */
+function Contents({ entries }: { entries: { id: string; title: string }[] }) {
+  return (
+    <nav aria-label="Report contents" className="border-t border-border pt-10">
+      <ol className="divide-y divide-border">
+        {entries.map((entry, i) => (
+          <li key={entry.id}>
+            <a href={`#${entry.id}`} className="flex items-baseline gap-4 py-3 text-sm hover:text-accent">
+              <span className="font-mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</span>
+              <span className="flex-1 truncate">{entry.title}</span>
+              <span aria-hidden className="hidden flex-1 border-b border-dotted border-border sm:block" />
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }
 
@@ -86,6 +110,17 @@ export function Report({
   const observed = view.sections.filter((s) => s.key === "facialStructure" || s.key === "eyeArea" || s.key === "expression");
   const aboutYou = view.sections.filter((s) => !observed.includes(s));
 
+  const contentsEntries = [
+    { id: "overview", title: "At a glance" },
+    ...(view.priorities.length > 0 ? [{ id: "priorities", title: "What matters most to you" }] : []),
+    { id: "observed", title: "Structure, eyes and expression" },
+    { id: "about-you", title: "Skin, hair, lifestyle and style" },
+    { id: "areas", title: "Where a conversation may help" },
+    { id: "visualization", title: "Before and illustrative after" },
+    { id: "limits", title: "Good to know" },
+    { id: "next-step-section", title: "Your next step" },
+  ];
+
   return (
     <article className="space-y-20 sm:space-y-28">
       <ResultsSummary view={view} />
@@ -97,9 +132,12 @@ export function Report({
           <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">{view.cover.badge}</span>
         </div>
         <h2 className="mt-14 font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl">{view.cover.title}</h2>
+        <div aria-hidden className={UNDERLINE} />
         <p className="mt-8 max-w-2xl text-lg leading-8 text-muted">{view.cover.intro}</p>
         {view.cover.dateLabel && <p className="mt-10 text-sm text-muted">Prepared {view.cover.dateLabel}</p>}
       </header>
+
+      <Contents entries={contentsEntries} />
 
       <Section id="overview" eyebrow="Your MogaFace overview" title="At a glance">
         <p className="max-w-3xl font-serif text-2xl leading-10 tracking-tight sm:text-3xl sm:leading-[1.5]">{view.overview}</p>
