@@ -68,6 +68,12 @@ export interface AnalysisRecord {
    * for at generation time gets `not_requested` for that angle, nothing more.
    */
   availableAngles: AngleSlot[];
+  /**
+   * How many illustration provider calls this session has already been allowed
+   * to make. Server-owned, incremented only inside the verified illustration
+   * path. Absent on records created before this field existed.
+   */
+  illustrationUses?: number;
 }
 
 /** What the client receives after a successful POST /api/analysis-session — the capability needed to later request an illustration. Never the record itself. */

@@ -97,6 +97,36 @@ function createFakeSupabase() {
 // A. create record → persist
 // ===========================================================================
 
+test("an sb_secret key is sent only as apikey, never as Authorization Bearer", async () => {
+  const seen: { apikey: string | null; authorization: string | null }[] = [];
+  const fetchImpl: typeof fetch = async (_input, init = {}) => {
+    const headers = new Headers(init.headers);
+    seen.push({ apikey: headers.get("apikey"), authorization: headers.get("authorization") });
+    return new Response(null, { status: 201 });
+  };
+  const handle = await createAnalysisRecord(realExpressionLinesInput(), {
+    env: { NEXT_PUBLIC_SUPABASE_URL: FAKE_ENV.NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test_key_not_real" },
+    fetchImpl,
+  });
+  assert.ok(handle);
+  assert.equal(seen[0]?.apikey, "sb_secret_test_key_not_real");
+  assert.equal(seen[0]?.authorization, null);
+});
+
+test("a Project URL pasted with /rest/v1 or surrounding quotes still writes to /rest/v1/analysis_sessions", async () => {
+  const supa = createFakeSupabase();
+  const deps: AnalysisSessionStoreDeps = {
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: '"https://fake-project.supabase.co/rest/v1/"',
+      SUPABASE_SERVICE_ROLE_KEY: `'${FAKE_ENV.SUPABASE_SERVICE_ROLE_KEY}'`,
+    },
+    fetchImpl: supa.fetchImpl,
+  };
+  const handle = await createAnalysisRecord(realExpressionLinesInput(), deps);
+  assert.ok(handle);
+  assert.equal(supa.requests[0]?.url.split("?")[0], "https://fake-project.supabase.co/rest/v1/analysis_sessions");
+});
+
 test("A. createAnalysisRecord, when Supabase is configured, writes a row via the real REST call — not the in-memory Map", async () => {
   const supa = createFakeSupabase();
   const deps: AnalysisSessionStoreDeps = { env: FAKE_ENV, fetchImpl: supa.fetchImpl };

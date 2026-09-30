@@ -14,9 +14,10 @@ import { handleMultiAngleIllustrationRequest } from "@/lib/image-generation/mult
 // reaches the browser. Photos are held in memory for the request only;
 // nothing is stored or logged.
 //
-// Production status: DISABLED by default (IMAGE_GENERATION_PROVIDER unset), and
-// even when enabled it refuses every request until an authenticator and a
-// shared-store rate limiter are supplied here. See docs/INTERPRETATION_AND_RESULTS.md.
+// Production status: DISABLED by default (IMAGE_GENERATION_PROVIDER unset).
+// When enabled, a request still has to present a valid analysis-session token.
+// That verified session is the subject, and the stored record counts uses,
+// so the image provider is not an open proxy. See lib/image-generation/trustedHandler.ts.
 export const maxDuration = 120; // up to three sequential image-edit calls
 
 export function POST(request: Request) {

@@ -31,8 +31,33 @@
 
 import { handleIllustrationRequest } from "./handler.ts";
 import type { IllustrationHandlerDeps } from "./handler.ts";
-import { getAnalysisRecord, AnalysisPersistenceUnavailableError } from "../analysis-session/store.ts";
+import { getAnalysisRecord, persistIllustrationUse, AnalysisPersistenceUnavailableError } from "../analysis-session/store.ts";
+import type { AnalysisSessionStoreDeps } from "../analysis-session/store.ts";
 import type { AnalysisRecord } from "../analysis-session/types.ts";
+import type { RateLimiter } from "../interpretation/access.ts";
+
+/**
+ * Production has no user accounts. A request that already presented a valid
+ * analysis-session token is the subject, and the stored record is the shared
+ * rate-limit counter. Development keeps the handler's own localhost
+ * authenticator and in-memory limiter. Callers that pass their own
+ * authenticator and limiter (tests, a future auth module) are left alone.
+ */
+function secureIllustrationDeps(record: AnalysisRecord, deps: IllustrationHandlerDeps): IllustrationHandlerDeps {
+  if (deps.env.NODE_ENV !== "production" || (deps.authenticator && deps.rateLimiter)) return deps;
+  const sessionDeps: AnalysisSessionStoreDeps = deps.analysisSessionDeps ?? { env: deps.env, fetchImpl: deps.fetchImpl };
+  const rateLimiter: RateLimiter = deps.rateLimiter ?? {
+    async check() {
+      const allowed = await persistIllustrationUse(record.id, record, sessionDeps);
+      return { allowed, retryAfterSeconds: allowed ? 0 : 3600 };
+    },
+  };
+  return {
+    ...deps,
+    authenticator: deps.authenticator ?? (async () => ({ subject: `analysis:${record.id}` })),
+    rateLimiter,
+  };
+}
 
 function forwardedHeaders(request: Request): Headers {
   const headers = new Headers();
@@ -72,7 +97,7 @@ export async function generateTrustedIllustrationForPhoto(
     }),
   );
   const forwarded = new Request(requestUrl, { method: "POST", headers, body: rebuilt });
-  return handleIllustrationRequest(forwarded, deps);
+  return handleIllustrationRequest(forwarded, secureIllustrationDeps(record, deps));
 }
 
 export async function handleTrustedIllustrationRequest(request: Request, deps: IllustrationHandlerDeps): Promise<Response> {

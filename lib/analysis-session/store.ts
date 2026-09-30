@@ -147,6 +147,30 @@ interface SupabaseRow {
 }
 
 /**
+ * TEMPORARY production diagnostic. Logs only PostgREST's own error fields
+ * (code/message/details/hint), the HTTP status and the operation name — never
+ * the request body, headers, keys, tokens or record. `details` is cut at
+ * "Failing row" because Postgres embeds the offending row's values there.
+ * Never throws and never alters the caller's behavior.
+ */
+async function logSupabaseFailure(operation: string, res: Response | null, err?: unknown): Promise<void> {
+  try {
+    const info: Record<string, unknown> = { operation, status: res?.status ?? null };
+    if (res) {
+      const body = JSON.parse(await res.text()) as Record<string, unknown>;
+      const details = typeof body.details === "string" ? body.details.split("Failing row")[0].slice(0, 300) : body.details;
+      Object.assign(info, { code: body.code, message: body.message, details, hint: body.hint });
+    } else if (err instanceof Error) {
+      const cause = (err as { cause?: { code?: unknown } }).cause;
+      Object.assign(info, { networkError: err.name, message: err.message, causeCode: cause?.code });
+    }
+    console.error("[analysis-session] Supabase " + operation + " failed", JSON.stringify(info));
+  } catch {
+    console.error("[analysis-session] Supabase " + operation + " failed", JSON.stringify({ operation, status: res?.status ?? null, note: "error body unreadable" }));
+  }
+}
+
+/**
  * Creates a trusted analysis record from client-submitted input. `assessment`
  * is sanitized (structural validation, unrelated to the forgery this module
  * closes — questionnaire answers are legitimately user-reported). `analysis`
@@ -208,13 +232,15 @@ export async function createAnalysisRecord(
   };
 
   if (configured) {
+    let networkErr: unknown;
     const res = await supabaseRequest(
       env,
       "/analysis_sessions",
       { method: "POST", headers: { prefer: "return=minimal" }, body: JSON.stringify({ analysis_id: id, session_token_hash: tokenHash.toString("hex"), record, expires_at: expiresAt }) },
       fetchImpl,
-    ).catch(() => null);
+    ).catch((e) => ((networkErr = e), null));
     if (!res || !res.ok) {
+      await logSupabaseFailure("createAnalysisRecord", res, networkErr);
       // A write failure must never silently fall back to the (unshared) in-memory map. In
       // production this is exactly "persistence unavailable" — fail closed, same as missing config.
       if (production) throw new AnalysisPersistenceUnavailableError();
@@ -257,8 +283,10 @@ export async function getAnalysisRecord(analysisId: string, sessionToken: string
   let expiresAtMs: number;
 
   if (configured) {
-    const res = await supabaseRequest(env, `/analysis_sessions?analysis_id=eq.${encodeURIComponent(analysisId)}&select=*`, { method: "GET" }, fetchImpl).catch(() => null);
+    let networkErr: unknown;
+    const res = await supabaseRequest(env, `/analysis_sessions?analysis_id=eq.${encodeURIComponent(analysisId)}&select=*`, { method: "GET" }, fetchImpl).catch((e) => ((networkErr = e), null));
     if (!res || !res.ok) {
+      await logSupabaseFailure("getAnalysisRecord", res, networkErr);
       if (production) throw new AnalysisPersistenceUnavailableError();
       return null;
     }
@@ -294,6 +322,42 @@ export async function getAnalysisRecord(analysisId: string, sessionToken: string
   if (submitted.length !== stored.length) return null; // timingSafeEqual requires equal-length buffers
   if (!timingSafeEqual(submitted, stored)) return null;
   return record;
+}
+
+/** One verified session may drive a few angles, each with a single retry. Shared across serverless instances via the stored record. */
+export const ILLUSTRATION_USE_LIMIT = 12;
+
+/**
+ * Records one illustration attempt against a record this server already
+ * loaded. Returns false when the session is over the limit or the shared
+ * store cannot persist the new count — callers must not call the image
+ * provider in that case.
+ */
+export async function persistIllustrationUse(analysisId: string, record: AnalysisRecord, deps: AnalysisSessionStoreDeps = {}): Promise<boolean> {
+  const { env, fetchImpl } = resolveDeps(deps);
+  const uses = (record.illustrationUses ?? 0) + 1;
+  if (uses > ILLUSTRATION_USE_LIMIT) return false;
+  const next: AnalysisRecord = { ...record, illustrationUses: uses };
+  if (!isSupabaseConfigured(env)) {
+    if (isProductionEnv(env)) return false;
+    const entry = fallbackRecords.get(analysisId);
+    if (entry) entry.record = next;
+    record.illustrationUses = uses;
+    return true;
+  }
+  let networkErr: unknown;
+  const res = await supabaseRequest(
+    env,
+    `/analysis_sessions?analysis_id=eq.${encodeURIComponent(analysisId)}`,
+    { method: "PATCH", headers: { prefer: "return=minimal" }, body: JSON.stringify({ record: next }) },
+    fetchImpl,
+  ).catch((e) => ((networkErr = e), null));
+  if (!res || !res.ok) {
+    await logSupabaseFailure("persistIllustrationUse", res, networkErr);
+    return false;
+  }
+  record.illustrationUses = uses;
+  return true;
 }
 
 /** Test-only: clears the in-memory fallback store between test files. Never called from production code. */

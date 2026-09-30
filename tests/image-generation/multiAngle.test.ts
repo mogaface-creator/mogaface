@@ -249,6 +249,28 @@ test("the multi-angle handler never reads opportunities/consumerReady/evidence d
   assert.match(src, /generateTrustedIllustrationForPhoto/);
 });
 
+test("a verified production session can illustrate without a separate authenticator — the session token is the subject", async () => {
+  const created = (await createAnalysisRecord(realExpressionLinesInput()))!;
+  const stored = (await getAnalysisRecord(created.analysisId, created.sessionToken))!;
+  const openedToken = randomBytes(32).toString("base64url");
+  __setAnalysisRecordForTests({ ...stored, opportunities: stored.opportunities.map((o) => ({ ...o, consumerReady: true })) }, openedToken);
+  let calls = 0;
+  const res = await handleMultiAngleIllustrationRequest(multiAngleRequest({ analysisId: created.analysisId, sessionToken: openedToken }), {
+    env: ENABLED_ENV,
+    fetchImpl: (async () => {
+      calls++;
+      return new Response(JSON.stringify({ data: [{ b64_json: b64(GENERATED) }] }), { status: 200 });
+    }) as typeof fetch,
+    logger: () => {},
+    eligibility: { calibrated: true },
+    analysisSessionDeps: { env: {} },
+  });
+  const body = (await res.json()) as { angles: { front: { status: string } } };
+  assert.equal(res.status, 200);
+  assert.equal(body.angles.front.status, "ready");
+  assert.equal(calls, 1);
+});
+
 test("front photo is required — a request with no front photo at all is rejected before any lookup", async () => {
   const res = await handleMultiAngleIllustrationRequest(multiAngleRequest({ front: null, left: LEFT_SOURCE, analysisId: "x", sessionToken: "y" }), { env: ENABLED_ENV, logger: () => {} });
   assert.equal(res.status, 400);
