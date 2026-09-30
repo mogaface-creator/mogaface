@@ -268,6 +268,10 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
     );
   }
 
+  // A trusted session can reach here while the calibration view is still
+  // not_eligible. Only the eligible view carries a preview of areas.
+  const previewAreas = view.state === "eligible" ? view.areas : [];
+
   // eligible
   if (typeof phase === "object") {
     const secondary = phase.ready.secondaryAngles;
@@ -291,7 +295,7 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
         {/* areas from the actual generation (the real, trusted plan) take precedence — view.areas is only
             a pre-generation preview computed from the calibration-gated pathway, which can disagree with
             what a PredictionPlan-driven generation actually shows. */}
-        <VisualizedAreaCards areas={phase.ready.areas ?? view.areas} title="What changed" />
+        <VisualizedAreaCards areas={phase.ready.areas ?? previewAreas} title="What changed" />
         <Notice isMock={phase.ready.isMock} />
       </div>
     );
@@ -307,7 +311,7 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
         }}
       />
 
-      <VisualizedAreaCards areas={view.areas} title="What an illustration would show" />
+      <VisualizedAreaCards areas={previewAreas} title="What an illustration would show" />
 
       <div className="mt-8" aria-live="polite">
         {phase === "confirming" && (
