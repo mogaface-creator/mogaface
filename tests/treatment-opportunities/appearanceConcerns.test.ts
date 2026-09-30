@@ -10,6 +10,7 @@ import type { Assessment } from "../../lib/assessment/types.ts";
 function assessmentWith(partial: Partial<AppearanceConcerns>): Assessment {
   const a = buildFilledAssessment();
   a.goals = { areas: [], priorities: [] }; // isolate the new questionnaire section
+  a.hair = { ...a.hair, concerns: [] }; // same isolation for hair.concerns, which also feeds a real signal
   a.appearanceConcerns = { ...createEmptyAppearanceConcerns(), ...partial };
   return a;
 }

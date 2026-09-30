@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ILLUSTRATION_FAILED_MESSAGE } from "@/lib/visualization/eligibility.ts";
 import { ILLUSTRATIVE_AFTER } from "@/lib/visualization/types.ts";
-import { DEFAULT_PHOTO_VISUALIZATION_CONSENT, type PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
+import { DEFAULT_PHOTO_VISUALIZATION_CONSENT, PHOTO_VISUALIZATION_CONSENT_SENTENCE, type PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 import type { VisualizedArea } from "@/lib/visualization/present.ts";
 import type { ReportVisualization } from "@/lib/results/reportView.ts";
 
@@ -18,7 +18,19 @@ import type { ReportVisualization } from "@/lib/results/reportView.ts";
  * only. It is an illustration: labelled as AI-generated, never as a result.
  */
 
-export type IllustrationRequestOutcome = { status: "ready"; afterUrl: string; isMock: boolean } | { status: "consent_required" | "not_eligible" | "unavailable" | "failed" };
+/** One secondary angle's (left 45°/right 45°) own result — never fabricated for an angle that wasn't actually requested or that failed. "not_requested" means the person never had a real photo for that angle; it never gets an invented one. */
+export type SecondaryAngleOutcome = { status: "ready"; afterUrl: string } | { status: "not_eligible" | "unavailable" | "failed" | "not_requested" };
+
+export type IllustrationRequestOutcome =
+  | {
+      status: "ready";
+      afterUrl: string;
+      isMock: boolean;
+      secondaryAngles?: { leftFortyFive: SecondaryAngleOutcome; rightFortyFive: SecondaryAngleOutcome };
+      /** Which areas were actually illustrated, from the real trusted plan — when absent (mock/demo/devPreview paths), the panel falls back to the pipeline's own precomputed `view.areas`. */
+      areas?: VisualizedArea[];
+    }
+  | { status: "consent_required" | "not_eligible" | "unavailable" | "failed" };
 
 export interface IllustrationControls {
   /** False → a real-photo generation is not switched on, so the section shows its placeholder. */
@@ -26,6 +38,18 @@ export interface IllustrationControls {
   /** True only for the development demo (a mock image; nothing is sent anywhere). */
   isDemo: boolean;
   initialConsent?: PhotoVisualizationConsent;
+  /**
+   * True exactly once: only when this render is the direct continuation of the
+   * person's own "Analyze My Face" click (consent was just granted there — see
+   * AssessmentReview.tsx/ResultsExperience.tsx's one-shot ?autogenerate=1
+   * handling). Never true on a plain page load, a refresh, or a revisit — those
+   * always require the explicit button below, even when consent is already on
+   * record, so a reload can never silently re-trigger generation.
+   */
+  autoStart?: boolean;
+  /** The person's own real left 45°/right 45° "before" photo, resolved the same way the front one is — absent when they never captured one. Never a stand-in image. */
+  leftFortyFiveBeforeUrl?: string | null;
+  rightFortyFiveBeforeUrl?: string | null;
   onGenerate: (consent: PhotoVisualizationConsent) => Promise<IllustrationRequestOutcome>;
 }
 
@@ -131,7 +155,7 @@ function Notice({ isMock }: { isMock?: boolean }) {
   );
 }
 
-/** A card per visualized area — area name, what was illustrated, and (where one applies) a neutral treatment-family name to discuss, never a suitability or need claim. Exported so the dev-only composite test (DevIllustrationTest.tsx) can preview the same card design. */
+/** A card per visualized area — area name and a concise, consumer-facing description of what changed, never a suitability or need claim. Exported so the dev-only composite test (DevIllustrationTest.tsx) can preview the same card design. */
 export function VisualizedAreaCards({ areas, title }: { areas: VisualizedArea[]; title: string }) {
   if (areas.length === 0) return null;
   return (
@@ -140,10 +164,8 @@ export function VisualizedAreaCards({ areas, title }: { areas: VisualizedArea[];
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {areas.map((a) => (
           <div key={a.area} className="rounded-2xl border border-border bg-surface p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-accent">Illustrative visualization</p>
-            <h4 className="mt-2 font-serif text-lg tracking-tight">{a.area}</h4>
+            <h4 className="font-serif text-lg tracking-tight">{a.area}</h4>
             <p className="mt-2 text-sm leading-6 text-muted">{a.description}</p>
-            {a.treatmentFamily && <p className="mt-3 text-xs text-muted">Possible treatment category to discuss with your clinician: {a.treatmentFamily}</p>}
           </div>
         ))}
       </div>
@@ -151,17 +173,42 @@ export function VisualizedAreaCards({ areas, title }: { areas: VisualizedArea[];
   );
 }
 
-type Phase = "idle" | "confirming" | "pending" | "failed" | { ready: { afterUrl: string; isMock: boolean } };
+type Phase = "idle" | "confirming" | "pending" | "failed" | { ready: { afterUrl: string; isMock: boolean; secondaryAngles?: { leftFortyFive: SecondaryAngleOutcome; rightFortyFive: SecondaryAngleOutcome }; areas?: VisualizedArea[] } };
+type AngleKey = "front" | "leftFortyFive" | "rightFortyFive";
+const ANGLE_LABELS: Record<AngleKey, string> = { front: "Front", leftFortyFive: "Left 45°", rightFortyFive: "Right 45°" };
+
+/** Front/left 45°/right 45° selector — shown only once there is more than one angle's worth of information to show (never for a single-angle result). */
+function AngleSelector({ selected, onSelect, available }: { selected: AngleKey; onSelect: (a: AngleKey) => void; available: AngleKey[] }) {
+  if (available.length <= 1) return null;
+  return (
+    <div role="tablist" aria-label="Photo angle" className="mb-4 inline-flex rounded-full border border-border p-1">
+      {available.map((a) => (
+        <button key={a} type="button" role="tab" aria-selected={selected === a} onClick={() => onSelect(a)} className={`${TAB_BUTTON} ${selected === a ? "bg-accent text-accent-foreground" : "text-muted"}`}>
+          {ANGLE_LABELS[a]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The calm, non-alarming line for a secondary angle that isn't ready — never a broken image, never an invented one. */
+function secondaryAngleUnavailableNote(label: string, outcome: SecondaryAngleOutcome | undefined): string | null {
+  if (!outcome || outcome.status === "ready" || outcome.status === "not_requested") return null;
+  return `${label} visualization unavailable.`;
+}
 
 export function IllustrationPanel({ view, controls }: { view: ReportVisualization; controls: IllustrationControls }) {
   const [consent, setConsent] = useState<PhotoVisualizationConsent>(controls.initialConsent ?? DEFAULT_PHOTO_VISUALIZATION_CONSENT);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [selectedAngle, setSelectedAngle] = useState<AngleKey>("front");
   const madeUrl = useRef<string | null>(null);
+  const secondaryUrls = useRef<string[]>([]);
 
-  // The generated image lives only in memory: release it when the panel goes away.
+  // The generated image(s) live only in memory: release them when the panel goes away.
   useEffect(
     () => () => {
       if (madeUrl.current?.startsWith("blob:")) URL.revokeObjectURL(madeUrl.current);
+      for (const u of secondaryUrls.current) if (u.startsWith("blob:")) URL.revokeObjectURL(u);
     },
     [],
   );
@@ -171,9 +218,21 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
     const outcome = await controls.onGenerate(granted);
     if (outcome.status === "ready") {
       madeUrl.current = outcome.afterUrl;
-      setPhase({ ready: { afterUrl: outcome.afterUrl, isMock: outcome.isMock } });
+      secondaryUrls.current = outcome.secondaryAngles ? [outcome.secondaryAngles.leftFortyFive, outcome.secondaryAngles.rightFortyFive].filter((a): a is { status: "ready"; afterUrl: string } => a.status === "ready").map((a) => a.afterUrl) : [];
+      setPhase({ ready: { afterUrl: outcome.afterUrl, isMock: outcome.isMock, secondaryAngles: outcome.secondaryAngles, areas: outcome.areas } });
     } else setPhase("failed");
   };
+
+  // Fires at most once per mount, and only for the one-shot continuation of the
+  // person's own "Analyze My Face" click — never on a plain load/refresh/revisit.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (controls.autoStart && controls.generationEnabled && !autoStarted.current && view.state === "eligible" && consent === "granted") {
+      autoStarted.current = true;
+      void run("granted");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Already-rendered result (e.g. supplied by the pipeline in tests).
   if (view.state === "ready") {
@@ -203,10 +262,28 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
 
   // eligible
   if (typeof phase === "object") {
+    const secondary = phase.ready.secondaryAngles;
+    const available: AngleKey[] = ["front", ...(secondary?.leftFortyFive.status === "ready" ? (["leftFortyFive"] as const) : []), ...(secondary?.rightFortyFive.status === "ready" ? (["rightFortyFive"] as const) : [])];
+    const angleBefore: Record<AngleKey, string | null> = { front: view.beforeUrl, leftFortyFive: controls.leftFortyFiveBeforeUrl ?? null, rightFortyFive: controls.rightFortyFiveBeforeUrl ?? null };
+    const angleAfter: Record<AngleKey, { url: string; isMock: boolean } | null> = {
+      front: { url: phase.ready.afterUrl, isMock: phase.ready.isMock },
+      leftFortyFive: secondary?.leftFortyFive.status === "ready" ? { url: secondary.leftFortyFive.afterUrl, isMock: false } : null,
+      rightFortyFive: secondary?.rightFortyFive.status === "ready" ? { url: secondary.rightFortyFive.afterUrl, isMock: false } : null,
+    };
+    const shownAngle = available.includes(selectedAngle) ? selectedAngle : "front";
+    const after = angleAfter[shownAngle];
+    const unavailableNotes = secondary
+      ? [secondaryAngleUnavailableNote(ANGLE_LABELS.leftFortyFive, secondary.leftFortyFive), secondaryAngleUnavailableNote(ANGLE_LABELS.rightFortyFive, secondary.rightFortyFive)].filter((n): n is string => n !== null)
+      : [];
     return (
       <div>
-        <BeforeAfterFrames before={view.beforeUrl} after={{ kind: "image", url: phase.ready.afterUrl, isMock: phase.ready.isMock }} />
-        <VisualizedAreaCards areas={view.areas} title="What this illustrates" />
+        <AngleSelector selected={shownAngle} onSelect={setSelectedAngle} available={available} />
+        <BeforeAfterFrames before={angleBefore[shownAngle]} after={after ? { kind: "image", url: after.url, isMock: after.isMock } : { kind: "empty", content: "Not available for this angle." }} />
+        {unavailableNotes.length > 0 && <p className="mt-3 text-xs text-muted">{unavailableNotes.join(" ")}</p>}
+        {/* areas from the actual generation (the real, trusted plan) take precedence — view.areas is only
+            a pre-generation preview computed from the calibration-gated pathway, which can disagree with
+            what a PredictionPlan-driven generation actually shows. */}
+        <VisualizedAreaCards areas={phase.ready.areas ?? view.areas} title="What changed" />
         <Notice isMock={phase.ready.isMock} />
       </div>
     );
@@ -227,9 +304,7 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
       <div className="mt-8" aria-live="polite">
         {phase === "confirming" && (
           <div className="max-w-2xl rounded-2xl border border-border bg-surface p-6">
-            <p className="text-base leading-7">
-              To create this illustration, your front photo will be sent to an external AI image service (OpenAI). It is sent only if you continue, only for this request, and it does not change your analysis.
-            </p>
+            <p className="text-base leading-7">{PHOTO_VISUALIZATION_CONSENT_SENTENCE}</p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button type="button" onClick={() => { setConsent("granted"); void run("granted"); }} className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                 Continue

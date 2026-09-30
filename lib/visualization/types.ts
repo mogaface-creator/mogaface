@@ -21,7 +21,7 @@ import type { TreatmentCategory } from "../treatment-opportunities/types.ts";
  * fixture, and the report UI have a name for each area in the product's
  * target reference experience — never so production can show them early.
  */
-export const VISUALIZATION_CATEGORIES = ["expression_lines", "facial_contour", "jawline_definition", "under_eye", "skin_appearance"] as const;
+export const VISUALIZATION_CATEGORIES = ["expression_lines", "facial_contour", "jawline_definition", "under_eye", "skin_appearance", "hair_appearance"] as const;
 export type VisualizationCategory = (typeof VISUALIZATION_CATEGORIES)[number];
 
 /** Short, consumer-facing name for a visualized area's UI card. */
@@ -31,6 +31,7 @@ export const VISUALIZATION_CATEGORY_LABELS: Record<VisualizationCategory, string
   jawline_definition: "Jawline definition",
   under_eye: "Under-eye appearance",
   skin_appearance: "Skin appearance",
+  hair_appearance: "Hair appearance",
 };
 
 /**
@@ -48,6 +49,7 @@ export const VISUALIZATION_CATEGORY_TREATMENT_CATEGORY: Record<VisualizationCate
   jawline_definition: "FACIAL_CONTOURING",
   under_eye: "DERMAL_FILLER",
   skin_appearance: "SKIN_TREATMENT",
+  hair_appearance: "HAIR_SCALP_ASSESSMENT",
 };
 
 /** Changes stay subtle: anything stronger is rejected by the validator. */
@@ -82,7 +84,7 @@ export const PRESERVATION_RULES: readonly string[] = [
 ];
 
 /** Where an approved change may act. Every other region must stay untouched. */
-export const VISUALIZATION_TARGET_REGIONS = ["forehead", "lower_face_contour", "jawline", "under_eye_area", "skin_overall"] as const;
+export const VISUALIZATION_TARGET_REGIONS = ["forehead", "lower_face_contour", "jawline", "under_eye_area", "skin_overall", "hairline_scalp"] as const;
 export type VisualizationTargetRegion = (typeof VISUALIZATION_TARGET_REGIONS)[number];
 
 /**
@@ -144,6 +146,18 @@ export const APPROVED_VISUAL_CHANGES: Record<VisualizationCategory, { targetRegi
     description: "Visible, natural-looking reduction in the appearance of the specifically observed skin-texture concern",
     visualInstruction:
       "Illustrate a clearly visible, natural-looking reduction in the appearance of the specifically observed skin-texture concern only, without altering skin texture anywhere else, noticeable in a side-by-side comparison, while keeping facial structure and identity unchanged.",
+  },
+  // Grounded the same way as skin_appearance: no computer-vision hair/scalp measurement exists
+  // (lib/observation/types.ts's HairAnalysis.inferences is always empty — see its own comment),
+  // so this rests on the person's own reported hair/scalp concern plus the real photo itself,
+  // never a detected finding. Deliberately says "coverage/density", never "loss", "balding", a
+  // cause, or a treatment name — see lib/visualization/predict.ts's module comment and
+  // safety.ts/lib/safety/language.ts, which this wording is written to pass unmodified.
+  hair_appearance: {
+    targetRegion: "hairline_scalp",
+    description: "Visible, natural-looking improvement in the appearance of hair coverage and density",
+    visualInstruction:
+      "Illustrate a clearly visible, natural-looking improvement in apparent hair density and coverage along the hairline and scalp area only, reducing visible scalp show-through, noticeable in a side-by-side comparison, while keeping the person's existing hair texture, color and general style unchanged, and keeping every other feature — including facial proportions and identity — unchanged.",
   },
 };
 

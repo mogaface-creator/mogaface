@@ -26,6 +26,9 @@ import { saveSnapshot } from "@/lib/results/store.ts";
 import { SNAPSHOT_VERSION } from "@/lib/results/types.ts";
 import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
 import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
+import { createAnalysisSession } from "@/lib/analysis-session/client.ts";
+import type { AnalysisSessionHandle } from "@/lib/analysis-session/types.ts";
+import { PHOTO_VISUALIZATION_CONSENT_SENTENCE, type PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 
 function labelFor<T extends string>(options: { value: T; label: string }[], value: T | null): string {
   if (value === null) return "Not provided";
@@ -139,6 +142,12 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   const [treatmentOpportunities, setTreatmentOpportunities] = useState<TreatmentOpportunity[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<{ slot: PhotoSlot; index: number; total: number } | null>(null);
+  // Set only when the server's OWN, independently-computed eligibility decision (see
+  // lib/analysis-session/) finds a genuine, evidence-backed visualization — the one moment this flow
+  // asks for photo-visualization consent, as the direct continuation of the single "Analyze My Face"
+  // click, never before or after it. Also carries the analysisId/sessionToken the Continue button needs.
+  const [confirmingVisualization, setConfirmingVisualization] = useState<AnalysisSessionHandle | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
   // Tracks which File object each current record was produced from, so a
   // second "Start Analysis" click only reprocesses slots whose photo
   // actually changed (Step 14) while retrying any that previously errored
@@ -151,8 +160,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   const missingRequiredFiles = missingSessionFiles.filter((s) => REQUIRED_PHOTO_SLOTS.includes(s.slot));
   const missingOptionalFiles = missingSessionFiles.filter((s) => !REQUIRED_PHOTO_SLOTS.includes(s.slot));
 
-  const runAnalysis = async () => {
+  const analyzeMyFace = async () => {
     setIsRunning(true);
+    setConfirmingVisualization(null);
     const slotsWithFiles = PHOTO_SLOTS.filter(({ slot }) => sessionFiles[slot]?.file);
     const nextRecords: PhotoAnalysisRecord[] = [];
 
@@ -190,32 +200,65 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     setVideoAnalysis(nextVideo);
 
     const nextMogaFaceAnalysis = buildMogaFaceAnalysis(assessment, nextAnalysis, nextVideo);
+    const nextTreatmentOpportunities = evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis });
     setMogaFaceAnalysis(nextMogaFaceAnalysis);
-    setTreatmentOpportunities(evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis }));
+    setTreatmentOpportunities(nextTreatmentOpportunities);
     setProgress(null);
     setIsRunning(false);
+
+    // Hands the raw analysis to the server ONCE: it independently recomputes opportunities and
+    // illustration eligibility itself (see lib/analysis-session/) — nothing asserted here is
+    // trusted later. Only here, once, does this flow ever ask for photo-visualization consent —
+    // and only when the SERVER says there is genuinely something real to ask about. A failed or
+    // ineligible session is treated identically: the report still finalizes normally, honestly
+    // unavailable, never a fallback that resubmits opportunities directly.
+    const frontRecord = nextRecords.find((r) => r.slot === "front");
+    setCreatingSession(true);
+    const session = await createAnalysisSession({
+      assessment,
+      analysis: nextMogaFaceAnalysis,
+      photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
+      hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
+      hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
+    });
+    setCreatingSession(false);
+    if (session?.illustrationEligible) {
+      setConfirmingVisualization(session);
+    } else {
+      finalizeAndGoToResults(nextMogaFaceAnalysis, nextTreatmentOpportunities, nextRecords, "pending", null);
+    }
   };
 
   /**
-   * Hands the analysis to the consumer results page. The front photo is
-   * referenced by its stable IndexedDB key ("front" — already written there
-   * by the photo-capture step, see mediaStore.ts/PhotoCaptureStep.tsx), not
-   * by blob URL: a blob URL is only valid in this document, and /results
-   * loads in a fresh one. No image bytes are stored in the snapshot itself.
+   * Hands the analysis to the consumer results page and navigates there — the
+   * ONE moment this flow leaves the assessment. The front photo is referenced
+   * by its stable IndexedDB key ("front" — already written there by the
+   * photo-capture step, see mediaStore.ts/PhotoCaptureStep.tsx), not by blob
+   * URL: a blob URL is only valid in this document, and /results loads in a
+   * fresh one. No image bytes are stored in the snapshot itself.
+   *
+   * `consent === "granted"` (only possible right after the inline consent
+   * screen below) additionally appends ?autogenerate=1, so /results generates
+   * the illustration immediately, without a second click — see
+   * ResultsExperience.tsx/IllustrationPanel.tsx's one-shot autoStart handling.
+   * `session` (present only when eligible + granted) is carried in the
+   * snapshot so /results can request the illustration by reference, never by
+   * resubmitting opportunities.
    */
-  const openResults = () => {
-    if (!mogaFaceAnalysis) return;
-    const frontRecord = records.find((r) => r.slot === "front");
+  const finalizeAndGoToResults = (analysis: MogaFaceAnalysis, opportunities: TreatmentOpportunity[], photoRecords: PhotoAnalysisRecord[], consent: PhotoVisualizationConsent, session: AnalysisSessionHandle | null) => {
+    const frontRecord = photoRecords.find((r) => r.slot === "front");
     const frontFile = sessionFiles.front?.file;
     const saved = saveSnapshot({
       version: SNAPSHOT_VERSION,
       createdAt: new Date().toISOString(),
       assessment,
-      analysis: mogaFaceAnalysis,
-      opportunities: treatmentOpportunities,
+      analysis,
+      opportunities,
+      photoVisualizationConsent: consent,
       frontPhoto: frontFile ? { mediaKey: "front", qualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true } : null,
+      ...(consent === "granted" && session ? { analysisSession: { analysisId: session.analysisId, sessionToken: session.sessionToken } } : {}),
     });
-    if (saved) router.push("/results");
+    if (saved) router.push(consent === "granted" && session ? "/results?autogenerate=1" : "/results");
   };
 
   return (
@@ -333,20 +376,20 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         )}
       </div>
 
-      {videoProgress && (
-        <p role="status" aria-live="polite" className="mt-4 text-sm text-muted">
-          Reading video frame {videoProgress.done} of {videoProgress.total}…
+      <StepNav
+        onBack={onBack}
+        onNext={analyzeMyFace}
+        nextDisabled={!validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning || confirmingVisualization !== null}
+        nextLabel={isRunning ? "Analyzing…" : "Analyze My Face"}
+      />
+
+      {(isRunning || creatingSession) && (
+        <p role="status" aria-live="polite" className="mt-6 text-sm font-medium text-accent">
+          {progress ? "Reviewing your facial features…" : videoProgress ? "Reviewing your facial expressions…" : creatingSession ? "Preparing your illustrative visualization…" : "Building your personalized report…"}
         </p>
       )}
 
-      <StepNav
-        onBack={onBack}
-        onNext={runAnalysis}
-        nextDisabled={!validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning}
-        nextLabel={isRunning ? "Analyzing…" : "Start Analysis"}
-      />
-
-      {(isRunning || analysis) && (
+      {process.env.NODE_ENV !== "production" && (isRunning || analysis) && (
         <div className="mt-8">
           <MultiPhotoDevResults
             photos={records}
@@ -361,12 +404,16 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         </div>
       )}
 
-      {mogaFaceAnalysis && !isRunning && (
-        <div className="mt-8 rounded-2xl border border-accent px-6 py-6 text-center">
-          <p className="text-sm text-muted">Analysis complete. The section above is the developer view.</p>
-          <div className="mt-4 flex justify-center">
-            <Button type="button" onClick={openResults}>
-              View My Results
+      {confirmingVisualization && mogaFaceAnalysis && (
+        <div className="mt-8 max-w-2xl rounded-2xl border border-border bg-surface p-6">
+          <h3 className="font-serif text-xl tracking-tight">Illustrative visualization</h3>
+          <p className="mt-3 text-base leading-7">{PHOTO_VISUALIZATION_CONSENT_SENTENCE}</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button type="button" onClick={() => finalizeAndGoToResults(mogaFaceAnalysis, treatmentOpportunities, records, "granted", confirmingVisualization)}>
+              Continue
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => finalizeAndGoToResults(mogaFaceAnalysis, treatmentOpportunities, records, "declined", confirmingVisualization)}>
+              Not now
             </Button>
           </div>
         </div>

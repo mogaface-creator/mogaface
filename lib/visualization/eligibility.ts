@@ -40,6 +40,10 @@ export const ILLUSTRATION_POLICY: Record<VisualizationCategory, boolean> = {
   jawline_definition: false,
   under_eye: false,
   skin_appearance: false,
+  // The calibration-gated pathway never covers this category — hair/scalp appearance is only
+  // ever illustrated via the separate, independent goal-driven pathway (predict.ts's
+  // PREDICTION_CATEGORY_POLICY), which has no computer-vision measurement to calibrate at all.
+  hair_appearance: false,
 };
 
 export const ILLUSTRATION_UNAVAILABLE_MESSAGE = "An illustrative visualization isn't available from the current analysis.";

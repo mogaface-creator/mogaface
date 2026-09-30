@@ -116,7 +116,7 @@ export function Report({
     { id: "observed", title: "Structure, eyes and expression" },
     { id: "about-you", title: "Skin, hair, lifestyle and style" },
     { id: "areas", title: "Where a conversation may help" },
-    { id: "visualization", title: "Before and illustrative after" },
+    { id: "visualization", title: "Your personalized visualization" },
     { id: "limits", title: "Good to know" },
     { id: "next-step-section", title: "Your next step" },
   ];
@@ -221,8 +221,21 @@ export function Report({
         )}
       </Section>
 
-      <Section id="visualization" eyebrow="Illustrative visualization" title="Before and illustrative after">
+      <Section id="visualization" eyebrow="Your results" title="Your Personalized Visualization">
         <IllustrationPanel view={view.visualization} controls={illustration} />
+        {view.visualization.state === "ready" && (
+          <div className="mt-10 max-w-2xl rounded-3xl border border-border bg-surface p-7 sm:p-8">
+            <h3 className="font-serif text-xl tracking-tight">Ready to explore your options?</h3>
+            <p className="mt-2 text-sm leading-6 text-muted">Discuss your results with a clinician to talk through what&apos;s realistic for you.</p>
+            <a
+              href={cta.href}
+              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
         {devIllustrationTest && <DevIllustrationTest photoUrl={devIllustrationTest.photoUrl} photoQualityValid={devIllustrationTest.photoQualityValid} />}
       </Section>
 

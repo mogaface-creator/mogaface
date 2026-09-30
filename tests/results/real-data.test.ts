@@ -190,7 +190,12 @@ test("Demo content appears ONLY when demo mode is explicitly requested", async (
   assert.match(src, /base = \{ \.\.\.stored!, frontPhoto \};/);
   assert.match(src, /source === "legacy" \? \{ kind: "legacy" \} : \{ kind: "empty" \}/);
   assert.match(src, /chooseInterpretationProvider\(\{\s*demo,/); // the demo never takes the third-party path (checked in chooseInterpretationProvider's tests)
-  assert.match(src, /calibrated: demo \? true : undefined/);
+  // The demo and the isolated, equally non-production-gated developer/clinic
+  // e2e preview (?devPreview=1 — see devE2EHandler.ts) are the only two
+  // callers that may override calibration for this render; devPreview itself
+  // requires !IS_PRODUCTION and is mutually exclusive with demo.
+  assert.match(src, /calibrated: demo \|\| devPreview \? true : undefined/);
+  assert.match(src, /const devPreview = !IS_PRODUCTION && !demo && params\.get\("devPreview"\) === "1";/);
 
   // 3. nothing stored and no analysis → "none" → the empty state, not a report
   assert.equal(chooseResultSource(null, null), "none");

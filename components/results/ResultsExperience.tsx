@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { requestIllustration } from "@/lib/image-generation/client.ts";
+import { requestDevE2EIllustration } from "@/lib/image-generation/devE2EClient.ts";
 import { createMockProvider } from "@/lib/image-generation/mockProvider.ts";
 import { generateVisualization } from "@/lib/image-generation/provider.ts";
 import { isPhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
@@ -15,6 +16,7 @@ import { buildDemoSnapshot, demoAfterImage } from "@/lib/results/demo.ts";
 import { runResultPipeline } from "@/lib/results/pipeline.ts";
 import { chooseResultSource } from "@/lib/results/source.ts";
 import { loadSnapshot, resolveStoredFrontPhoto } from "@/lib/results/store.ts";
+import { getMedia } from "@/lib/assessment/mediaStore.ts";
 import { loadAnalysisResult } from "@/lib/facial-analysis/resultStore.ts";
 import type { AssessmentSnapshot, ResultStage } from "@/lib/results/types.ts";
 import { Report } from "./Report";
@@ -24,7 +26,7 @@ import { LoadingState } from "./LoadingState";
 
 type Mode =
   | { kind: "running"; stage: ResultStage }
-  | { kind: "done"; view: ReportView; isDemo: boolean; illustration: IllustrationControls; devIllustrationTest: { photoUrl: string; photoQualityValid: boolean } | null }
+  | { kind: "done"; view: ReportView; isDemo: boolean; isDevPreview: boolean; illustration: IllustrationControls; devIllustrationTest: { photoUrl: string; photoQualityValid: boolean } | null }
   | { kind: "legacy" }
   | { kind: "empty" }
   | { kind: "error" };
@@ -43,6 +45,17 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
  *   ?demo=1&image=noevidence no front photo, so it is not eligible
  *   ?demo=1&image=fail the (mock) generation fails when the button is pressed
  *   ?demo=1&image=consent the demo asks for photo consent first, like a real photo would (still a mock; nothing is sent)
+ *   ?devPreview=1      REAL assessment snapshot (never synthetic), with the pending
+ *                      expression-calibration milestone bypassed for THIS render only —
+ *                      see devE2EHandler.ts for the server-side half of this. Ignored
+ *                      together with ?demo=1.
+ *
+ * A REAL, production feature (not development-only): ?autogenerate=1 is set once,
+ * by AssessmentReview.tsx's own navigation, only immediately after the person's
+ * own "Analyze My Face" click already obtained fresh photo-visualization consent
+ * for an eligible result. It is read and stripped from the URL on this one
+ * render, so a later refresh or revisit of the same /results URL never
+ * re-triggers generation — see IllustrationPanel.tsx's autoStart handling.
  */
 export function ResultsExperience() {
   const [mode, setMode] = useState<Mode>({ kind: "running", stage: "analyzing" });
@@ -52,6 +65,11 @@ export function ResultsExperience() {
   // document — revoked below. Never the stored reference itself: a stored
   // snapshot only carries a stable IndexedDB key, never a blob: URL.
   const frontPhotoUrlRef = useRef<string | null>(null);
+  // Same pattern for the person's own real left 45°/right 45° photo, when
+  // they actually captured one — resolved directly from IndexedDB (see
+  // lib/assessment/mediaStore.ts), never invented when absent.
+  const leftFortyFiveUrlRef = useRef<string | null>(null);
+  const rightFortyFiveUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,7 +80,14 @@ export function ResultsExperience() {
     async function run() {
       const params = new URLSearchParams(window.location.search);
       const demo = !IS_PRODUCTION && params.get("demo") === "1";
+      const devPreview = !IS_PRODUCTION && !demo && params.get("devPreview") === "1";
+      // The developer supervised-fixture test (DevIllustrationTest.tsx) must never appear in the
+      // normal consumer flow — even in a dev server, which is otherwise indistinguishable from a
+      // real visit. Same explicit-opt-in pattern as demo/devPreview above.
+      const devToolsRequested = !IS_PRODUCTION && params.get("devTools") === "1";
       const imageMode = IS_PRODUCTION ? null : params.get("image");
+      const autoGenerateRequested = !demo && params.get("autogenerate") === "1";
+      if (autoGenerateRequested) window.history.replaceState(null, "", window.location.pathname);
 
       const stored = demo ? null : loadSnapshot();
       const source = demo ? "snapshot" : chooseResultSource(stored?.createdAt ?? null, loadAnalysisResult()?.result.timestamp ?? null);
@@ -92,6 +117,19 @@ export function ResultsExperience() {
       }
       const snapshot = imageMode === "noevidence" ? { ...base, frontPhoto: null } : base;
 
+      // Same-document, fresh object URLs for the person's own real left/right
+      // 45° photos, when they actually captured one — resolved once, here,
+      // exactly like the front photo. Missing media resolves to null: never
+      // a stand-in image, never a reason to fail the rest of the page.
+      if (!demo) {
+        const [leftBlob, rightBlob] = await Promise.all([getMedia("leftFortyFive"), getMedia("rightFortyFive")]);
+        if (cancelled) {
+          return;
+        }
+        if (leftBlob) leftFortyFiveUrlRef.current = URL.createObjectURL(leftBlob);
+        if (rightBlob) rightFortyFiveUrlRef.current = URL.createObjectURL(rightBlob);
+      }
+
       await tick();
 
       try {
@@ -104,15 +142,18 @@ export function ResultsExperience() {
             remoteEnabled: process.env.NEXT_PUBLIC_INTERPRETATION_REMOTE === "1",
             consent: !IS_PRODUCTION && params.get("consent") === "granted" ? "granted" : isInterpretationConsent(snapshot.interpretationConsent) ? snapshot.interpretationConsent : DEFAULT_INTERPRETATION_CONSENT,
           }),
-          calibrated: demo ? true : undefined, // the demo alone opens the calibration gate — see lib/results/demo.ts
+          calibrated: demo || devPreview ? true : undefined, // the demo and the isolated dev/clinic e2e preview are the only two callers that override this — see lib/results/demo.ts and devE2EHandler.ts
           onStage: (stage) => set({ kind: "running", stage }),
         });
 
         const front = snapshot.frontPhoto;
         const illustration: IllustrationControls = {
-          generationEnabled: demo ? imageMode !== "none" : process.env.NEXT_PUBLIC_ILLUSTRATION_GENERATION === "1",
+          generationEnabled: demo ? imageMode !== "none" : devPreview ? true : process.env.NEXT_PUBLIC_ILLUSTRATION_GENERATION === "1",
           isDemo: demo && imageMode !== "consent", // only controls whether the consent step is shown; a demo never sends anything
           initialConsent: isPhotoVisualizationConsent(snapshot.photoVisualizationConsent) ? snapshot.photoVisualizationConsent : undefined,
+          autoStart: autoGenerateRequested,
+          leftFortyFiveBeforeUrl: leftFortyFiveUrlRef.current,
+          rightFortyFiveBeforeUrl: rightFortyFiveUrlRef.current,
           onGenerate: async (consent) => {
             if (!front) return { status: "not_eligible" };
             if (demo) {
@@ -125,12 +166,32 @@ export function ResultsExperience() {
               });
               return made.status === "ready" && made.imageUrl ? { status: "ready", afterUrl: made.imageUrl, isMock: true } : { status: "failed" };
             }
-            const made = await requestIllustration({ photoUrl: front.ref, photoQualityValid: front.qualityValid, opportunities: snapshot.opportunities, consent });
-            return made.status === "ready" ? { status: "ready", afterUrl: made.afterUrl, isMock: false } : { status: made.status };
+            // devPreview sends the REAL opportunities to the isolated dev/clinic e2e route
+            // (devE2EHandler.ts), which alone may bypass the pending calibration milestone,
+            // and only for real, evidence-backed expression_lines opportunities. A normal
+            // real visit never submits opportunities at all: it references the trusted
+            // analysis-session record AssessmentReview.tsx created once, at analysis time (see
+            // lib/analysis-session/) — the server resolves its OWN opportunities from that,
+            // never trusting anything this request body claims.
+            if (devPreview) {
+              const made = await requestDevE2EIllustration({ photoUrl: front.ref, photoQualityValid: front.qualityValid, opportunities: snapshot.opportunities, consent });
+              return made.status === "ready" ? { status: "ready", afterUrl: made.afterUrl, isMock: false } : { status: made.status };
+            }
+            if (!snapshot.analysisSession) return { status: "not_eligible" };
+            const made = await requestIllustration({
+              photoUrl: front.ref,
+              photoQualityValid: front.qualityValid,
+              leftFortyFivePhotoUrl: leftFortyFiveUrlRef.current ?? undefined,
+              rightFortyFivePhotoUrl: rightFortyFiveUrlRef.current ?? undefined,
+              analysisId: snapshot.analysisSession.analysisId,
+              sessionToken: snapshot.analysisSession.sessionToken,
+              consent,
+            });
+            return made.front.status === "ready" ? { status: "ready", afterUrl: made.front.afterUrl, isMock: false, secondaryAngles: { leftFortyFive: made.leftFortyFive, rightFortyFive: made.rightFortyFive }, areas: made.areas } : { status: made.front.status };
           },
         };
-        const devIllustrationTest = front ? { photoUrl: front.ref, photoQualityValid: front.qualityValid } : null;
-        set({ kind: "done", view: toReportView(result, front?.ref ?? null), isDemo: snapshot.isDemo === true, illustration, devIllustrationTest });
+        const devIllustrationTest = devToolsRequested && front ? { photoUrl: front.ref, photoQualityValid: front.qualityValid } : null;
+        set({ kind: "done", view: toReportView(result, front?.ref ?? null), isDemo: snapshot.isDemo === true, isDevPreview: devPreview, illustration, devIllustrationTest });
       } catch {
         set({ kind: "error" });
       }
@@ -142,6 +203,14 @@ export function ResultsExperience() {
       if (frontPhotoUrlRef.current) {
         URL.revokeObjectURL(frontPhotoUrlRef.current);
         frontPhotoUrlRef.current = null;
+      }
+      if (leftFortyFiveUrlRef.current) {
+        URL.revokeObjectURL(leftFortyFiveUrlRef.current);
+        leftFortyFiveUrlRef.current = null;
+      }
+      if (rightFortyFiveUrlRef.current) {
+        URL.revokeObjectURL(rightFortyFiveUrlRef.current);
+        rightFortyFiveUrlRef.current = null;
       }
     };
   }, []);
@@ -155,6 +224,11 @@ export function ResultsExperience() {
           {mode.isDemo && (
             <p role="note" className="mb-12 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
               Demo data — development only. Synthetic evidence and placeholder images; this is not a real assessment.
+            </p>
+          )}
+          {mode.isDevPreview && (
+            <p role="note" className="mb-12 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+              DEVELOPER / CLINIC TESTING ONLY. This preview is for evaluating the MogaFace experience and is not a calibrated clinical result.
             </p>
           )}
           <Report view={mode.view} cta={cta} illustration={mode.illustration} devIllustrationTest={mode.devIllustrationTest} />

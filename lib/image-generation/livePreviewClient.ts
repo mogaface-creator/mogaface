@@ -9,7 +9,7 @@
 
 import { allowsPhotoProcessing } from "../visualization/consent.ts";
 import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
-import { PREVIEW_SECRET_HEADER } from "./livePreviewHandler.ts";
+import { PREVIEW_SECRET_HEADER } from "./livePreviewConstants.ts";
 
 export type LivePreviewVerifyOutcome = "ok" | "unauthorized" | "disabled" | "failed";
 export type LivePreviewGenerateOutcome = { status: "ready"; afterUrl: string } | { status: "consent_required" | "unauthorized" | "disabled" | "failed" };

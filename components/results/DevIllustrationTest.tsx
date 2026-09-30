@@ -22,9 +22,12 @@ import { BeforeAfterFrames, VisualizedAreaCards } from "./IllustrationPanel";
  *
  * Rendered only outside a production build (NODE_ENV !== "production" is
  * inlined at build time, so a production bundle never includes this branch),
- * and even then it does nothing unless the server independently has
- * NODE_ENV=development AND DEV_ILLUSTRATION_TEST=1 — this component cannot
- * open the calibration gate, the policy gate, or bypass consent on its own.
+ * AND only when the results page itself was loaded with the explicit
+ * ?devTools=1 query flag (see ResultsExperience.tsx) — a normal consumer
+ * visit, even to a dev server, never mounts this component at all. Even then
+ * it does nothing unless the server independently has NODE_ENV=development
+ * AND DEV_ILLUSTRATION_TEST=1 — this component cannot open the calibration
+ * gate, the policy gate, or bypass consent on its own.
  */
 
 type Fixture = "single" | "multi";

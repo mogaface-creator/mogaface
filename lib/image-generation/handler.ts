@@ -12,9 +12,15 @@
  *   6. Well-formed multipart body of sensible size?             no → 400 / 413
  *   7. Has the person consented to photo processing?            no → 403
  *   8. Is the photo a real, sensibly-sized image?               no → 400
- *   9. Rebuild the plan FROM THE OPPORTUNITIES on the server and decide
- *      eligibility. Client-supplied plans, prompts, descriptions and
- *      consumer-ready flags are never used.                     no → { status: "not_eligible" }
+ *   9. A trusted, server-built PredictionPlan (payload.predictionPlan,
+ *      forwarded only by trustedHandler.ts/multiAngle.ts from the
+ *      analysis-session record — see lib/visualization/predict.ts) is used
+ *      when present, structurally valid and "planned". Otherwise, the plan
+ *      is rebuilt FROM THE OPPORTUNITIES on the server and eligibility is
+ *      decided the original way. Either way, client-supplied plans,
+ *      prompts, descriptions and consumer-ready flags are never trusted —
+ *      only a plan this same server already built and stored.
+ *                                                                 no → { status: "not_eligible" }
  *  10. Build the prompt from the approved changes and safety-check it.
  *  11. Call the image API, bounded by a timeout, and validate the result.
  * Everything after 8 answers HTTP 200 with a status, never a technical error:
@@ -32,6 +38,7 @@
 
 import { createMemoryRateLimiter, devAuthenticator } from "../interpretation/access.ts";
 import type { Authenticator, RateLimiter } from "../interpretation/access.ts";
+import type { AnalysisSessionStoreDeps } from "../analysis-session/store.ts";
 import { isConsumerReady } from "../facial-analysis/calibration/status.ts";
 import { OPPORTUNITY_STATUSES, TREATMENT_CATEGORIES } from "../treatment-opportunities/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
@@ -40,6 +47,9 @@ import { allowsPhotoProcessing } from "../visualization/consent.ts";
 import { decideIllustrationEligibility } from "../visualization/eligibility.ts";
 import type { EligibilityOptions } from "../visualization/eligibility.ts";
 import { ILLUSTRATIVE_AFTER } from "../visualization/types.ts";
+import type { VisualizationChange, VisualizationPlan } from "../visualization/types.ts";
+import { isValidVisualizationPlan } from "../visualization/validate.ts";
+import { visualizedAreaFor } from "../visualization/present.ts";
 import { validateSourcePhoto } from "./output.ts";
 import { createOpenAiImageProvider, DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS } from "./openaiImages.ts";
 import type { OpenAiProviderErrorDetail } from "./openaiImages.ts";
@@ -47,7 +57,7 @@ import { generateVisualization } from "./provider.ts";
 
 export const MAX_REQUEST_BYTES = 12_000_000;
 const MAX_PAYLOAD_CHARS = 100_000;
-const PAYLOAD_KEYS = new Set(["photoVisualizationConsent", "photoQualityValid", "opportunities"]);
+const PAYLOAD_KEYS = new Set(["photoVisualizationConsent", "photoQualityValid", "opportunities", "predictionPlan"]);
 
 type Env = Record<string, string | undefined>;
 
@@ -92,6 +102,18 @@ export interface IllustrationHandlerDeps {
   timeoutMs?: number;
   now?: () => number;
   requestId?: () => string;
+  /**
+   * Overrides the deps passed to the analysis-session store (see
+   * lib/analysis-session/store.ts) when trustedHandler.ts/multiAngle.ts
+   * resolve analysisId+sessionToken into a trusted record. Defaults to
+   * `{ env, fetchImpl }` — the real route (app/api/generate-illustration)
+   * never sets this, so production always shares the SAME process.env and
+   * fetch implementation between the OpenAI provider and Supabase, exactly
+   * like a real deployment. Exists so tests can construct a "production"
+   * env for THIS handler's own auth/rate-limit checks without also having
+   * to wire a fake Supabase backend for the analysis-session store.
+   */
+  analysisSessionDeps?: AnalysisSessionStoreDeps;
 }
 
 export const isIllustrationEnabled = (env: Env): boolean => env.IMAGE_GENERATION_PROVIDER?.trim().toLowerCase() === "openai" && !!env.OPENAI_API_KEY?.trim();
@@ -218,12 +240,30 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
   const source = validateSourcePhoto(bytes, photo.type);
   if (!source.ok) return done("rejected", 400, { error: "invalid_photo" }, "invalid_photo");
 
-  // 9. The plan and the eligibility decision are rebuilt here, from the opportunities only.
-  const opportunities = sanitizeOpportunities(payload.opportunities, deps.eligibility?.calibrated);
-  if (!opportunities) return done("rejected", 400, { error: "invalid_request" }, "invalid_opportunities");
-  const plan = (deps.buildPlan ?? buildVisualizationPlan)({ frontPhoto: { ref: "upload", qualityValid: payload.photoQualityValid === true }, opportunities });
-  const eligibility = decideIllustrationEligibility(plan, opportunities, deps.eligibility);
-  if (!eligibility.eligible) return done("not_eligible", 200, { status: "not_eligible", reason: eligibility.reason }, eligibility.reason ?? "not_eligible");
+  // 9. A trusted, already-built PredictionPlan takes precedence when present and valid (see
+  // predict.ts's module comment for why this is a separate, independent pathway from the
+  // opportunities-based one below — never a weaker check, just a different evidence source).
+  // Structural validation here is defense in depth: this value is server-forwarded, never
+  // client-submitted (PAYLOAD_KEYS admits the key, but the real public route only ever reaches
+  // this function via trustedHandler.ts/multiAngle.ts, which build the FormData themselves from
+  // the trusted analysis-session record — see their own doc comments).
+  const predictionPlan = isValidVisualizationPlan(payload.predictionPlan) ? (payload.predictionPlan as VisualizationPlan) : null;
+  let plan: VisualizationPlan;
+  let approvedChanges: VisualizationChange[];
+  let opportunities: TreatmentOpportunity[] | undefined;
+  if (predictionPlan && predictionPlan.status === "planned") {
+    plan = predictionPlan;
+    approvedChanges = predictionPlan.changes;
+  } else {
+    const sanitized = sanitizeOpportunities(payload.opportunities, deps.eligibility?.calibrated);
+    if (!sanitized) return done("rejected", 400, { error: "invalid_request" }, "invalid_opportunities");
+    opportunities = sanitized;
+    const builtPlan = (deps.buildPlan ?? buildVisualizationPlan)({ frontPhoto: { ref: "upload", qualityValid: payload.photoQualityValid === true }, opportunities });
+    const eligibility = decideIllustrationEligibility(builtPlan, opportunities, deps.eligibility);
+    if (!eligibility.eligible) return done("not_eligible", 200, { status: "not_eligible", reason: eligibility.reason }, eligibility.reason ?? "not_eligible");
+    plan = builtPlan;
+    approvedChanges = eligibility.approvedChanges;
+  }
 
   // 10–11. Render only the approved changes; the prompt is built and safety-checked inside generateVisualization.
   const provider = createOpenAiImageProvider({
@@ -240,9 +280,9 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
   });
   const outcome = await generateVisualization({
     sourceImage: { url: "upload", slot: "front", bytes: source.bytes, mimeType: source.mimeType },
-    plan: { ...plan, changes: eligibility.approvedChanges },
+    plan: { ...plan, changes: approvedChanges },
     provider,
-    opportunities,
+    opportunities, // undefined on the PredictionPlan path — there is no TreatmentOpportunity[] to cross-check against; the plan's own structural validation already covers it
     photoConsent: "granted",
     timeoutMs: (deps.timeoutMs ?? illustrationTimeoutMs(deps.env)) + 500, // the provider's own abort fires first
     maxImageChars: 20_000_000,
@@ -255,5 +295,11 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
     status: "ready",
     image: { mimeType: match[1], base64: match[2] },
     illustrativeAfter: { kind: "illustrative_after", label: ILLUSTRATIVE_AFTER.label, aiLabel: ILLUSTRATIVE_AFTER.aiLabel, notice: ILLUSTRATIVE_AFTER.notice, generatedByAi: true, provider: outcome.provider, createdAt: outcome.createdAt },
+    // Which areas THIS generation actually illustrated — from the real, server-authoritative
+    // plan that drove it (predictionPlan or the legacy opportunities path), never a client-side
+    // guess. The consumer UI must render cards from this, not from its own local preview, which
+    // (being computed client-side from the calibration-gated pathway only) can disagree with
+    // what a PredictionPlan-driven generation actually shows — see ResultsExperience.tsx.
+    changes: approvedChanges.map(visualizedAreaFor),
   });
 }

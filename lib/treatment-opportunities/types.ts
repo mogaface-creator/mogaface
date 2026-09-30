@@ -39,6 +39,13 @@ export const TREATMENT_CONCERNS = [
   "facial_contour_volume",
   "facial_lifting",
   "skin_appearance",
+  // Not produced by any TREATMENT_RULES rule (no rule consumes the "under_eye" signal — see
+  // evidence.ts's APPEARANCE_CONCERN_KINDS comment); reserved for a goal-driven, non-calibrated
+  // downstream consumer outside this layer.
+  "under_eye_appearance",
+  // Same as above: no rule consumes the "hair_appearance" signal either — reserved for the
+  // same goal-driven, non-calibrated downstream consumer.
+  "hair_appearance",
 ] as const;
 export type TreatmentConcern = (typeof TREATMENT_CONCERNS)[number];
 
@@ -51,6 +58,7 @@ export const CONCERN_SIGNAL_KINDS = [
   "facial_lifting",
   "skin_concern",
   "under_eye",
+  "hair_appearance",
 ] as const;
 export type ConcernSignalKind = (typeof CONCERN_SIGNAL_KINDS)[number];
 

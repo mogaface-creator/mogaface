@@ -186,6 +186,8 @@ test("5. the client never calls the OpenAI API directly and never imports a seco
     assert.doesNotMatch(src, /openai\.com|api\.openai/i, path);
     assert.doesNotMatch(src, /createOpenAiImageProvider/, path);
   }
+  assert.match(read("lib/image-generation/livePreviewClient.ts"), /livePreviewConstants\.ts/, "the browser client imports its header contract from the browser-safe module");
+  assert.doesNotMatch(read("lib/image-generation/livePreviewClient.ts"), /from ["']\.\/livePreviewHandler\.ts["']/, "the browser client must not import the server handler");
   assert.match(read("lib/image-generation/livePreviewHandler.ts"), /handleIllustrationRequest/, "must reuse the existing handler, not a second integration");
 });
 

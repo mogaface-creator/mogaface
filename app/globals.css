@@ -2,30 +2,148 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/**
+ * MogaFace Design System — tokens derived from the Clinic Next Face Brand
+ * Identity System v1.0. MogaFace is the product name; only the visual
+ * language (colour, type, spacing, surfaces) is adopted from the brand guide.
+ *
+ * Every colour below follows the guide's own light/dark surface-pairing
+ * rules (never Antique Gold or Pale Violet/Wisteria as light-surface text;
+ * never Deep Plum/Plum Ink/Muted Mulberry as dark-surface text).
+ */
 :root {
-  --background: #ffffff;
-  --surface: #f7f9fa;
-  --foreground: #1c2b31;
-  --muted: #75838a;
-  --border: #e2e8ea;
-  --accent: #3f6d82;
+  /* Core surfaces */
+  --background: #ffffff; /* Pure Veil — clean base, the app's primary canvas */
+  --surface: #f2e6d8; /* Silk Beige — main secondary/alternating surface */
+  --surface-warm: #f7f0e8; /* Champagne — warm card surface, subtle shifts */
+  --surface-cool: #f4f1f8; /* Cool Surface — alternate cool wash */
+  --surface-subtle: #e3dfea; /* Misty Lilac — soft fills, badges, tooltips */
+  --border: #e3dfea; /* Misty Lilac, used as a restrained hairline */
+
+  /* Text */
+  --foreground: #1a0e2e; /* Deep Plum (light-surface heading value) */
+  --body-text: #3d2f4f; /* Plum Ink — long-form body copy */
+  --muted: #8a7b9a; /* Haze — muted/meta text */
+  --secondary-text: #6b5a7e; /* Muted Mulberry — subtitles */
+  --gold-text: #8a6d35; /* Deep Gold — the ONLY gold safe as light-surface text */
+
+  /* Brand accent */
+  --accent: #5e358f; /* Royal Amethyst — primary brand */
   --accent-foreground: #ffffff;
+  --link: #8b6bae; /* Soft Orchid — links / active state */
+  --highlight: #a38bbf; /* Wisteria */
+  --light-accent: #d4c7e8; /* Pale Violet */
+  --gold: #c2a46f; /* Antique Gold — borders/icons/badges, never light-surface text */
+  --gold-warm: #d4b87a; /* Warm Gold — gradient highlight */
+
+  /* Dark surfaces (hero panels, footer, CTA blocks) */
+  --dark-surface: #2a1548; /* Deep Plum */
+  --dark-surface-2: #1a0e2e; /* Velvet Night */
+  --dark-foreground: #f2e6d8; /* Silk Beige — dark-surface headings */
+  --dark-body: #d4c7e8; /* Pale Violet — dark-surface body/subtitle */
+  --dark-muted: #a38bbf; /* Wisteria — dark-surface quotes/meta */
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, #d4c7e8, #5e358f, #2a1548);
+  --gradient-regal: linear-gradient(135deg, #5e358f, #2a1548);
+  --gradient-silk: linear-gradient(180deg, #ffffff, #faf6f1, #f2e6d8);
+  --gradient-golden-hour: linear-gradient(135deg, #c2a46f, #d4b87a, #e8d5a8);
+  --gradient-prestige: linear-gradient(135deg, #5e358f, #c2a46f);
+  --gradient-orchid: linear-gradient(135deg, #e3dfea, #d4c7e8, #a38bbf);
+  --gradient-velvet: linear-gradient(135deg, #2a1548, #5e358f, #8b6bae);
+
+  /* Shadows (brand scale) */
+  --shadow-subtle: 0 1px 3px rgba(42, 21, 72, 0.08);
+  --shadow-medium: 0 4px 16px rgba(42, 21, 72, 0.1);
+  --shadow-elevated: 0 8px 32px rgba(42, 21, 72, 0.14);
+  --shadow-heavy: 0 16px 48px rgba(42, 21, 72, 0.18);
+}
+
+/* Dark theme — the brand guide's own dark-surface rules, not merely inverted light values. */
+:root.dark {
+  --background: #1a0e2e;
+  --surface: #2a1548;
+  --surface-warm: #2a1548;
+  --surface-cool: #2a1548;
+  --surface-subtle: #3d2f6f;
+  --border: #3d2f6f;
+
+  --foreground: #f2e6d8;
+  --body-text: #d4c7e8;
+  --muted: #a38bbf;
+  --secondary-text: #d4c7e8;
+  --gold-text: #c2a46f; /* Antique Gold is explicitly permitted as dark-surface text */
+
+  --accent: #8b6bae;
+  --accent-foreground: #ffffff;
+  --link: #d4c7e8;
+  --highlight: #a38bbf;
+  --light-accent: #d4c7e8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
+  --color-surface-warm: var(--surface-warm);
+  --color-surface-cool: var(--surface-cool);
+  --color-surface-subtle: var(--surface-subtle);
   --color-border: var(--border);
+
+  --color-foreground: var(--foreground);
+  --color-body-text: var(--body-text);
+  --color-muted: var(--muted);
+  --color-secondary-text: var(--secondary-text);
+  --color-gold-text: var(--gold-text);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-serif: var(--font-fraunces);
+  --color-link: var(--link);
+  --color-highlight: var(--highlight);
+  --color-light-accent: var(--light-accent);
+  --color-gold: var(--gold);
+  --color-gold-warm: var(--gold-warm);
+
+  --color-dark-surface: var(--dark-surface);
+  --color-dark-surface-2: var(--dark-surface-2);
+  --color-dark-foreground: var(--dark-foreground);
+  --color-dark-body: var(--dark-body);
+  --color-dark-muted: var(--dark-muted);
+
+  --shadow-subtle: var(--shadow-subtle);
+  --shadow-medium: var(--shadow-medium);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-heavy: var(--shadow-heavy);
+
+  /* Type roles — used intentionally, never as a single interchangeable "serif"/"sans":
+     font-serif  = Title (Cormorant Garamond)   — hero statements, wordmark
+     font-heading= Heading/Subheading (Playfair)— page/card/service headings
+     font-label  = Section Header (Cinzel)      — uppercase eyebrows, nav, dividers
+     font-sans   = Body (DM Sans)               — all long-form and UI copy
+     font-meta   = Small (Josefin Sans)         — metadata, timestamps, footnotes
+     font-mono   = unchanged (Geist Mono)       — tabular/numeric dev displays only */
+  --font-serif: var(--font-cormorant);
+  --font-heading: var(--font-playfair);
+  --font-label: var(--font-cinzel);
+  --font-sans: var(--font-dm-sans);
+  --font-meta: var(--font-josefin);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Section Header role (Cinzel, uppercase, wide tracking) — the one recurring
+   "eyebrow" pattern reused across the app. Deep Gold on light surfaces, Antique
+   Gold on dark, per the guide's explicit surface-pairing rule. */
+.eyebrow {
+  font-family: var(--font-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: var(--gold-text);
+}
+:root.dark .eyebrow {
+  color: var(--gold);
 }

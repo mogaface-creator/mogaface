@@ -155,7 +155,7 @@ test("the image prompt is built from the approved fields only: instructions, pre
 test("A: a single plan can represent multiple independently evidence-backed visual areas", () => {
   const plan = buildDevMultiAreaPlan("blob:front");
   assert.equal(plan.status, "planned");
-  assert.equal(plan.changes.length, 5);
+  assert.equal(plan.changes.length, 6);
   assert.deepEqual(
     plan.changes.map((c) => c.category).sort(),
     [...VISUALIZATION_CATEGORIES].sort(),
@@ -173,25 +173,25 @@ test("A: a single plan can represent multiple independently evidence-backed visu
   const areas = plan.changes.map(visualizedAreaFor);
   assert.deepEqual(
     areas.map((a) => a.area).sort(),
-    ["Expression lines", "Facial contour", "Jawline definition", "Skin appearance", "Under-eye appearance"],
+    ["Expression lines", "Facial contour", "Hair appearance", "Jawline definition", "Skin appearance", "Under-eye appearance"],
   );
   assert.ok(areas.every((a) => a.description.length > 0));
   assert.ok(areas.every((a) => typeof a.treatmentFamily === "string"));
 });
 
-test("B: production eligibility rejects every category the real policy hasn't approved, including the three new ones", () => {
-  assert.deepEqual(ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: false, jawline_definition: false, under_eye: false, skin_appearance: false });
+test("B: production eligibility rejects every category the real policy hasn't approved, including the new ones", () => {
+  assert.deepEqual(ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: false, jawline_definition: false, under_eye: false, skin_appearance: false, hair_appearance: false });
   const plan = buildDevMultiAreaPlan("blob:front");
   // the REAL policy/calibration state (no dev override at all)
   const real = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST);
   assert.equal(real.eligible, false, "not even expression_lines survives without the calibration override");
   assert.deepEqual(real.approvedChanges, []);
-  // even calibrated (the closed gate opened), the real policy alone still blocks the other four
+  // even calibrated (the closed gate opened), the real policy alone still blocks the other five
   const calibratedOnly = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true });
   assert.deepEqual(calibratedOnly.approvedChanges.map((c) => c.category), ["expression_lines"]);
   assert.deepEqual(
     calibratedOnly.blocked.map((b) => b.category).sort(),
-    ["facial_contour", "jawline_definition", "skin_appearance", "under_eye"],
+    ["facial_contour", "hair_appearance", "jawline_definition", "skin_appearance", "under_eye"],
   );
   // jawline_definition and under_eye can never even be BUILT from a real opportunity — no rule produces them
   const real45 = inputFor(assessmentWith({ selected: ["FACIAL_DEFINITION", "FACIAL_VOLUME", "FACIAL_LIFTING", "UNDER_EYE", "SKIN_TONE"] }), { withVideoLines: true, open: true }).opportunities;
@@ -199,7 +199,7 @@ test("B: production eligibility rejects every category the real policy hasn't ap
   assert.ok(!realPlan.changes.some((c) => c.category === "jawline_definition" || c.category === "under_eye"));
 });
 
-test("C: the dev-only composite fixture represents five categories without touching the real production policy or calibration objects", () => {
+test("C: the dev-only composite fixture represents six categories without touching the real production policy or calibration objects", () => {
   const beforePolicy = { ...ILLUSTRATION_POLICY };
   const plan = buildDevMultiAreaPlan("blob:front");
   decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true, policy: DEV_FULL_ILLUSTRATION_POLICY });
@@ -207,16 +207,16 @@ test("C: the dev-only composite fixture represents five categories without touch
   assert.deepEqual(ILLUSTRATION_POLICY, beforePolicy);
   assert.notEqual(DEV_FULL_ILLUSTRATION_POLICY, ILLUSTRATION_POLICY);
   // the dev override opens exactly the taxonomy, all true — a separate object, never mutating the real one
-  assert.deepEqual(DEV_FULL_ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: true, jawline_definition: true, under_eye: true, skin_appearance: true });
+  assert.deepEqual(DEV_FULL_ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: true, jawline_definition: true, under_eye: true, skin_appearance: true, hair_appearance: true });
 });
 
-test("D–E: the multi-area prompt contains only the five approved instructions, in the approved fixed wording, and no beautification language", () => {
+test("D–E: the multi-area prompt contains only the six approved instructions, in the approved fixed wording, and no beautification language", () => {
   const plan = buildDevMultiAreaPlan("blob:front");
   const decision = decideIllustrationEligibility(plan, DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST, { calibrated: true, policy: DEV_FULL_ILLUSTRATION_POLICY });
-  assert.equal(decision.approvedChanges.length, 5);
+  assert.equal(decision.approvedChanges.length, 6);
   const prompt = buildIllustrationPrompt({ ...plan, changes: decision.approvedChanges });
   for (const c of decision.approvedChanges) assert.ok(prompt.includes(c.visualInstruction), c.category);
-  assert.equal(prompt.split("\n").filter((l) => l.startsWith("- ")).length, 5);
+  assert.equal(prompt.split("\n").filter((l) => l.startsWith("- ")).length, 6);
   assert.deepEqual(findUnsafeVisualText(prompt), []);
   assert.deepEqual(validateIllustrationPrompt(prompt), []);
   for (const bad of ["beautif", "flawless", "attractive", "perfect", "ideal", "glow up", "flaw", "imperfection", "botox", "filler", "inject", "guarantee"]) {

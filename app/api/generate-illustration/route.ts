@@ -1,17 +1,24 @@
-import { handleIllustrationRequest } from "@/lib/image-generation/handler.ts";
+import { handleMultiAngleIllustrationRequest } from "@/lib/image-generation/multiAngle.ts";
 
-// Server-side illustrative image generation. All logic — provider switch, origin
-// check, authentication, entitlement hook, rate limit, photo consent, photo
-// validation, eligibility, safety-checked prompt, timeout — lives in
-// lib/image-generation/handler.ts so it can be tested. The API key is read
-// there and never reaches the browser. The photo is held in memory for the
-// request only; nothing is stored or logged.
+// Server-side illustrative image generation — front, and (when the person
+// actually has one) left 45°/right 45°, generated from their own real source
+// photo, sharing the SAME trusted analysis record (see
+// lib/analysis-session/). The request carries an analysisId/sessionToken,
+// never client-submitted treatment opportunities: handleMultiAngleIllustrationRequest
+// resolves them once, against the server's own, independently-computed
+// analysis record, then forwards each present angle to
+// lib/image-generation/handler.ts's handleIllustrationRequest — unmodified —
+// for everything else: provider switch, origin check, authentication,
+// entitlement hook, rate limit, photo consent, photo validation, eligibility,
+// safety-checked prompt, timeout. The API key is read there and never
+// reaches the browser. Photos are held in memory for the request only;
+// nothing is stored or logged.
 //
 // Production status: DISABLED by default (IMAGE_GENERATION_PROVIDER unset), and
 // even when enabled it refuses every request until an authenticator and a
 // shared-store rate limiter are supplied here. See docs/INTERPRETATION_AND_RESULTS.md.
-export const maxDuration = 60;
+export const maxDuration = 120; // up to three sequential image-edit calls
 
 export function POST(request: Request) {
-  return handleIllustrationRequest(request, { env: process.env });
+  return handleMultiAngleIllustrationRequest(request, { env: process.env });
 }

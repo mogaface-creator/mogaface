@@ -148,12 +148,12 @@ test("C: the multi-area fixture produces all five areas here, while the real pro
   assert.equal(api.calls.length, 0);
 });
 
-test("D–E: the multi-area prompt sent to the image API carries all five approved instructions and nothing unsafe", async () => {
+test("D–E: the multi-area prompt sent to the image API carries all six approved instructions and nothing unsafe", async () => {
   const r = await callDev(DEV_ENABLED, {}, { fixture: "multi" });
   assert.equal(r.json.status, "ready");
   const prompt = String(r.calls[0].form.get("prompt") ?? "");
-  assert.equal(prompt.split("\n").filter((l) => l.startsWith("- ")).length, 5);
-  for (const region of ["forehead", "lower face contour", "jawline", "under eye area", "skin overall"]) assert.match(prompt, new RegExp(region, "i"));
+  assert.equal(prompt.split("\n").filter((l) => l.startsWith("- ")).length, 6);
+  for (const region of ["forehead", "lower face contour", "jawline", "under eye area", "skin overall", "hairline"]) assert.match(prompt, new RegExp(region, "i"));
   for (const bad of ["beautif", "attractive", "perfect", "ideal", "glow up", "flaw", "botox", "filler", "inject", "guarantee"]) assert.doesNotMatch(prompt, new RegExp(bad, "i"));
 });
 

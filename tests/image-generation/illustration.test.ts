@@ -59,7 +59,7 @@ const expressionOpps = () => readyOpps(["FACIAL_LINES"]);
 const contourOpps = () => readyOpps(["FACIAL_DEFINITION"]);
 const both = () => readyOpps(["FACIAL_DEFINITION", "FACIAL_LINES"]);
 const CAL_ON = { calibrated: true };
-const POLICY_ALL = { policy: { expression_lines: true, facial_contour: true, jawline_definition: false, under_eye: false, skin_appearance: false }, calibrated: true };
+const POLICY_ALL = { policy: { expression_lines: true, facial_contour: true, jawline_definition: false, under_eye: false, skin_appearance: false, hair_appearance: false }, calibrated: true };
 const wire = (o: TreatmentOpportunity) => ({ id: o.id, category: o.category, status: o.status, consumerReady: o.consumerReady, evidenceObservationIds: o.evidenceObservationIds, evidenceQuestionIds: o.evidenceQuestionIds });
 
 // ---- a stub OpenAI image API ----
@@ -121,8 +121,8 @@ test("1. No consent → no API call (server, provider and client all refuse)", a
 
   // the browser never even fetches the photo
   let fetched = 0;
-  const out = await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, opportunities: expressionOpps(), consent: "pending", fetchImpl: (async () => { fetched++; return new Response("{}"); }) as typeof fetch });
-  assert.deepEqual([out.status, fetched], ["consent_required", 0]);
+  const out = await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, analysisId: "x", sessionToken: "y", consent: "pending", fetchImpl: (async () => { fetched++; return new Response("{}"); }) as typeof fetch });
+  assert.deepEqual([out.front.status, fetched], ["consent_required", 0]);
 });
 
 test("2. Declined consent → no API call", async () => {
@@ -131,8 +131,8 @@ test("2. Declined consent → no API call", async () => {
   assert.deepEqual([r.status, r.json.error, h.logs[0].reason], [403, "consent_required", "consent_declined"]);
   assert.equal(h.api.calls.length, 0);
   let fetched = 0;
-  const out = await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, opportunities: expressionOpps(), consent: "declined", fetchImpl: (async () => { fetched++; return new Response("{}"); }) as typeof fetch });
-  assert.deepEqual([out.status, fetched], ["consent_required", 0]);
+  const out = await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, analysisId: "x", sessionToken: "y", consent: "declined", fetchImpl: (async () => { fetched++; return new Response("{}"); }) as typeof fetch });
+  assert.deepEqual([out.front.status, fetched], ["consent_required", 0]);
   // generateVisualization with an external provider and no consent → unavailable, provider's own check
   const plan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: expressionOpps() });
   const api = stubImages();
@@ -209,7 +209,7 @@ test("6. Missing evidence → no API call", async () => {
 });
 
 test("eligibility rules: expression lines only; contour is BLOCKED by policy even when its opportunity is consumer-ready; filler/lifting/skin/under-eye never", () => {
-  assert.deepEqual(ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: false, jawline_definition: false, under_eye: false, skin_appearance: false });
+  assert.deepEqual(ILLUSTRATION_POLICY, { expression_lines: true, facial_contour: false, jawline_definition: false, under_eye: false, skin_appearance: false, hair_appearance: false });
   const opps = both();
   const plan = buildVisualizationPlan({ frontPhoto: FRONT, opportunities: opps });
   assert.deepEqual(plan.changes.map((c) => c.category).sort(), ["expression_lines", "facial_contour"], "the existing plan is unchanged");
@@ -409,7 +409,10 @@ test("16 + success. A generated image is validated, returned as illustrativeAfte
   assert.equal(h.logs[0].outcome, "ready");
   // the UI carries the required labels and keeps the clinician context visible
   const panel = readFileSync(new URL("../../components/results/IllustrationPanel.tsx", import.meta.url), "utf8");
-  for (const needle of ["ILLUSTRATIVE_AFTER.label", "ILLUSTRATIVE_AFTER.aiLabel", "ILLUSTRATIVE_AFTER.notice", "ILLUSTRATIVE_AFTER.shortNotice", "A qualified clinician decides what, if anything, is appropriate for you.", "Generate My Illustrative View", "external AI image service"]) assert.ok(panel.includes(needle), needle);
+  for (const needle of ["ILLUSTRATIVE_AFTER.label", "ILLUSTRATIVE_AFTER.aiLabel", "ILLUSTRATIVE_AFTER.notice", "ILLUSTRATIVE_AFTER.shortNotice", "A qualified clinician decides what, if anything, is appropriate for you.", "Generate My Illustrative View", "PHOTO_VISUALIZATION_CONSENT_SENTENCE"]) assert.ok(panel.includes(needle), needle);
+  // the shared sentence text itself — single source of truth, reused by AssessmentReview.tsx too (see product-flow.test.ts)
+  const consentModule = readFileSync(new URL("../../lib/visualization/consent.ts", import.meta.url), "utf8");
+  assert.match(consentModule, /external AI image service/);
   assert.equal(ILLUSTRATIVE_AFTER.shortNotice, "Illustrative only — not a prediction or guarantee of treatment results.");
 });
 
@@ -461,7 +464,7 @@ test("20–21. API failure, timeout and network error → HTTP 200 'failed' (the
   assert.deepEqual([r.status, r.json.status, r.json.errorCode], [200, "failed", "timeout"]);
   // the browser maps every non-ready outcome to the placeholder, and a network error too
   const fetchImpl = (async (u: unknown) => { if (String(u) === "blob:x") return new Response(new Blob([SOURCE as BlobPart])); throw new TypeError("offline"); }) as typeof fetch;
-  assert.equal((await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, opportunities: expressionOpps(), consent: "granted", fetchImpl })).status, "failed");
+  assert.equal((await requestIllustration({ photoUrl: "blob:x", photoQualityValid: true, analysisId: "x", sessionToken: "y", consent: "granted", fetchImpl })).front.status, "failed");
   assert.match(ILLUSTRATION_FAILED_MESSAGE, /isn't available for this analysis/);
   assert.match(ILLUSTRATION_UNAVAILABLE_MESSAGE, /isn't available from the current analysis/);
 });
@@ -606,11 +609,11 @@ test("19. No photo or generated-image bytes are ever written to localStorage or 
   // the whole browser-side flow: fetch the photo, upload it, turn the result into an in-memory reference
   const fetchImpl = (async (u: unknown) => {
     if (String(u) === "blob:front") return new Response(new Blob([SOURCE as BlobPart]));
-    return new Response(JSON.stringify({ status: "ready", image: { mimeType: "image/png", base64: b64(GENERATED) } }));
+    return new Response(JSON.stringify({ status: "done", angles: { front: { status: "ready", image: { mimeType: "image/png", base64: b64(GENERATED) } } } }));
   }) as typeof fetch;
   const made: Blob[] = [];
-  const out = await requestIllustration({ photoUrl: "blob:front", photoQualityValid: true, opportunities: expressionOpps(), consent: "granted", fetchImpl, createObjectUrl: (b) => (made.push(b), "blob:generated") });
-  assert.deepEqual([out.status, made.length, made[0].type], ["ready", 1, "image/png"]);
+  const out = await requestIllustration({ photoUrl: "blob:front", photoQualityValid: true, analysisId: "x", sessionToken: "y", consent: "granted", fetchImpl, createObjectUrl: (b) => (made.push(b), "blob:generated") });
+  assert.deepEqual([out.front.status, made.length, made[0].type], ["ready", 1, "image/png"]);
   assert.deepEqual(writes, [], "nothing was written to browser storage");
   // the snapshot store refuses a malformed front-photo reference (defense in
   // depth: the typed API can no longer construct a ref/data URI here at all —
@@ -643,20 +646,37 @@ test("23. Nothing is generated automatically: rendering or refreshing the report
   }
   assert.deepEqual([providerCalls, fetches], [0, 0]);
   // structure: the results page passes no provider, and generation is reachable only from click handlers
+  // or the one-shot ?autogenerate=1 continuation of the person's own "Analyze My Face" click (see AssessmentReview.tsx)
   const page = readFileSync(join(ROOT, "components/results/ResultsExperience.tsx"), "utf8");
   assert.match(page, /imageProvider: null/);
   assert.equal(page.match(/requestIllustration\(/g)?.length, 1);
   assert.doesNotMatch(page, /setInterval|setTimeout\([^)]*onGenerate/);
+  // the one-shot signal is read once from the URL, then IMMEDIATELY stripped — a refresh of the resulting
+  // URL (no ?autogenerate) can never re-arm it
+  assert.match(page, /params\.get\("autogenerate"\)/);
+  assert.match(page, /window\.history\.replaceState\(null, "", window\.location\.pathname\)/);
+
   const panel = readFileSync(join(ROOT, "components/results/IllustrationPanel.tsx"), "utf8");
   const runCalls = panel.split("\n").filter((l) => /\brun\(/.test(l) && !/const run/.test(l));
-  assert.ok(runCalls.length >= 2 && runCalls.every((l) => /onClick/.test(l)), runCalls.join("\n"));
-  assert.doesNotMatch(panel, /useEffect\([^)]*run\(/);
+  const onClickRunCalls = runCalls.filter((l) => /onClick/.test(l));
+  assert.ok(onClickRunCalls.length >= 2, "the demo-consent and non-demo-consent buttons must still call run only from onClick");
+  // the one remaining call site is the auto-start effect — gated on the one-shot signal, a per-mount
+  // ref so it can fire at most once, and the SAME "eligible"/"granted" conditions the button itself requires
+  const nonClickRunCalls = runCalls.filter((l) => !/onClick/.test(l));
+  assert.equal(nonClickRunCalls.length, 1, runCalls.join("\n"));
+  const effectBody = panel.slice(panel.indexOf("useEffect(() => {\n    if (controls.autoStart"), panel.indexOf("}, []);") + 8);
+  assert.match(effectBody, /controls\.autoStart/);
+  assert.match(effectBody, /controls\.generationEnabled/);
+  assert.match(effectBody, /autoStarted\.current/);
+  assert.match(effectBody, /view\.state === "eligible"/);
+  assert.match(effectBody, /consent === "granted"/);
+  assert.match(effectBody, /autoStarted\.current = true;/); // set before calling run, so a second render (even React Strict Mode) can never call it twice
   void spy;
 });
 
 test("24. Demo mode never calls the real image API: it uses a mock provider in the browser; a demo payload is refused by the server", async () => {
   const page = readFileSync(join(ROOT, "components/results/ResultsExperience.tsx"), "utf8");
-  const demoBranch = page.slice(page.indexOf("if (demo) {"), page.indexOf("const made = await requestIllustration"));
+  const demoBranch = page.slice(page.indexOf("if (demo) {"), page.indexOf("if (devPreview) {"));
   assert.match(demoBranch, /createMockProvider/);
   assert.doesNotMatch(demoBranch, /requestIllustration|fetch\(|\/api\//);
   // behaviour: the demo's generation is a mock and touches no network

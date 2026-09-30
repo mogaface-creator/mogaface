@@ -21,3 +21,7 @@ export const DEFAULT_PHOTO_VISUALIZATION_CONSENT: PhotoVisualizationConsent = "p
 export const isPhotoVisualizationConsent = (v: unknown): v is PhotoVisualizationConsent => (PHOTO_VISUALIZATION_CONSENT_STATES as readonly unknown[]).includes(v);
 
 export const allowsPhotoProcessing = (consent: unknown): boolean => consent === "granted";
+
+/** The single required consent sentence for sending a real photo to the image-generation provider — shared so every surface that asks for it says exactly the same thing. */
+export const PHOTO_VISUALIZATION_CONSENT_SENTENCE =
+  "To create this illustration, your front photo will be sent to an external AI image service (OpenAI). It is sent only if you continue, only for this request, and it does not change your analysis.";

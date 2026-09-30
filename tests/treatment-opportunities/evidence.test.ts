@@ -32,14 +32,18 @@ test("questionnaire mapping: same signal from two answers merges and keeps the s
   assert.equal(signals[0].evidence.length, 2);
 });
 
-test("questionnaire mapping: unrelated answers produce no signals, and none is invented", () => {
-  assert.deepEqual(buildConcernSignals(assessmentWithGoals(["improveHair", "improveGrooming"], ["hair", "face"])), []);
+test("questionnaire mapping: improveHair/hair now produce a real hair_appearance signal; unrelated answers still produce nothing", () => {
+  const hairSignals = buildConcernSignals(assessmentWithGoals(["improveHair"], ["hair"]));
+  assert.deepEqual(hairSignals.map((s) => s.kind), ["hair_appearance"]);
+  assert.equal(hairSignals[0].strength, "explicit");
+
+  assert.deepEqual(buildConcernSignals(assessmentWithGoals(["improveGrooming"], ["face"])), []);
   assert.deepEqual(buildConcernSignals(createEmptyAssessment()), []);
   // Without appearanceConcerns answers (empty here), these kinds are unreachable from an Assessment.
   const kinds: string[] = buildConcernSignals(
     assessmentWithGoals(["lookMoreDefined", "improveSkin"], ["skin", "jawDefinition", "face"]),
   ).map((s) => s.kind);
-  for (const k of ["expression_lines", "facial_lifting", "facial_volume", "under_eye"]) assert.ok(!kinds.includes(k));
+  for (const k of ["expression_lines", "facial_lifting", "facial_volume", "under_eye", "hair_appearance"]) assert.ok(!kinds.includes(k));
 });
 
 test("questionnaire mapping: malformed assessment does not throw", () => {

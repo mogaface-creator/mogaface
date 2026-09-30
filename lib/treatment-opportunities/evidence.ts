@@ -10,7 +10,7 @@
 
 import { normalizeAppearanceConcerns } from "../assessment/appearanceConcerns.ts";
 import type { AppearanceConcernDetailId, AppearanceConcernId } from "../assessment/appearanceConcerns.ts";
-import type { Assessment, GoalArea, GoalPriority } from "../assessment/types.ts";
+import type { Assessment, GoalArea, GoalPriority, HairConcern } from "../assessment/types.ts";
 import type { Observation } from "../observation/types.ts";
 import { EXPRESSION_MOVEMENT_OBSERVATION_IDS, LINE_PATTERN_OBSERVATION_IDS } from "../observation/videoDomains.ts";
 import type {
@@ -123,11 +123,24 @@ interface SignalMapping {
 const PRIORITY_SIGNALS: Partial<Record<GoalPriority, SignalMapping>> = {
   lookMoreDefined: { kind: "facial_definition", strength: "general", label: "Goal: look more defined" },
   improveSkin: { kind: "skin_concern", strength: "explicit", label: "Goal: improve skin" },
+  improveHair: { kind: "hair_appearance", strength: "explicit", label: "Goal: improve hair" },
 };
 
 const AREA_SIGNALS: Partial<Record<GoalArea, SignalMapping>> = {
   skin: { kind: "skin_concern", strength: "general", label: "Area of interest: skin" },
   jawDefinition: { kind: "facial_contour", strength: "explicit", label: "Area of interest: jaw definition" },
+  hair: { kind: "hair_appearance", strength: "general", label: "Area of interest: hair" },
+};
+
+/**
+ * Which hair.concerns values are about hair/scalp APPEARANCE (density, coverage, hairline) —
+ * as opposed to texture/maintenance concerns (dryness, frizz, styling, haircut) that have
+ * nothing to do with how much hair/scalp is visible. Only these ground a hair_appearance signal.
+ */
+const HAIR_CONCERN_KINDS: Partial<Record<HairConcern, SignalMapping>> = {
+  hairline: { kind: "hair_appearance", strength: "explicit", label: "Hair concern: hairline" },
+  thinning: { kind: "hair_appearance", strength: "explicit", label: "Hair concern: thinning" },
+  scalp: { kind: "hair_appearance", strength: "explicit", label: "Hair concern: scalp" },
 };
 
 /**
@@ -178,6 +191,9 @@ export function buildConcernSignals(assessment: Assessment | null | undefined): 
   const areas = Array.isArray(assessment?.goals?.areas) ? assessment.goals.areas : [];
   for (const p of new Set(priorities)) add(PRIORITY_SIGNALS[p], `goals.priorities.${p}`);
   for (const a of new Set(areas)) add(AREA_SIGNALS[a], `goals.areas.${a}`);
+
+  const hairConcerns = Array.isArray(assessment?.hair?.concerns) ? assessment.hair.concerns : [];
+  for (const c of new Set(hairConcerns)) add(HAIR_CONCERN_KINDS[c], `hair.concerns.${c}`);
 
   // normalizeAppearanceConcerns returns [] for missing or malformed data.
   for (const s of normalizeAppearanceConcerns(assessment?.appearanceConcerns)) {

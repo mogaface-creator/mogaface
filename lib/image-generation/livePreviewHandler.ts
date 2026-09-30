@@ -35,6 +35,8 @@ import type { Authenticator, RateLimiter } from "../interpretation/access.ts";
 import { handleIllustrationRequest } from "./handler.ts";
 import type { IllustrationHandlerDeps } from "./handler.ts";
 import { DEV_ILLUSTRATION_FIXTURE_OPPORTUNITY } from "./devIllustrationFixture.ts";
+import { PREVIEW_SECRET_HEADER } from "./livePreviewConstants.ts";
+export { PREVIEW_SECRET_HEADER } from "./livePreviewConstants.ts";
 
 export interface LivePreviewEnv {
   /** Master switch. Must be exactly "1", or this route behaves as if it does not exist (404) — same philosophy as devTestHandler.ts's double gate. */
@@ -45,8 +47,6 @@ export interface LivePreviewEnv {
 }
 
 const MIN_SECRET_LENGTH = 8;
-export const PREVIEW_SECRET_HEADER = "x-illustration-preview-code";
-
 export function isLivePreviewEnabled(env: LivePreviewEnv): boolean {
   return env.ILLUSTRATION_LIVE_PREVIEW === "1" && typeof env.ILLUSTRATION_PREVIEW_SECRET === "string" && env.ILLUSTRATION_PREVIEW_SECRET.length >= MIN_SECRET_LENGTH;
 }

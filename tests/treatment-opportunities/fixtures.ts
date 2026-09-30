@@ -8,6 +8,7 @@ import type { ConcernSignal, ConcernSignalKind, EvaluationContext, EvidenceItem 
 export function assessmentWithGoals(priorities: Assessment["goals"]["priorities"], areas: Assessment["goals"]["areas"] = []): Assessment {
   const a = buildFilledAssessment();
   a.goals = { areas, priorities };
+  a.hair = { ...a.hair, concerns: [] }; // buildFilledAssessment's own hair.concerns (["hairline", "styling"]) would otherwise leak a real hair_appearance signal into every test using this fixture
   return a;
 }
 

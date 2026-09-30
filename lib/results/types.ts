@@ -63,6 +63,17 @@ export interface AssessmentSnapshot {
   analysis: MogaFaceAnalysis;
   opportunities: TreatmentOpportunity[];
   frontPhoto: FrontPhotoRef | null;
+  /**
+   * The server-issued handle for this assessment's trusted analysis record
+   * (see lib/analysis-session/), created once, right after "Analyze My Face"
+   * finishes real analysis. Absent means no session was created — either the
+   * server-computed opportunities were never eligible, or session creation
+   * failed; either way the illustration is honestly unavailable, never a
+   * client-submitted-opportunities fallback. `sessionToken` is a bearer
+   * capability scoped to this one record (see AnalysisSessionHandle) — never
+   * treated as proof of anything beyond "may read this specific record".
+   */
+  analysisSession?: { analysisId: string; sessionToken: string };
 }
 
 /**

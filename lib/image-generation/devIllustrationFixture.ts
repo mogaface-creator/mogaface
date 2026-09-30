@@ -93,6 +93,14 @@ export const DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES: Record<VisualizationCategory,
     evidenceObservationIds: ["skin.dev-fixture-texture"],
     evidenceQuestionIds: [],
   } as unknown as TreatmentOpportunity,
+  hair_appearance: {
+    id: "dev-fixture.hair-appearance",
+    category: "HAIR_SCALP_ASSESSMENT",
+    status: "potential_opportunity",
+    consumerReady: true,
+    evidenceObservationIds: ["hair.dev-fixture-coverage"],
+    evidenceQuestionIds: [],
+  } as unknown as TreatmentOpportunity,
 };
 
 export const DEV_MULTI_AREA_FIXTURE_OPPORTUNITIES_LIST: TreatmentOpportunity[] = VISUALIZATION_CATEGORIES.map(
