@@ -15,6 +15,7 @@ import type { VisualizationPlan } from "../visualization/types.ts";
 import { validateVisualizationPlan } from "../visualization/validate.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import { createMockProvider } from "./mockProvider.ts";
+import { isPredictionPlan, buildPredictionIllustrationPrompt } from "./predictionPrompt.ts";
 import { validateIllustrationPrompt } from "../visualization/safety.ts";
 import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import { ImageGenerationError } from "./types.ts";
@@ -33,6 +34,11 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
  * A plan may carry more than one approved change (see visualization/types.ts);
  * every one of them is listed, each still individually safety-checked.
  */
+/** Prediction plans name the place on this person's photo. Every other plan keeps the original prompt. */
+export function illustrationPromptFor(plan: VisualizationPlan): string {
+  return isPredictionPlan(plan) ? buildPredictionIllustrationPrompt(plan) : buildIllustrationPrompt(plan);
+}
+
 export function buildIllustrationPrompt(plan: VisualizationPlan): string {
   if (plan.changes.length === 0) return "";
   return [
@@ -158,7 +164,7 @@ export async function generateVisualization(input: GenerateVisualizationInput): 
   if (!provider) return { status: "unavailable", errorCode: "provider_not_configured" };
 
   // The prompt is checked BEFORE any provider is called: unsafe wording never leaves this function.
-  if (validateIllustrationPrompt(buildIllustrationPrompt(plan)).length > 0) return { status: "failed", errorCode: "unsafe_prompt" };
+  if (validateIllustrationPrompt(illustrationPromptFor(plan)).length > 0) return { status: "failed", errorCode: "unsafe_prompt" };
 
   try {
     const request: ImageGenerationRequest = { sourceImage, visualizationPlan: plan, photoConsent: input.photoConsent };

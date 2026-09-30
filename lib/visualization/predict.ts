@@ -49,6 +49,8 @@ import {
 } from "../treatment-opportunities/evidence.ts";
 import { createOpportunity } from "../treatment-opportunities/types.ts";
 import type { ConcernSignal, ConcernSignalKind, EvidenceItem, TreatmentCategory, TreatmentConcern, TreatmentOpportunity, VideoObservation } from "../treatment-opportunities/types.ts";
+import { buildPredictionFocus } from "./focus.ts";
+import type { PredictionFocus } from "./focus.ts";
 import { buildChangeFromOpportunity } from "./build.ts";
 import type { FrontPhotoRef } from "./build.ts";
 import { PRESERVATION_RULES, VISUALIZATION_DISCLAIMER } from "./types.ts";
@@ -76,8 +78,10 @@ export const PREDICTION_CATEGORY_POLICY: Record<VisualizationCategory, boolean> 
 
 /**
  * Fixed, always-the-same list of changes the image model must never make,
- * regardless of category or user — reused verbatim by the prompt builder
- * (lib/image-generation/predictionPrompt.ts). Distinct from
+ * regardless of category or user. The image prompt does not paste this list:
+ * some phrases here are rejected by the prompt safety scan. The prompt uses
+ * the approved instruction plus the photo-specific focus instead
+ * (lib/visualization/focus.ts, lib/image-generation/predictionPrompt.ts). Distinct from
  * PRESERVATION_RULES (what must stay THE SAME): this is what must never be
  * DONE, phrased as explicit prohibitions rather than things to preserve.
  */
@@ -129,6 +133,12 @@ export interface PredictionPlan extends VisualizationPlan {
   prohibited: readonly string[];
   purpose: string;
   consistency: string;
+  /**
+   * Places on this person's photo the approved changes apply to. Empty when
+   * they named an area but not a place within it — the prompt then uses a
+   * category default (lib/visualization/focus.ts).
+   */
+  focus: PredictionFocus[];
 }
 
 interface CategoryCandidate {
@@ -248,6 +258,7 @@ function notEligible(reason: VisualizationPlan["ineligibleReason"], sourcePhoto:
     prohibited: PROHIBITED_CHANGES,
     purpose: PREDICTION_PURPOSE,
     consistency: CROSS_ANGLE_CONSISTENCY,
+    focus: [],
   };
 }
 
@@ -322,5 +333,6 @@ export function buildPredictionPlan(input: PredictionPlanInput): PredictionPlan 
     prohibited: PROHIBITED_CHANGES,
     purpose: PREDICTION_PURPOSE,
     consistency: CROSS_ANGLE_CONSISTENCY,
+    focus: buildPredictionFocus(assessment, changes.map((change) => change.category)),
   };
 }

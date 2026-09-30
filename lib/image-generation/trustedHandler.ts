@@ -29,6 +29,7 @@
  * duplicates this logic.
  */
 
+import { buildPredictionFocus } from "../visualization/focus.ts";
 import { handleIllustrationRequest } from "./handler.ts";
 import type { IllustrationHandlerDeps } from "./handler.ts";
 import { getAnalysisRecord, persistIllustrationUse, AnalysisPersistenceUnavailableError } from "../analysis-session/store.ts";
@@ -95,7 +96,9 @@ export async function generateTrustedIllustrationForPhoto(
       photoVisualizationConsent,
       photoQualityValid: photoQualityValid === true,
       opportunities: record.opportunities,
-      predictionPlan: record.predictionPlan,
+      predictionPlan: record.predictionPlan.focus?.length
+        ? record.predictionPlan
+        : { ...record.predictionPlan, focus: buildPredictionFocus(record.assessment, record.predictionPlan.changes.map((change) => change.category)) },
     }),
   );
   const forwarded = new Request(requestUrl, { method: "POST", headers, body: rebuilt });

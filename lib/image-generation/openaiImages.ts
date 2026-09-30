@@ -17,7 +17,7 @@
 import { validateIllustrationPrompt } from "../visualization/safety.ts";
 import { allowsPhotoProcessing } from "../visualization/consent.ts";
 import { validateGeneratedImage, imageDimensions } from "./output.ts";
-import { buildIllustrationPrompt } from "./provider.ts";
+import { illustrationPromptFor } from "./provider.ts";
 import { ImageGenerationError } from "./types.ts";
 import type { ImageGenerationProvider } from "./types.ts";
 
@@ -95,7 +95,7 @@ export function createOpenAiImageProvider(config: OpenAiImageConfig): ImageGener
       if (!allowsPhotoProcessing(request.photoConsent)) throw new ImageGenerationError("no_consent", "Photo processing has not been agreed to.");
       const { bytes, mimeType } = request.sourceImage;
       if (!bytes || !mimeType || !EXTENSION[mimeType]) throw new ImageGenerationError("invalid_source", "The source photo is missing.");
-      const prompt = buildIllustrationPrompt(request.visualizationPlan);
+      const prompt = illustrationPromptFor(request.visualizationPlan);
       if (validateIllustrationPrompt(prompt).length > 0) throw new ImageGenerationError("unsafe_prompt", "The prompt did not pass the safety check.");
 
       const postEdit = (modelName: string, size: string | undefined, quality: string | undefined) => {
