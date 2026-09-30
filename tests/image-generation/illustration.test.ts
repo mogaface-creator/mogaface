@@ -365,6 +365,22 @@ test("OpenAI image request: POST /v1/images/edits, Bearer key, multipart photo +
   const d = harness();
   await d.call();
   assert.equal(d.api.calls[0].form.get("model"), DEFAULT_IMAGE_MODEL);
+  // A deployment can set a model, size, or quality the image API rejects. That must fall back once to the defaults, not fail the illustration.
+  const calls: FormData[] = [];
+  const fetchImpl: typeof fetch = async (_url, init) => {
+    const form = init!.body as FormData;
+    calls.push(form);
+    if (calls.length === 1) return new Response(JSON.stringify({ error: { code: "invalid_value", message: "Invalid value" } }), { status: 400 });
+    return new Response(JSON.stringify({ data: [{ b64_json: b64(GENERATED) }] }), { status: 200 });
+  };
+  const recovered = harness({ env: { ...ENABLED, IMAGE_GENERATION_MODEL: "not-a-real-model", IMAGE_GENERATION_SIZE: "999x999", IMAGE_GENERATION_QUALITY: "ultra" }, fetchImpl });
+  const recoveredResult = await recovered.call();
+  assert.equal(recoveredResult.json.status, "ready");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].get("model"), "not-a-real-model");
+  assert.equal(calls[1].get("model"), DEFAULT_IMAGE_MODEL);
+  assert.equal(calls[1].get("quality"), null);
+  assert.equal(calls[1].get("size"), "1024x1536");
   assert.equal(d.api.calls[0].form.get("input_fidelity"), null);
   assert.equal(chooseImageSize(fakeJpeg(1200, 900, 5000)), "1536x1024");
   assert.equal(chooseImageSize(fakePng(800, 800, 5000)), "1024x1024");

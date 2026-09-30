@@ -98,26 +98,46 @@ export function createOpenAiImageProvider(config: OpenAiImageConfig): ImageGener
       const prompt = buildIllustrationPrompt(request.visualizationPlan);
       if (validateIllustrationPrompt(prompt).length > 0) throw new ImageGenerationError("unsafe_prompt", "The prompt did not pass the safety check.");
 
-      const form = new FormData();
-      form.append("model", model);
-      form.append("image", new Blob([bytes as BlobPart], { type: mimeType }), `portrait.${EXTENSION[mimeType]}`);
-      form.append("prompt", prompt);
-      form.append("n", "1");
-      form.append("size", config.size || chooseImageSize(bytes));
-      if (config.quality) form.append("quality", config.quality);
-      form.append("output_format", "jpeg");
-
-      let response: Response;
-      try {
-        response = await (config.fetchImpl ?? fetch)(OPENAI_IMAGE_EDITS_URL, {
+      const postEdit = (modelName: string, size: string | undefined, quality: string | undefined) => {
+        const form = new FormData();
+        form.append("model", modelName);
+        form.append("image", new Blob([bytes as BlobPart], { type: mimeType }), `portrait.${EXTENSION[mimeType]}`);
+        form.append("prompt", prompt);
+        form.append("n", "1");
+        form.append("size", size || chooseImageSize(bytes));
+        if (quality) form.append("quality", quality);
+        form.append("output_format", "jpeg");
+        return (config.fetchImpl ?? fetch)(OPENAI_IMAGE_EDITS_URL, {
           method: "POST",
           headers: { authorization: `Bearer ${config.apiKey}` }, // no content-type: fetch sets the multipart boundary
           body: form,
           signal: AbortSignal.timeout(config.timeoutMs ?? DEFAULT_IMAGE_TIMEOUT_MS),
         });
+      };
+
+      let response: Response;
+      try {
+        response = await postEdit(model, config.size, config.quality);
       } catch (e) {
         const name = e instanceof Error ? e.name : "";
         throw new ImageGenerationError(name === "TimeoutError" || name === "AbortError" ? "timeout" : "provider_failed", "The image provider could not be reached.");
+      }
+      if (!response.ok) {
+        const detail = await readProviderErrorDetail(response);
+        const usedOverride = model !== DEFAULT_IMAGE_MODEL || !!config.size || !!config.quality;
+        // A mistaken model, size, or quality on the deployment must not blank the illustration.
+        // One retry uses the known-good defaults; any other error is still a failure.
+        if (detail.code === "invalid_value" && usedOverride) {
+          try {
+            response = await postEdit(DEFAULT_IMAGE_MODEL, undefined, undefined);
+          } catch (e) {
+            const name = e instanceof Error ? e.name : "";
+            throw new ImageGenerationError(name === "TimeoutError" || name === "AbortError" ? "timeout" : "provider_failed", "The image provider could not be reached.");
+          }
+        } else {
+          if (config.onProviderError) config.onProviderError(detail);
+          throw new ImageGenerationError("provider_failed", "The image provider returned an error.");
+        }
       }
       if (!response.ok) {
         if (config.onProviderError) config.onProviderError(await readProviderErrorDetail(response));

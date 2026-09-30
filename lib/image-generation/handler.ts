@@ -287,6 +287,7 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
     timeoutMs: (deps.timeoutMs ?? illustrationTimeoutMs(deps.env)) + 500, // the provider's own abort fires first
     maxImageChars: 20_000_000,
   });
+  if (outcome.status === "ready") providerErrorDetail = undefined;
   const dataUrl = outcome.status === "ready" ? outcome.imageUrl : undefined;
   const match = dataUrl ? /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(dataUrl) : null;
   const providerCode = providerErrorDetail?.code && /^[a-z0-9_]{1,80}$/i.test(providerErrorDetail.code) ? providerErrorDetail.code : undefined;
