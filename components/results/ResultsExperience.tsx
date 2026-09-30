@@ -152,6 +152,7 @@ export function ResultsExperience() {
           isDemo: demo && imageMode !== "consent", // only controls whether the consent step is shown; a demo never sends anything
           initialConsent: isPhotoVisualizationConsent(snapshot.photoVisualizationConsent) ? snapshot.photoVisualizationConsent : undefined,
           autoStart: autoGenerateRequested,
+          trustedSession: !!snapshot.analysisSession,
           leftFortyFiveBeforeUrl: leftFortyFiveUrlRef.current,
           rightFortyFiveBeforeUrl: rightFortyFiveUrlRef.current,
           onGenerate: async (consent) => {

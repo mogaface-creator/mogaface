@@ -47,6 +47,13 @@ export interface IllustrationControls {
    * record, so a reload can never silently re-trigger generation.
    */
   autoStart?: boolean;
+  /**
+   * The server already stored a planned illustration for this visit and the
+   * person agreed to it. The on-page calibration gate can still say
+   * "not eligible" — that gate is not the prediction plan. When this is set,
+   * the panel asks the server for the image instead of stopping on that note.
+   */
+  trustedSession?: boolean;
   /** The person's own real left 45°/right 45° "before" photo, resolved the same way the front one is — absent when they never captured one. Never a stand-in image. */
   leftFortyFiveBeforeUrl?: string | null;
   rightFortyFiveBeforeUrl?: string | null;
@@ -227,7 +234,7 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
   // person's own "Analyze My Face" click — never on a plain load/refresh/revisit.
   const autoStarted = useRef(false);
   useEffect(() => {
-    if (controls.autoStart && controls.generationEnabled && !autoStarted.current && view.state === "eligible" && consent === "granted") {
+    if (controls.autoStart && controls.generationEnabled && !autoStarted.current && consent === "granted" && (view.state === "eligible" || controls.trustedSession)) {
       autoStarted.current = true;
       void run("granted");
     }
@@ -245,7 +252,8 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
     );
   }
 
-  if (view.state === "not_eligible" || view.state === "failed" || !controls.generationEnabled) {
+  const trusted = controls.trustedSession === true && controls.generationEnabled;
+  if (!trusted && (view.state === "not_eligible" || view.state === "failed" || !controls.generationEnabled)) {
     const title = view.state === "eligible" ? "Illustrative visualization" : view.title;
     const body = view.state === "eligible" ? "An illustrative view isn't available right now." : view.body;
     const detail = view.state === "not_eligible" ? view.detail : null;
