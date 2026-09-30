@@ -50,7 +50,7 @@ import { ILLUSTRATIVE_AFTER } from "../visualization/types.ts";
 import type { VisualizationChange, VisualizationPlan } from "../visualization/types.ts";
 import { isValidVisualizationPlan } from "../visualization/validate.ts";
 import { visualizedAreaFor } from "../visualization/present.ts";
-import { validateSourcePhoto } from "./output.ts";
+import { isUploadedPhoto, validateSourcePhoto } from "./output.ts";
 import { createOpenAiImageProvider, DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS } from "./openaiImages.ts";
 import type { OpenAiProviderErrorDetail } from "./openaiImages.ts";
 import { generateVisualization } from "./provider.ts";
@@ -220,7 +220,7 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
   const photo = form.get("photo");
   const payloadText = form.get("payload");
   const fields = [...form.keys()];
-  if (!(photo instanceof File) || typeof payloadText !== "string" || fields.some((k) => k !== "photo" && k !== "payload") || fields.length !== 2) return done("rejected", 400, { error: "invalid_request" }, "invalid_fields");
+  if (!isUploadedPhoto(photo) || typeof payloadText !== "string" || fields.some((k) => k !== "photo" && k !== "payload") || fields.length !== 2) return done("rejected", 400, { error: "invalid_request" }, "invalid_fields");
   if (photo.size > MAX_REQUEST_BYTES) return done("rejected", 413, { error: "too_large" }, "photo_too_large");
   if (payloadText.length > MAX_PAYLOAD_CHARS) return done("rejected", 413, { error: "too_large" }, "payload_too_large");
   let payload: Record<string, unknown>;
@@ -289,7 +289,8 @@ export async function handleIllustrationRequest(request: Request, deps: Illustra
   });
   const dataUrl = outcome.status === "ready" ? outcome.imageUrl : undefined;
   const match = dataUrl ? /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(dataUrl) : null;
-  if (outcome.status !== "ready" || !match) return done("failed", 200, { status: "failed", errorCode: outcome.errorCode ?? "invalid_result" }, outcome.errorCode ?? "invalid_result");
+  const providerCode = providerErrorDetail?.code && /^[a-z0-9_]{1,80}$/i.test(providerErrorDetail.code) ? providerErrorDetail.code : undefined;
+  if (outcome.status !== "ready" || !match) return done("failed", 200, { status: "failed", errorCode: outcome.errorCode ?? "invalid_result", ...(providerCode ? { providerCode } : {}) }, outcome.errorCode ?? "invalid_result");
 
   return done("ready", 200, {
     status: "ready",

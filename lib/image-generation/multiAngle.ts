@@ -24,6 +24,7 @@
  * server's analysis found real evidence or whether a provider is configured.
  */
 
+import { isUploadedPhoto } from "./output.ts";
 import { generateTrustedIllustrationForPhoto } from "./trustedHandler.ts";
 import type { IllustrationHandlerDeps } from "./handler.ts";
 import { getAnalysisRecord, AnalysisPersistenceUnavailableError } from "../analysis-session/store.ts";
@@ -46,34 +47,40 @@ export interface AngleResult {
   attempts: number;
   /** Which areas THIS angle's generation actually illustrated — from the real server-authoritative plan, identical across every ready angle since they all share one record. See handler.ts's ready response. */
   changes?: VisualizedArea[];
+  /** Safe machine code for a non-ready angle. Never a message, key, or image. */
+  code?: string;
 }
 
 export type MultiAngleResult = Record<AngleSlot, AngleResult>;
 
 const MAX_ATTEMPTS = 2; // one retry
 
-async function parseAngleResponse(res: Response): Promise<{ status: AngleStatus; image?: { mimeType: string; base64: string }; changes?: VisualizedArea[] }> {
-  if (res.status === 403) return { status: "unavailable" }; // consent — already checked once, up front, before any angle; defensive only
-  if (res.status === 404) return { status: "not_eligible" }; // analysis record missing/expired
+function safeCode(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-z0-9_]{1,80}$/i.test(value) ? value : undefined;
+}
+
+async function parseAngleResponse(res: Response): Promise<{ status: AngleStatus; image?: { mimeType: string; base64: string }; changes?: VisualizedArea[]; code?: string }> {
+  if (res.status === 403) return { status: "unavailable", code: "forbidden" }; // consent — already checked once, up front, before any angle; defensive only
+  if (res.status === 404) return { status: "not_eligible", code: "not_found" }; // analysis record missing/expired
   let body: Record<string, unknown>;
   try {
     body = (await res.json()) as Record<string, unknown>;
   } catch {
-    return { status: "failed" };
+    return { status: "failed", code: "unreadable" };
   }
-  if (body.available === false) return { status: "unavailable" };
-  if (body.status === "not_eligible") return { status: "not_eligible" };
+  if (body.available === false) return { status: "unavailable", code: "provider_disabled" };
+  if (body.status === "not_eligible") return { status: "not_eligible", code: safeCode(body.reason) ?? "not_eligible" };
   const image = body.image as { mimeType?: string; base64?: string } | undefined;
   if (body.status === "ready" && typeof image?.base64 === "string" && /^image\/(png|jpeg|webp)$/.test(image.mimeType ?? "")) {
     const changes = Array.isArray(body.changes) ? (body.changes as VisualizedArea[]) : undefined;
     return { status: "ready", image: { mimeType: image.mimeType!, base64: image.base64 }, changes };
   }
-  return { status: "failed" };
+  return { status: "failed", code: safeCode(body.error) ?? safeCode(body.providerCode) ?? safeCode(body.errorCode) ?? `http_${res.status}` };
 }
 
-async function runOneAngle(photo: File, record: Parameters<typeof generateTrustedIllustrationForPhoto>[1], consent: unknown, qualityValid: unknown, requestUrl: string, headers: Headers, deps: IllustrationHandlerDeps): Promise<AngleResult> {
+async function runOneAngle(photo: Blob, record: Parameters<typeof generateTrustedIllustrationForPhoto>[1], consent: unknown, qualityValid: unknown, requestUrl: string, headers: Headers, deps: IllustrationHandlerDeps): Promise<AngleResult> {
   let attempts = 0;
-  let last: { status: AngleStatus; image?: { mimeType: string; base64: string }; changes?: VisualizedArea[] } = { status: "failed" };
+  let last: { status: AngleStatus; image?: { mimeType: string; base64: string }; changes?: VisualizedArea[]; code?: string } = { status: "failed" };
   while (attempts < MAX_ATTEMPTS) {
     attempts++;
     const res = await generateTrustedIllustrationForPhoto(photo, record, consent, qualityValid, requestUrl, headers, deps);
@@ -113,10 +120,10 @@ export async function handleMultiAngleIllustrationRequest(request: Request, deps
     return Response.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const photosByAngle: Partial<Record<AngleSlot, File>> = {};
+  const photosByAngle: Partial<Record<AngleSlot, Blob>> = {};
   for (const angle of ANGLE_SLOTS) {
     const f = form.get(ANGLE_FORM_FIELDS[angle]);
-    if (f instanceof File) photosByAngle[angle] = f;
+    if (isUploadedPhoto(f)) photosByAngle[angle] = f;
   }
   if (!photosByAngle.front) return Response.json({ error: "invalid_request", detail: "front photo is required" }, { status: 400 });
 

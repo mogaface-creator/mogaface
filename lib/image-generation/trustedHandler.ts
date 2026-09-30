@@ -77,7 +77,7 @@ function forwardedHeaders(request: Request): Headers {
  * the opportunities-based pipeline otherwise.
  */
 export async function generateTrustedIllustrationForPhoto(
-  photo: File,
+  photo: Blob,
   record: AnalysisRecord,
   photoVisualizationConsent: unknown,
   photoQualityValid: unknown,
@@ -86,7 +86,9 @@ export async function generateTrustedIllustrationForPhoto(
   deps: IllustrationHandlerDeps,
 ): Promise<Response> {
   const rebuilt = new FormData();
-  rebuilt.append("photo", photo, photo.name || "portrait");
+  const named = photo as Blob & { name?: string };
+  const name = typeof named.name === "string" && named.name ? named.name : "portrait";
+  rebuilt.append("photo", photo, name);
   rebuilt.append(
     "payload",
     JSON.stringify({

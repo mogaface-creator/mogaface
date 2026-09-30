@@ -442,6 +442,8 @@ test("the source photo is validated: real image, matching type, sensible size; n
   assert.equal((await h.call({ photo: null })).status, 400);
   assert.equal(h.api.calls.length, 0);
   assert.equal(validateSourcePhoto(SOURCE, "image/jpeg").ok, true);
+  assert.equal(validateSourcePhoto(SOURCE, "").ok, true, "a photo whose browser omitted the type is still a real JPEG");
+  assert.equal(validateSourcePhoto(SOURCE, "image/jpg").ok, true, "image/jpg is the same JPEG");
 });
 
 // =====================================================================================

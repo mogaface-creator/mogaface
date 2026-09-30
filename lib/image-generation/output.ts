@@ -42,12 +42,31 @@ export function imageDimensions(b: Uint8Array): { width: number; height: number 
 
 export type ValidatedImage = { ok: true; mimeType: ImageMime; bytes: Uint8Array } | { ok: false; reason: string };
 
+/**
+ * A file part from multipart parsing. `instanceof File` is not reliable here:
+ * the parser's File and this module's File can be different objects, so a
+ * real upload would be rejected and the illustration would never start.
+ */
+export function isUploadedPhoto(value: unknown): value is Blob & { name?: string } {
+  if (!value || typeof value !== "object") return false;
+  const photo = value as Blob;
+  return typeof photo.arrayBuffer === "function" && typeof photo.size === "number" && typeof photo.type === "string" && photo.size >= 0;
+}
+
+/** Browsers sometimes omit a type, or send the non-standard image/jpg label, for a real JPEG. */
+function declaredMimeMatches(declaredMime: string, detected: ImageMime): boolean {
+  const declared = declaredMime.trim().toLowerCase();
+  if (declared === detected) return true;
+  if (declared === "") return true;
+  return detected === "image/jpeg" && (declared === "image/jpg" || declared === "image/pjpeg");
+}
+
 /** The uploaded source photo: a real PNG/JPEG/WebP of sensible size whose bytes match what it claims to be. */
 export function validateSourcePhoto(bytes: Uint8Array, declaredMime: string): ValidatedImage {
   if (bytes.length === 0 || bytes.length > MAX_SOURCE_PHOTO_BYTES) return { ok: false, reason: "photo size" };
   const mime = detectImageMime(bytes);
   if (!mime) return { ok: false, reason: "photo is not a PNG, JPEG or WebP image" };
-  if (declaredMime !== mime) return { ok: false, reason: "photo type does not match its content" };
+  if (!declaredMimeMatches(declaredMime, mime)) return { ok: false, reason: "photo type does not match its content" };
   const d = imageDimensions(bytes);
   if (d && (Math.min(d.width, d.height) < MIN_SIDE || Math.max(d.width, d.height) > MAX_SIDE)) return { ok: false, reason: "photo dimensions" };
   return { ok: true, mimeType: mime, bytes };
