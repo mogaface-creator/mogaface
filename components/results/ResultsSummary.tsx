@@ -1,53 +1,28 @@
 import type { ReportView } from "@/lib/results/reportView.ts";
-import { topPriorities } from "@/lib/results/summary.ts";
 
 /**
- * The compact, mobile-first summary shown at the very top of the Results
- * experience: headline, the person's real front photo (when available —
- * never a demo or placeholder image), their top priorities, and a single
- * primary action that jumps to the full report below. Pure presentation over
- * data the full report already computes (view.priorities, view.visualization.beforeUrl)
- * — no new analysis, evidence, or eligibility logic.
+ * The opening of the results document: title, a short line, and the jump
+ * into the written report. The faces sit in the section immediately below
+ * this, so this block stays short enough that the pair is on the first screen.
+ * Pure presentation — no new analysis.
  */
 export function ResultsSummary({ view }: { view: ReportView }) {
-  const priorities = topPriorities(view);
-  const beforeUrl = view.visualization.beforeUrl;
-
   return (
-    <section aria-labelledby="summary-heading" className="rounded-[2rem] border border-border bg-surface p-6 sm:p-10">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">{view.cover.eyebrow}</p>
-      <h1 id="summary-heading" className="mt-3 font-serif text-3xl leading-[1.1] tracking-tight sm:text-4xl">
+    <header className="text-center">
+      <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-gold-text">{view.cover.eyebrow}</p>
+      <h1 id="summary-heading" className="mx-auto mt-5 max-w-2xl font-serif text-[2.6rem] leading-[1.02] tracking-tight sm:text-6xl">
         {view.cover.title}
       </h1>
-
-      {beforeUrl && (
-        <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-background">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={beforeUrl} alt="Your photo" className="aspect-[4/5] w-full object-cover" />
-        </div>
-      )}
-
-      {priorities.length > 0 && (
-        <div className="mt-8">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">What matters most to you</p>
-          <ul className="mt-4 space-y-3">
-            {priorities.map((p) => (
-              <li key={p.number} className="rounded-2xl border border-border bg-background p-4">
-                <h2 className="font-serif text-lg leading-snug tracking-tight">{p.concern}</h2>
-                <p className="mt-1.5 text-sm leading-6 text-muted">{p.why}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <a
-        id="summary-cta"
-        href="#full-report"
-        className="mt-8 flex w-full items-center justify-center rounded-full bg-accent px-8 py-4 text-base font-medium text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
-      >
+      <div aria-hidden className="mx-auto mt-6 h-px w-14 bg-accent" />
+      <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted">{view.cover.intro}</p>
+      <p className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted">
+        <span>MogaFace</span>
+        {view.cover.dateLabel && <span>Prepared {view.cover.dateLabel}</span>}
+        {view.cover.badge && <span>{view.cover.badge}</span>}
+      </p>
+      <a id="summary-cta" href="#full-report" className="mt-6 inline-block text-sm text-foreground underline decoration-accent decoration-1 underline-offset-4 hover:text-accent">
         See full results
       </a>
-    </section>
+    </header>
   );
 }

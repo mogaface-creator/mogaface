@@ -10,7 +10,7 @@ export default function ResultsPage() {
     <>
       <Header />
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-6 py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
           <ResultsExperience />
         </div>
       </main>

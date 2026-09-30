@@ -60,8 +60,9 @@ export interface IllustrationControls {
   onGenerate: (consent: PhotoVisualizationConsent) => Promise<IllustrationRequestOutcome>;
 }
 
-const FRAME = "relative aspect-[4/5] overflow-hidden rounded-3xl";
-const CAPTION = "mt-3 text-xs font-medium uppercase tracking-[0.18em] text-muted";
+const FRAME = "relative aspect-[4/5] overflow-hidden rounded-2xl";
+const CAPTION = "mt-3 text-center text-[11px] font-medium uppercase tracking-[0.22em] text-muted";
+const PHOTO_BAR = "absolute inset-x-0 top-0 bg-dark-surface/92 px-3 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.24em] text-dark-foreground";
 
 function Arrow() {
   return (
@@ -83,6 +84,7 @@ function BeforeFrame({ url }: { url: string | null }) {
         ) : (
           <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted">Your front photo will appear here.</div>
         )}
+        <span className={PHOTO_BAR}>Current look</span>
       </div>
       <figcaption className={CAPTION}>Before</figcaption>
     </figure>
@@ -92,7 +94,8 @@ function BeforeFrame({ url }: { url: string | null }) {
 function EmptyAfter({ children }: { children: React.ReactNode }) {
   return (
     <figure>
-      <div className={`${FRAME} flex items-center justify-center border border-dashed border-border bg-surface/60 px-8 text-center`} role="img" aria-label="Illustrative after: not available yet">
+      <div className={`${FRAME} flex items-center justify-center border border-border bg-surface px-8 text-center`} role="img" aria-label="Illustrative after: not available yet">
+        <span className={PHOTO_BAR}>Illustrative view</span>
         <div className="font-serif text-xl leading-snug tracking-tight text-muted">{children}</div>
       </div>
       <figcaption className={CAPTION}>{ILLUSTRATIVE_AFTER.label}</figcaption>
@@ -109,8 +112,9 @@ function AfterFrame({ slot }: { slot: AfterSlot }) {
       <div className={`${FRAME} border border-border bg-surface`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={slot.url} alt="Illustrative after (AI-generated visualization)" className="h-full w-full object-cover" />
-        <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-medium text-foreground">{ILLUSTRATIVE_AFTER.aiLabel}</span>
-        {slot.isMock && <span className="absolute bottom-3 left-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Mock image — development only</span>}
+        <span className={PHOTO_BAR}>Illustrative view</span>
+        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-foreground">{ILLUSTRATIVE_AFTER.aiLabel}</span>
+        {slot.isMock && <span className="absolute bottom-3 right-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Mock image — development only</span>}
       </div>
       <figcaption className={CAPTION}>{ILLUSTRATIVE_AFTER.label}</figcaption>
       <p className="mt-1 text-xs text-muted">{ILLUSTRATIVE_AFTER.shortNotice}</p>
@@ -154,7 +158,7 @@ export function BeforeAfterFrames({ before, after }: { before: string | null; af
 
 function Notice({ isMock }: { isMock?: boolean }) {
   return (
-    <div className="mt-8 space-y-2 text-sm text-muted">
+    <div className="mx-auto mt-8 max-w-xl space-y-2 text-center text-sm text-muted">
       <p>{ILLUSTRATIVE_AFTER.notice}</p>
       <p>A qualified clinician decides what, if anything, is appropriate for you.</p>
       {isMock && <p className="text-amber-800 dark:text-amber-300">Demo: a placeholder image, not a generated one. Nothing was sent anywhere.</p>}
@@ -167,11 +171,11 @@ export function VisualizedAreaCards({ areas, title }: { areas: VisualizedArea[];
   if (areas.length === 0) return null;
   return (
     <div className="mt-8">
-      <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-muted">{title}</h3>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <h3 className="text-center text-[11px] font-medium uppercase tracking-[0.22em] text-muted">{title}</h3>
+      <div className="mx-auto mt-4 max-w-xl divide-y divide-border text-left">
         {areas.map((a) => (
-          <div key={a.area} className="rounded-2xl border border-border bg-surface p-5">
-            <h4 className="font-serif text-lg tracking-tight">{a.area}</h4>
+          <div key={a.area} className="py-5">
+            <h4 className="font-serif text-xl tracking-tight">{a.area}</h4>
             <p className="mt-2 text-sm leading-6 text-muted">{a.description}</p>
           </div>
         ))}
@@ -313,7 +317,7 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
 
       <VisualizedAreaCards areas={previewAreas} title="What an illustration would show" />
 
-      <div className="mt-8" aria-live="polite">
+      <div className="mt-8 text-center" aria-live="polite">
         {phase === "confirming" && (
           <div className="max-w-2xl rounded-2xl border border-border bg-surface p-6">
             <p className="text-base leading-7">{PHOTO_VISUALIZATION_CONSENT_SENTENCE}</p>

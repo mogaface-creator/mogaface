@@ -11,18 +11,18 @@ import { StickyMobileCta } from "./StickyMobileCta";
  * calibration state or versions, so it cannot show them.
  */
 
-const EYEBROW = "text-xs font-medium uppercase tracking-[0.18em] text-muted";
-const UNDERLINE = "mt-4 h-px w-14 bg-accent";
+const EYEBROW = "text-[11px] font-medium uppercase tracking-[0.28em] text-gold-text";
+const UNDERLINE = "mx-auto mt-5 h-px w-14 bg-accent";
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={id} className="border-t border-border pt-12">
+    <section aria-labelledby={id} className="border-t border-border pt-16 text-center">
       <p className={EYEBROW}>{eyebrow}</p>
-      <h2 id={id} className="mt-3 font-serif text-3xl tracking-tight sm:text-4xl">
+      <h2 id={id} className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">
         {title}
       </h2>
       <div aria-hidden className={UNDERLINE} />
-      <div className="mt-10">{children}</div>
+      <div className="mt-12 text-left">{children}</div>
     </section>
   );
 }
@@ -62,10 +62,10 @@ function StatusBadge({ status, label }: { status: keyof typeof STATUS_DOT; label
 
 function DomainRow({ section }: { section: ReportSectionView }) {
   return (
-    <div className="grid gap-4 py-8 sm:grid-cols-[13rem_1fr] sm:gap-10">
+    <div className="grid gap-4 py-10 sm:grid-cols-[14rem_1fr] sm:gap-16">
       <div>
-        <h3 className="font-serif text-xl tracking-tight">{section.title}</h3>
-        <p className="mt-2 inline-block rounded-full border border-border px-3 py-1 text-xs text-muted">{section.basisLabel}</p>
+        <h3 className="font-serif text-2xl tracking-tight">{section.title}</h3>
+        <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-muted">{section.basisLabel}</p>
       </div>
       <div className="max-w-2xl space-y-4 text-base leading-7">
         {section.statements.map((s) => (
@@ -116,44 +116,58 @@ export function Report({
     { id: "observed", title: "Structure, eyes and expression" },
     { id: "about-you", title: "Skin, hair, lifestyle and style" },
     { id: "areas", title: "Where a conversation may help" },
-    { id: "visualization", title: "Your personalized visualization" },
     { id: "limits", title: "Good to know" },
     { id: "next-step-section", title: "Your next step" },
   ];
 
   return (
     <>
-      <article className="space-y-20 sm:space-y-28">
+      <article>
         <ResultsSummary view={view} />
 
-        <header id="full-report" className="pb-4">
-        <div className="flex items-center justify-between gap-4">
-          <p className={EYEBROW}>{view.cover.eyebrow}</p>
-          <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">{view.cover.badge}</span>
+        <section id="visualization" aria-label="Your look" className="mt-12">
+          <IllustrationPanel view={view.visualization} controls={illustration} />
+          {view.visualization.state === "ready" && (
+            <div className="mx-auto mt-10 max-w-xl text-center">
+              <h3 className="font-serif text-2xl tracking-tight">Ready to explore your options?</h3>
+              <p className="mt-3 text-sm leading-6 text-muted">Discuss your results with a clinician to talk through what&apos;s realistic for you.</p>
+              <a
+                href={cta.href}
+                {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                {cta.label}
+              </a>
+            </div>
+          )}
+          {devIllustrationTest && <DevIllustrationTest photoUrl={devIllustrationTest.photoUrl} photoQualityValid={devIllustrationTest.photoQualityValid} />}
+        </section>
+
+        <div id="full-report" className="mt-20">
+          <div id="overview">
+            <p className={`${EYEBROW} text-center`}>Your report</p>
+            <p className="mx-auto mt-5 max-w-3xl text-center font-serif text-2xl leading-snug tracking-tight sm:text-3xl">{view.overview}</p>
+            <div aria-hidden className={UNDERLINE} />
+          </div>
         </div>
-        <h2 className="mt-14 font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl">{view.cover.title}</h2>
-        <div aria-hidden className={UNDERLINE} />
-        <p className="mt-8 max-w-2xl text-lg leading-8 text-muted">{view.cover.intro}</p>
-        {view.cover.dateLabel && <p className="mt-10 text-sm text-muted">Prepared {view.cover.dateLabel}</p>}
-      </header>
 
-      <Contents entries={contentsEntries} />
-
-      <Section id="overview" eyebrow="Your MogaFace overview" title="At a glance">
-        <p className="max-w-3xl font-serif text-2xl leading-10 tracking-tight sm:text-3xl sm:leading-[1.5]">{view.overview}</p>
-      </Section>
+        <div className="mt-12">
+          <Contents entries={contentsEntries} />
+        </div>
 
       {view.priorities.length > 0 && (
         <Section id="priorities" eyebrow="Your top priorities" title="What matters most to you">
-          <ol className="grid gap-px overflow-hidden rounded-3xl border border-border bg-border sm:grid-cols-3">
+          <ol className="mx-auto max-w-3xl divide-y divide-border">
             {view.priorities.map((p) => (
-              <li key={p.number} className="flex flex-col gap-4 bg-background p-7">
-                <span className="font-serif text-4xl text-muted">{p.number}</span>
-                <h3 className="font-serif text-xl leading-snug tracking-tight">{p.concern}</h3>
-                <p className="text-sm leading-6">{p.why}</p>
-                <p className="text-sm leading-6 text-muted">{p.evidence}</p>
-                <div className="mt-auto pt-2">
-                  <StatusBadge status={p.status} label={p.statusLabel} />
+              <li key={p.number} className="grid gap-3 py-8 sm:grid-cols-[4rem_1fr] sm:gap-8">
+                <span className="font-serif text-3xl text-muted">{p.number}</span>
+                <div>
+                  <h3 className="font-serif text-2xl leading-snug tracking-tight">{p.concern}</h3>
+                  <p className="mt-3 text-base leading-7">{p.why}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted">{p.evidence}</p>
+                  <div className="mt-4">
+                    <StatusBadge status={p.status} label={p.statusLabel} />
+                  </div>
                 </div>
               </li>
             ))}
@@ -171,11 +185,14 @@ export function Report({
 
       <Section id="areas" eyebrow="Areas to discuss with your clinician" title="Where a conversation may help">
         {view.areas.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2">
-            {view.areas.map((a) => (
-              <article key={a.title} className="flex flex-col rounded-3xl border border-border bg-surface p-7 sm:p-8">
-                <StatusBadge status={a.status === "discuss" ? "discuss" : "observation_only"} label={a.statusLabel} />
-                <h3 className="mt-4 font-serif text-2xl tracking-tight">{a.title}</h3>
+          <div className="mx-auto max-w-3xl divide-y divide-border">
+            {view.areas.map((a, i) => (
+              <article key={a.title} className="py-10">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="font-serif text-3xl text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <StatusBadge status={a.status === "discuss" ? "discuss" : "observation_only"} label={a.statusLabel} />
+                </div>
+                <h3 className="mt-3 font-serif text-2xl tracking-tight">{a.title}</h3>
                 <dl className="mt-6 space-y-5 text-sm leading-6">
                   <div>
                     <dt className={EYEBROW}>Why it appeared</dt>
@@ -221,26 +238,8 @@ export function Report({
         )}
       </Section>
 
-      <Section id="visualization" eyebrow="Your results" title="Your Personalized Visualization">
-        <IllustrationPanel view={view.visualization} controls={illustration} />
-        {view.visualization.state === "ready" && (
-          <div className="mt-10 max-w-2xl rounded-3xl border border-border bg-surface p-7 sm:p-8">
-            <h3 className="font-serif text-xl tracking-tight">Ready to explore your options?</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">Discuss your results with a clinician to talk through what&apos;s realistic for you.</p>
-            <a
-              href={cta.href}
-              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
-              {cta.label}
-            </a>
-          </div>
-        )}
-        {devIllustrationTest && <DevIllustrationTest photoUrl={devIllustrationTest.photoUrl} photoQualityValid={devIllustrationTest.photoQualityValid} />}
-      </Section>
-
       <Section id="limits" eyebrow="What MogaFace can and cannot tell you" title="Good to know">
-        <ul className="max-w-2xl divide-y divide-border text-base leading-7">
+        <ul className="mx-auto max-w-2xl divide-y divide-border text-base leading-7">
           {view.limitations.map((l) => (
             <li key={l} className="py-4">
               {l}
@@ -249,7 +248,7 @@ export function Report({
         </ul>
       </Section>
 
-      <section id="next-step-section" aria-labelledby="next-step" className="rounded-[2rem] bg-accent px-7 py-14 text-accent-foreground sm:px-14 sm:py-20">
+      <section id="next-step-section" aria-labelledby="next-step" className="mt-20 rounded-[2rem] bg-dark-surface px-7 py-14 text-dark-foreground sm:px-14 sm:py-20">
         <p className="text-xs font-medium uppercase tracking-[0.18em] opacity-70">Your next step</p>
         <h2 id="next-step" className="mt-4 max-w-2xl font-serif text-3xl leading-tight tracking-tight sm:text-5xl">
           {view.cta.heading}
@@ -259,13 +258,13 @@ export function Report({
         <a
           href={cta.href}
           {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          className="mt-10 inline-flex items-center justify-center rounded-full bg-accent-foreground px-8 py-4 text-sm font-medium text-accent transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-foreground"
+          className="mt-10 inline-flex items-center justify-center rounded-full bg-dark-foreground px-8 py-4 text-sm font-medium text-dark-surface transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-foreground"
         >
           {cta.label}
         </a>
       </section>
 
-      <footer className="border-t border-border pt-8 text-sm text-muted">
+      <footer className="mt-16 border-t border-border pt-8 text-center text-sm text-muted">
         <p className="font-serif text-lg text-foreground">MogaFace</p>
         <p className="mt-2">{view.footer.tagline}</p>
         <p className="mt-1">{view.footer.disclaimer}</p>
