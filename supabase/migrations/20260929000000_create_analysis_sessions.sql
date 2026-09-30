@@ -48,6 +48,10 @@ create index if not exists analysis_sessions_expires_at_idx on public.analysis_s
 -- which is exactly the vulnerability this whole architecture exists to close.
 alter table public.analysis_sessions enable row level security;
 
+-- service_role bypasses RLS, but Postgres still checks table grants first.
+-- A table created in the SQL editor does not always receive this grant.
+grant select, insert, update, delete on table public.analysis_sessions to service_role;
+
 -- Best-effort housekeeping only — getAnalysisRecord() already checks expiry
 -- in application code on every read and never trusts a stale row, so this is
 -- not a security control, just table hygiene. Run manually or on a schedule;

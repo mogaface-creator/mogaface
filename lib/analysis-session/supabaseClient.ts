@@ -102,6 +102,8 @@ export async function supabaseRequest(env: SupabaseEnv, path: string, init: Requ
   // Legacy service_role keys are JWTs and still go on both headers.
   if (key.startsWith("sb_")) headers.delete("authorization");
   else headers.set("authorization", `Bearer ${key}`);
+  // Secret keys are rejected with 401 when the User-Agent looks like a browser.
+  if (!headers.has("user-agent")) headers.set("user-agent", "MogaFace-server");
   if (!headers.has("content-type")) headers.set("content-type", "application/json");
   return fetchImpl(`${base}/rest/v1${path}`, { ...init, headers });
 }
