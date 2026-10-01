@@ -46,16 +46,16 @@ const josefinSans = Josefin_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "MogaFace — Understand Your Face",
+  title: "MogaFace — See the change on your own face",
   description:
-    "Explore measurable facial proportions, symmetry and features using computer vision, entirely in your browser.",
+    "Answer a few questions, share three photos, and see an illustrative after of the places you named. A clinician decides what comes next.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistMono.variable} ${cormorantGaramond.variable} ${playfairDisplay.variable} ${cinzel.variable} ${dmSans.variable} ${josefinSans.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${cormorantGaramond.variable} ${playfairDisplay.variable} ${cinzel.variable} ${dmSans.variable} ${josefinSans.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">{children}</body>
     </html>

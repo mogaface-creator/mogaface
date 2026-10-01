@@ -1,8 +1,14 @@
 import Link from "next/link";
 
+const LINKS = [
+  { href: "/#why", label: "Why MogaFace" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#faq", label: "FAQ" },
+];
+
 export function Header() {
   return (
-    <header className="border-b border-border">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5">
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
@@ -13,18 +19,17 @@ export function Header() {
           </svg>
           <span className="font-serif text-lg tracking-tight">MogaFace</span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-muted">
-          <Link href="/#what-we-measure" className="hidden hover:text-foreground transition-colors sm:inline">
-            What we measure
-          </Link>
-          <Link href="/#how-it-works" className="hidden hover:text-foreground transition-colors sm:inline">
-            How it works
-          </Link>
+        <nav className="flex items-center gap-8 text-sm text-secondary-text">
+          {LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="hidden transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent md:inline">
+              {link.label}
+            </Link>
+          ))}
           <Link
             href="/assessment"
-            className="rounded-full bg-accent px-4 py-2 text-accent-foreground hover:opacity-90 transition-opacity"
+            className="rounded-full bg-[image:var(--gradient-regal)] px-4 py-2 text-sm font-medium text-accent-foreground shadow-[var(--shadow-subtle)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98]"
           >
-            Start analysis
+            Start
           </Link>
         </nav>
       </div>
