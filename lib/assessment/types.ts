@@ -7,6 +7,7 @@
  */
 
 import type { AppearanceConcerns } from "./appearanceConcerns.ts";
+import type { ClinicIntake } from "./clinicIntake.ts";
 
 export type GenderPresentation = "male" | "female" | "nonBinary" | "preferNotToSay";
 
@@ -188,6 +189,11 @@ export interface Assessment {
    * before it existed load with an empty value (see sanitizeAssessment).
    */
   appearanceConcerns: AppearanceConcerns;
+  /**
+   * The clinic questionnaire. Absent on assessments saved before it existed.
+   * Never copied into an image prompt.
+   */
+  clinicIntake: ClinicIntake;
   hair: HairProfile;
   facialHair: FacialHairProfile;
   lifestyle: LifestyleProfile;

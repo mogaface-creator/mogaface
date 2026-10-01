@@ -28,6 +28,7 @@ import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/ev
 import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
 import { createAnalysisSession } from "@/lib/analysis-session/client.ts";
 import { parseLeadContact } from "@/lib/leads/contact.ts";
+import { intakeReviewSections } from "@/lib/assessment/clinicIntake.ts";
 import type { AnalysisSessionHandle } from "@/lib/analysis-session/types.ts";
 import { PHOTO_VISUALIZATION_CONSENT_SENTENCE, type PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 
@@ -44,10 +45,12 @@ function labelsFor<T extends string>(options: { value: T; label: string }[], val
 interface SummarySection {
   title: string;
   rows: { label: string; value: string }[];
+  stack?: boolean;
 }
 
 function buildSections(assessment: Assessment, availablePhotoCount: number): SummarySection[] {
   return [
+    ...intakeReviewSections(assessment.clinicIntake),
     {
       title: "Profile",
       rows: [
@@ -275,9 +278,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
             <h3 className="text-sm font-medium uppercase tracking-wide text-muted">{section.title}</h3>
             <dl className="mt-4 space-y-2">
               {section.rows.map((row) => (
-                <div key={row.label} className="flex items-baseline justify-between gap-4">
+                <div key={row.label} className={section.stack ? "block" : "flex items-baseline justify-between gap-4"}>
                   <dt className="text-sm text-muted">{row.label}</dt>
-                  <dd className="text-right text-sm">{row.value}</dd>
+                  <dd className={section.stack ? "mt-1 text-sm leading-6 whitespace-pre-wrap" : "text-right text-sm"}>{row.value}</dd>
                 </div>
               ))}
               {section.title === "Photos" && (

@@ -8,6 +8,7 @@
  */
 
 import { createEmptyAppearanceConcerns, sanitizeAppearanceConcerns } from "./appearanceConcerns.ts";
+import { sanitizeClinicIntake } from "./clinicIntake.ts";
 import { ASSESSMENT_VERSION, PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type Assessment } from "./types.ts";
 
 const GENDER_PRESENTATIONS = ["male", "female", "nonBinary", "preferNotToSay"] as const;
@@ -218,6 +219,7 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
   // but malformed → the whole assessment is discarded, like every other section.
   const appearanceConcerns =
     raw.appearanceConcerns === undefined ? createEmptyAppearanceConcerns() : sanitizeAppearanceConcerns(raw.appearanceConcerns);
+  const clinicIntake = sanitizeClinicIntake(raw.clinicIntake);
   const hair = sanitizeHair(raw.hair);
   const facialHair = sanitizeFacialHair(raw.facialHair);
   const lifestyle = sanitizeLifestyle(raw.lifestyle);
@@ -238,6 +240,7 @@ export function sanitizeAssessment(raw: unknown): Assessment | null {
     profile,
     goals,
     appearanceConcerns,
+    clinicIntake,
     hair,
     facialHair,
     lifestyle,
@@ -256,7 +259,8 @@ export interface AssessmentValidation {
 export function validateAssessment(assessment: Assessment): AssessmentValidation {
   const missing: string[] = [];
 
-  if (assessment.profile.ageYears === null) missing.push("Age");
+  if (assessment.profile.ageYears === null && assessment.clinicIntake.ageConfirmed !== "yes") missing.push("Age");
+  if (assessment.clinicIntake.ageConfirmed === "no") missing.push("Must be 18 or older");
   if (assessment.profile.heightCm === null) missing.push("Height");
   if (assessment.profile.weightKg === null) missing.push("Weight");
   if (assessment.goals.areas.length === 0) missing.push("At least one goal");

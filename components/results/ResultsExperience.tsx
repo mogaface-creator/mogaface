@@ -147,8 +147,10 @@ export function ResultsExperience() {
         });
 
         const front = snapshot.frontPhoto;
+        const afterPhotoDeclined = snapshot.assessment.clinicIntake?.wantAfterPhoto === "no";
         const illustration: IllustrationControls = {
-          generationEnabled: demo ? imageMode !== "none" : devPreview ? true : process.env.NEXT_PUBLIC_ILLUSTRATION_GENERATION === "1",
+          generationEnabled: afterPhotoDeclined ? false : demo ? imageMode !== "none" : devPreview ? true : process.env.NEXT_PUBLIC_ILLUSTRATION_GENERATION === "1",
+          afterPhotoDeclined,
           isDemo: demo && imageMode !== "consent", // only controls whether the consent step is shown; a demo never sends anything
           initialConsent: isPhotoVisualizationConsent(snapshot.photoVisualizationConsent) ? snapshot.photoVisualizationConsent : undefined,
           autoStart: autoGenerateRequested,

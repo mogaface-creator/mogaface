@@ -5,13 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AssessmentProgress } from "./AssessmentProgress";
 import { AssessmentIntro } from "./AssessmentIntro";
-import { ProfileStep } from "./ProfileStep";
-import { GoalsStep } from "./GoalsStep";
-import { AppearanceConcernsStep } from "./AppearanceConcernsStep";
-import { HairStep } from "./HairStep";
-import { FacialHairStep } from "./FacialHairStep";
-import { LifestyleStep } from "./LifestyleStep";
-import { StyleStep } from "./StyleStep";
+import { ClinicIntakeSection } from "./ClinicIntakeSection";
 import { PhotoInstructions } from "./PhotoInstructions";
 import { PhotoCaptureStep } from "./PhotoCaptureStep";
 import type { SessionFiles } from "./PhotoCollection";
@@ -24,13 +18,13 @@ import { PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 
 const STEP_ORDER = [
   "intro",
-  "profile",
-  "goals",
-  "appearanceConcerns",
-  "hair",
-  "facialHair",
-  "lifestyle",
-  "style",
+  "about",
+  "comfort",
+  "breathing",
+  "body",
+  "skin",
+  "recovery",
+  "report",
   "photoInstructions",
   "photoCollection",
   "review",
@@ -38,13 +32,13 @@ const STEP_ORDER = [
 type StepId = (typeof STEP_ORDER)[number];
 
 const PROGRESS_INDEX: Partial<Record<StepId, number>> = {
-  profile: 0,
-  goals: 1,
-  appearanceConcerns: 2,
-  hair: 3,
-  facialHair: 4,
-  lifestyle: 5,
-  style: 6,
+  about: 0,
+  comfort: 1,
+  breathing: 2,
+  body: 3,
+  skin: 4,
+  recovery: 5,
+  report: 6,
   photoInstructions: 7,
   photoCollection: 7,
   review: 8,
@@ -171,47 +165,8 @@ export function AssessmentShell() {
 
           {stepId === "intro" && <AssessmentIntro onBegin={goNext} />}
 
-          {stepId === "profile" && (
-            <ProfileStep value={assessment.profile} onChange={(profile) => patch({ profile })} onNext={goNext} onBack={goBack} />
-          )}
-
-          {stepId === "goals" && (
-            <GoalsStep value={assessment.goals} onChange={(goals) => patch({ goals })} onNext={goNext} onBack={goBack} />
-          )}
-
-          {stepId === "appearanceConcerns" && (
-            <AppearanceConcernsStep
-              value={assessment.appearanceConcerns}
-              onChange={(appearanceConcerns) => patch({ appearanceConcerns })}
-              onNext={goNext}
-              onBack={goBack}
-            />
-          )}
-
-          {stepId === "hair" && (
-            <HairStep value={assessment.hair} onChange={(hair) => patch({ hair })} onNext={goNext} onBack={goBack} />
-          )}
-
-          {stepId === "facialHair" && (
-            <FacialHairStep
-              value={assessment.facialHair}
-              onChange={(facialHair) => patch({ facialHair })}
-              onNext={goNext}
-              onBack={goBack}
-            />
-          )}
-
-          {stepId === "lifestyle" && (
-            <LifestyleStep
-              value={assessment.lifestyle}
-              onChange={(lifestyle) => patch({ lifestyle })}
-              onNext={goNext}
-              onBack={goBack}
-            />
-          )}
-
-          {stepId === "style" && (
-            <StyleStep value={assessment.style} onChange={(style) => patch({ style })} onNext={goNext} onBack={goBack} />
+          {(stepId === "about" || stepId === "comfort" || stepId === "breathing" || stepId === "body" || stepId === "skin" || stepId === "recovery" || stepId === "report") && (
+            <ClinicIntakeSection section={stepId} assessment={assessment} onChange={(next) => patch(next)} onNext={goNext} onBack={goBack} />
           )}
 
           {stepId === "photoInstructions" && <PhotoInstructions onNext={goNext} onBack={goBack} />}

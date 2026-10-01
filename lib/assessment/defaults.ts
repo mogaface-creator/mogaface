@@ -1,4 +1,5 @@
 import { createEmptyAppearanceConcerns } from "./appearanceConcerns.ts";
+import { createEmptyClinicIntake } from "./clinicIntake.ts";
 import { ASSESSMENT_VERSION, type Assessment } from "./types.ts";
 
 function generateId(): string {
@@ -18,6 +19,7 @@ export function createEmptyAssessment(): Assessment {
     profile: { ageYears: null, genderPresentation: null, heightCm: null, weightKg: null },
     goals: { areas: [], priorities: [] },
     appearanceConcerns: createEmptyAppearanceConcerns(),
+    clinicIntake: createEmptyClinicIntake(),
     hair: { length: null, texture: null, density: null, concerns: [], currentStyle: "", haircutFrequency: null },
     facialHair: { currentStyle: null, improvements: [] },
     lifestyle: {

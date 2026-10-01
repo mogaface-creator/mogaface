@@ -35,6 +35,8 @@ export type IllustrationRequestOutcome =
 export interface IllustrationControls {
   /** False → a real-photo generation is not switched on, so the section shows its placeholder. */
   generationEnabled: boolean;
+  /** The person asked not to include an example after photo. */
+  afterPhotoDeclined?: boolean;
   /** True only for the development demo (a mock image; nothing is sent anywhere). */
   isDemo: boolean;
   initialConsent?: PhotoVisualizationConsent;
@@ -249,6 +251,15 @@ export function IllustrationPanel({ view, controls }: { view: ReportVisualizatio
         <BeforeAfterFrames before={view.beforeUrl} after={{ kind: "image", url: view.afterUrl, isMock: view.isMock }} />
         <VisualizedAreaCards areas={view.areas} title="What changed" />
         <Notice isMock={view.isMock} />
+      </div>
+    );
+  }
+
+  if (controls.afterPhotoDeclined) {
+    return (
+      <div>
+        <BeforeAfterFrames before={view.beforeUrl} after={{ kind: "empty", content: "You asked not to include an example after photo." }} />
+        <p className="mt-8 max-w-2xl text-base leading-7 text-muted">Your answers are still here for the clinic. An after photo would only have been an example of direction, not a promise.</p>
       </div>
     );
   }
