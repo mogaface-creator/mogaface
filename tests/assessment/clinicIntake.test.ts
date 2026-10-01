@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
 import { projectBody, projectPlaces, sanitizeClinicIntake } from "../../lib/assessment/clinicIntake.ts";
+import { allAsks } from "../../lib/assessment/intakeQuestions.ts";
 import { sanitizeAssessment } from "../../lib/assessment/schema.ts";
 import { buildPredictionPlan } from "../../lib/visualization/predict.ts";
 import { buildPredictionIllustrationPrompt } from "../../lib/image-generation/predictionPrompt.ts";
@@ -30,6 +31,24 @@ test("height and weight copy onto the profile only inside a usable range", () =>
   assert.equal(next.profile.weightKg, 70);
   const rejected = projectBody(next, 20, 70);
   assert.equal(rejected.profile.heightCm, null);
+});
+
+test("each original question is asked in its own words, including the parts that were previously merged", () => {
+  const prompts = allAsks().flatMap((ask) => [ask.prompt, ...(ask.options ?? []).map((option) => option.label)]).join("\n");
+  for (const phrase of [
+    "based on measurements",
+    "Get a step-by-step plan",
+    "Injections like Botox, fillers, skin boosters",
+    "Do you breathe through your mouth while sleeping?",
+    "rice, dal, bread",
+    "HYROX",
+    "isotretinoin (acne tablets)",
+    "low haemoglobin",
+    "heavy-legged",
+    "not a promise of the result",
+  ]) {
+    assert.equal(prompts.includes(phrase), true, phrase);
+  }
 });
 
 test("treatment words and look directions stay out of the image prompt", () => {

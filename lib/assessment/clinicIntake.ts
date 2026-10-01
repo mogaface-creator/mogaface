@@ -6,6 +6,7 @@
  */
 
 import { createEmptyAppearanceConcerns, parentOfDetail, toggleConcern, toggleDetail, type AppearanceConcernId } from "./appearanceConcerns.ts";
+import { allAsks, INTAKE_QUESTIONS, type Ask } from "./intakeQuestions.ts";
 import type { Assessment } from "./types.ts";
 
 export const CLINIC_PLACES = [
@@ -42,7 +43,7 @@ export type SkinProblem = (typeof SKIN_PROBLEMS)[number];
 export const PUFFINESS = ["never", "sometimes", "daily"] as const;
 export type Puffiness = (typeof PUFFINESS)[number];
 
-export const TRAINING_PHASE = ["heavy", "steady", "burntOut"] as const;
+export const TRAINING_PHASE = ["heavy", "steady", "burntOut", "neither"] as const;
 export type TrainingPhase = (typeof TRAINING_PHASE)[number];
 
 export const REPORT_TONE = ["blunt", "gentle"] as const;
@@ -109,6 +110,10 @@ export interface ClinicIntake {
   reportTone: ReportTone | null;
   reportOrder: ReportOrder | null;
   wantAfterPhoto: "yes" | "no" | null;
+  /** One answer per ask id. Older intakes load with an empty map. */
+  reply: Record<string, string>;
+  /** Multi-select asks, keyed by ask id. */
+  picked: Record<string, string[]>;
 }
 
 const emptyDislike = (): FaceDislike => ({ words: "", duration: "" });
@@ -162,6 +167,8 @@ export function createEmptyClinicIntake(): ClinicIntake {
     reportTone: null,
     reportOrder: null,
     wantAfterPhoto: null,
+    reply: {},
+    picked: {},
   };
 }
 
@@ -209,6 +216,33 @@ function dislikesFrom(value: unknown): ClinicIntake["dislikes"] {
     return { words: text(entry.words, 240), duration: text(entry.duration, 120) };
   });
   return [three[0], three[1], three[2]];
+}
+
+function sanitizeReply(value: unknown): Record<string, string> {
+  const source = isObject(value) ? value : {};
+  const reply: Record<string, string> = {};
+  for (const ask of allAsks()) {
+    if (ask.kind === "multi" || ask.kind === "dislikes" || ask.kind === "places" || ask.kind === "height" || ask.kind === "weight") continue;
+    const raw = source[ask.id];
+    if (ask.kind === "yesno") reply[ask.id] = oneOf(raw, YES_NO) ?? "";
+    else if (ask.kind === "choice") reply[ask.id] = oneOf(raw, (ask.options ?? []).map((option) => option.value)) ?? "";
+    else if (ask.kind === "score") {
+      const n = typeof raw === "string" ? Number(raw) : raw;
+      const s = score(n);
+      reply[ask.id] = s === null ? "" : String(s);
+    } else reply[ask.id] = text(raw);
+  }
+  return reply;
+}
+
+function sanitizePicked(value: unknown): Record<string, string[]> {
+  const source = isObject(value) ? value : {};
+  const picked: Record<string, string[]> = {};
+  for (const ask of allAsks()) {
+    if (ask.kind !== "multi") continue;
+    picked[ask.id] = listOf(source[ask.id], (ask.options ?? []).map((option) => option.value), ask.max ?? (ask.options?.length ?? 0));
+  }
+  return picked;
 }
 
 /** Missing or unreadable intake becomes empty. It never rejects the rest of the assessment. */
@@ -264,7 +298,87 @@ export function sanitizeClinicIntake(value: unknown): ClinicIntake {
     reportTone: oneOf(value.reportTone, REPORT_TONE),
     reportOrder: oneOf(value.reportOrder, REPORT_ORDER),
     wantAfterPhoto: oneOf(value.wantAfterPhoto, YES_NO),
+    reply: sanitizeReply(value.reply),
+    picked: sanitizePicked(value.picked),
   };
+}
+
+export function replyOf(intake: ClinicIntake, id: string): string {
+  const stored = intake.reply?.[id];
+  if (typeof stored === "string" && stored.length > 0) return stored;
+  if (id === "ageConfirmed") return intake.ageConfirmed ?? "";
+  if (id === "directWordsOk") return intake.directWordsOk ?? "";
+  if (id === "toldWorriesMore") return intake.toldWorriesMore ?? "";
+  if (id === "botherScore") return intake.botherScore === null ? "" : String(intake.botherScore);
+  if (id === "stressOutOf10") return intake.stressOutOf10 === null ? "" : String(intake.stressOutOf10);
+  if (id === "mirrorTime") return intake.mirrorTime;
+  if (id === "reportWant") return intake.reportWant ?? "";
+  if (id === "event") return intake.event;
+  if (id === "spendNext12Months") return intake.spendNext12Months;
+  if (id === "maxWilling") return intake.maxWilling ?? "";
+  if (id === "downtime") return intake.downtime ?? "";
+  if (id === "priorTreatments") return intake.priorTreatments;
+  if (id === "reportTone") return intake.reportTone ?? "";
+  if (id === "reportOrder") return intake.reportOrder ?? "";
+  if (id === "wantAfterPhoto") return intake.wantAfterPhoto ?? "";
+  if (id === "morningPuffiness") return intake.morningPuffiness ?? "";
+  if (id === "trainingPhase") return intake.trainingPhase ?? "";
+  if (id === "pregnantOrBreastfeeding") return intake.pregnantOrBreastfeeding ?? "";
+  return "";
+}
+
+export function pickedOf(intake: ClinicIntake, id: string): string[] {
+  const stored = intake.picked?.[id];
+  if (Array.isArray(stored) && stored.length > 0) return stored;
+  if (id === "lookDirections") return intake.lookDirections;
+  if (id === "skinProblems") return intake.skinProblems;
+  return [];
+}
+
+export function askVisible(intake: ClinicIntake, ask: Ask): boolean {
+  if (!ask.when) return true;
+  if (ask.when.id) return replyOf(intake, ask.when.id) === ask.when.is;
+  return (ask.when.any ?? []).some((id) => replyOf(intake, id) === ask.when?.is);
+}
+
+/** Writes one ask, and keeps the older single fields the rest of the app already reads. */
+export function setAnswer(assessment: Assessment, id: string, value: string): Assessment {
+  const reply = { ...assessment.clinicIntake.reply, [id]: value };
+  const partial: Partial<ClinicIntake> = { reply };
+  if ((id === "ageConfirmed" || id === "directWordsOk" || id === "wantAfterPhoto") && (value === "yes" || value === "no" || value === "")) {
+    partial[id] = value === "" ? null : value;
+  }
+  if (id === "toldWorriesMore" && (value === "yes" || value === "no" || value === "")) partial.toldWorriesMore = value === "" ? null : value;
+  if (id === "botherScore" || id === "stressOutOf10") {
+    const scored = value === "" ? null : score(Number(value));
+    partial.reply = { ...reply, [id]: scored === null ? "" : String(scored) };
+    if (id === "botherScore") partial.botherScore = scored;
+    else partial.stressOutOf10 = scored;
+  }
+  if (id === "mirrorTime") partial.mirrorTime = value;
+  if (id === "event") partial.event = value;
+  if (id === "spendNext12Months") partial.spendNext12Months = value;
+  if (id === "priorTreatments") partial.priorTreatments = value;
+  if (id === "reportWant") partial.reportWant = oneOf(value, REPORT_WANTS);
+  if (id === "maxWilling") partial.maxWilling = oneOf(value, MAX_WILLING);
+  if (id === "downtime") partial.downtime = oneOf(value, DOWNTIME);
+  if (id === "reportTone") partial.reportTone = oneOf(value, REPORT_TONE);
+  if (id === "reportOrder") partial.reportOrder = oneOf(value, REPORT_ORDER);
+  if (id === "morningPuffiness") partial.morningPuffiness = oneOf(value, PUFFINESS);
+  if (id === "trainingPhase") partial.trainingPhase = oneOf(value, TRAINING_PHASE);
+  if (id === "pregnantOrBreastfeeding") partial.pregnantOrBreastfeeding = oneOf(value, PREGNANCY);
+  return withIntake(assessment, partial);
+}
+
+export function setPicked(assessment: Assessment, id: string, values: string[]): Assessment {
+  const ask = allAsks().find((item) => item.id === id);
+  const allowed = (ask?.options ?? []).map((option) => option.value);
+  const nextValues = listOf(values, allowed, ask?.max ?? allowed.length);
+  const picked = { ...assessment.clinicIntake.picked, [id]: nextValues };
+  const partial: Partial<ClinicIntake> = { picked };
+  if (id === "lookDirections") partial.lookDirections = nextValues as LookDirection[];
+  if (id === "skinProblems") partial.skinProblems = nextValues as SkinProblem[];
+  return withIntake(assessment, partial);
 }
 
 function hasAGoal(intake: ClinicIntake): boolean {
@@ -314,107 +428,48 @@ export function withIntake(assessment: Assessment, partial: Partial<ClinicIntake
   return { ...assessment, clinicIntake: intake, goals: { ...assessment.goals, areas: [...areas] } };
 }
 
-function shown(value: string | null | undefined, labels?: Record<string, string>): string {
-  if (value === null || value === undefined || value === "") return "Not answered";
-  return labels?.[value] ?? value;
+function labelFor(ask: Ask, value: string): string {
+  if (!value) return "Not answered";
+  return ask.options?.find((option) => option.value === value)?.label ?? (value === "yes" ? "Yes" : value === "no" ? "No" : value);
 }
 
-const YES_NO_LABELS = { yes: "Yes", no: "No", notSure: "Not sure", notApplicable: "Not applicable" };
+const SECTION_TITLES: Record<string, string> = {
+  about: "About you and your goals",
+  comfort: "What you are comfortable with",
+  breathing: "Breathing, teeth and jaw",
+  body: "Body, fitness and weight",
+  skin: "Skin and health",
+  recovery: "Sleep, recovery and inflammation",
+  report: "How you want the report",
+};
 
 export function intakeReviewSections(intake: ClinicIntake): { title: string; rows: { label: string; value: string }[]; stack: true }[] {
-  const dislikeRows = intake.dislikes.map((dislike, index) => ({
-    label: `Dislike ${index + 1}`,
-    value: dislike.words ? `${dislike.words}${dislike.duration ? ` — ${dislike.duration}` : ""}` : "Not answered",
-  }));
-  return [
-    {
-      title: "About you and your goals",
-      stack: true,
-      rows: [
-        { label: "18 or above", value: shown(intake.ageConfirmed, YES_NO_LABELS) },
-        { label: "Plain, direct words", value: shown(intake.directWordsOk, YES_NO_LABELS) },
-        { label: "How much the face bothers daily life", value: intake.botherScore === null ? "Not answered" : `${intake.botherScore} / 10` },
-        { label: "Time on mirror, comparison, or photo editing", value: shown(intake.mirrorTime) },
-        { label: "Told they worry more than needed", value: shown(intake.toldWorriesMore, YES_NO_LABELS) },
-        { label: "Wants most from this", value: shown(intake.reportWant, { understand: "Understand my face", plan: "A step-by-step plan", secondOpinion: "A second opinion on a treatment already being considered", reassurance: "Honest reassurance" }) },
-        ...dislikeRows,
-        { label: "Places for the illustrative after", value: intake.places.length ? intake.places.join(", ") : "Not answered" },
-        { label: "Want the face to look", value: intake.lookDirections.length ? intake.lookDirections.join(", ") : "Not answered" },
-        { label: "Date or event", value: shown(intake.event) },
-      ],
-    },
-    {
-      title: "What you are comfortable with",
-      stack: true,
-      rows: [
-        { label: "Spend in the next 12 months", value: shown(intake.spendNext12Months) },
-        { label: "Maximum willing to do", value: shown(intake.maxWilling, { skincare: "Skincare and lifestyle only", laser: "Laser and machine treatments", injections: "Injections", threads: "Threads", surgery: "Surgery" }) },
-        { label: "Visible downtime that can be managed", value: shown(intake.downtime, { none: "None", days2to3: "2–3 days", oneWeek: "1 week", twoWeeksOrMore: "2 weeks or more" }) },
-        { label: "Already done", value: shown(intake.priorTreatments) },
-      ],
-    },
-    {
-      title: "Breathing, teeth and jaw",
-      stack: true,
-      rows: [
-        { label: "Breathing and sleep", value: shown(intake.breathing) },
-        { label: "Teeth and jaw history", value: shown(intake.teethAndJawHistory) },
-        { label: "Jaw now", value: shown(intake.jawNow) },
-      ],
-    },
-    {
-      title: "Body, fitness and weight",
-      stack: true,
-      rows: [
-        { label: "Height", value: intake.heightCm === null ? "Not answered" : `${intake.heightCm} cm` },
-        { label: "Weight", value: intake.weightKg === null ? "Not answered" : `${intake.weightKg} kg` },
-        { label: "Waist", value: shown(intake.waist) },
-        { label: "Body fat", value: shown(intake.bodyFat) },
-        { label: "Family height and puberty", value: shown(intake.familyHeightAndPuberty) },
-        { label: "Exercise", value: shown(intake.exercise) },
-        { label: "Weight history", value: shown(intake.weightHistory) },
-      ],
-    },
-    {
-      title: "Skin and health",
-      stack: true,
-      rows: [
-        { label: "Skin problems", value: intake.skinProblems.length ? intake.skinProblems.join(", ") : "Not answered" },
-        { label: "Marks or thick scars easily", value: shown(intake.marksEasily, YES_NO_LABELS) },
-        { label: "Daily products", value: shown(intake.dailyProducts) },
-        { label: "Acne tablets or steroid creams", value: shown(intake.acneTabletsOrSteroidCreams) },
-        { label: "Health conditions", value: shown(intake.healthConditions) },
-        { label: "Medicines and supplements", value: shown(intake.medicines) },
-        { label: "Pregnant or breastfeeding", value: shown(intake.pregnantOrBreastfeeding, YES_NO_LABELS) },
-        { label: "Allergies or anaesthesia reaction", value: shown(intake.allergies) },
-      ],
-    },
-    {
-      title: "Sleep, recovery and daily habits",
-      stack: true,
-      rows: [
-        { label: "Sleep", value: shown(intake.sleepHours) },
-        { label: "Same time daily", value: shown(intake.sleepSameTime, YES_NO_LABELS) },
-        { label: "Morning puffiness", value: shown(intake.morningPuffiness, { never: "Never", sometimes: "Sometimes", daily: "Daily" }) },
-        { label: "Resting heart rate or HRV", value: shown(intake.heartRateTrend) },
-        { label: "Unusually tired days", value: shown(intake.tiredDays) },
-        { label: "Illness and digestion", value: shown(intake.illnessAndDigestion) },
-        { label: "Flare-ups", value: shown(intake.flareUps) },
-        { label: "Alcohol and nicotine", value: shown(intake.alcoholAndNicotine) },
-        { label: "Water and salt", value: shown(intake.waterAndSalt) },
-        { label: "Stress", value: intake.stressOutOf10 === null ? "Not answered" : `${intake.stressOutOf10} / 10` },
-        { label: "Sun and sunscreen", value: shown(intake.sunAndSunscreen) },
-        { label: "Training phase", value: shown(intake.trainingPhase, { heavy: "Heavy training", steady: "Steady", burntOut: "Burnt out" }) },
-      ],
-    },
-    {
-      title: "How you want this written",
-      stack: true,
-      rows: [
-        { label: "Tone", value: shown(intake.reportTone, { blunt: "Very blunt and direct", gentle: "Honest but gentle" }) },
-        { label: "Order", value: shown(intake.reportOrder, { measurementsFirst: "Measurements first", planFirst: "Action plan first" }) },
-        { label: "Example after photo", value: shown(intake.wantAfterPhoto, { yes: "Yes — an example of the direction, not a promise", no: "No" }) },
-      ],
-    },
-  ];
+  return (["about", "comfort", "breathing", "body", "skin", "recovery", "report"] as const).map((section) => {
+    const rows: { label: string; value: string }[] = [];
+    for (const question of INTAKE_QUESTIONS.filter((item) => item.section === section)) {
+      for (const ask of question.asks) {
+        if (!askVisible(intake, ask)) continue;
+        if (ask.kind === "dislikes") {
+          intake.dislikes.forEach((dislike, index) => {
+            rows.push({
+              label: `Dislike ${index + 1}`,
+              value: dislike.words ? `${dislike.words}${dislike.duration ? ` — for ${dislike.duration}` : ""}` : "Not answered",
+            });
+          });
+        } else if (ask.kind === "places") {
+          rows.push({ label: ask.prompt, value: intake.places.length ? intake.places.join(", ") : "Not answered" });
+        } else if (ask.kind === "height") {
+          rows.push({ label: ask.prompt, value: intake.heightCm === null ? "Not answered" : `${intake.heightCm} cm` });
+        } else if (ask.kind === "weight") {
+          rows.push({ label: ask.prompt, value: intake.weightKg === null ? "Not answered" : `${intake.weightKg} kg` });
+        } else if (ask.kind === "multi") {
+          const values = pickedOf(intake, ask.id);
+          rows.push({ label: ask.prompt, value: values.length ? values.map((value) => labelFor(ask, value)).join(", ") : "Not answered" });
+        } else {
+          rows.push({ label: ask.prompt, value: labelFor(ask, replyOf(intake, ask.id)) });
+        }
+      }
+    }
+    return { title: SECTION_TITLES[section], rows, stack: true as const };
+  });
 }
