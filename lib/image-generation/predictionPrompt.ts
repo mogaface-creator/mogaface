@@ -28,7 +28,7 @@ export function buildPredictionIllustrationPrompt(plan: PredictionPlan): string 
   const lines = [
     "Edit this photograph. The result is the after image in a side-by-side pair with the original.",
     "Keep the same person, pose, crop, camera angle, lighting, clothing, and background. Do not replace the person.",
-    "Change only the places named below. Make each named change easy to see beside the original. If a named place is not visible in this photo, leave it unchanged.",
+    "Change only the places named below. Each named change must be obvious when this photo is compared with the original. If a named place is not visible in this photo, leave it unchanged.",
     "Apply only these changes:",
   ];
   for (const change of plan.changes) {

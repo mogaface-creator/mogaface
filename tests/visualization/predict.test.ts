@@ -144,22 +144,18 @@ test("H/M. buildPredictionPlan is a pure, deterministic function of its input â€
   assert.deepEqual(planA, planB);
 });
 
-test("J. missing visual context: an assessment with goals but an analysis with zero observations excludes every observation-requiring category", () => {
+test("J. a valid front photo is enough to illustrate the places the person selected, even with zero measurements", () => {
   const assessment = baseAssessment(["FACIAL_LINES", "FACIAL_DEFINITION", "UNDER_EYE"], ["DARK_LOOKING_UNDER_EYES"]);
   const plan = buildPredictionPlan({ assessment, analysis: emptyAnalysis(assessment), frontPhoto: QUALITY_VALID_FRONT });
-  assert.equal(plan.status, "not_eligible");
-  assert.equal(plan.changes.length, 0);
-  assert.ok(plan.excludedChanges.some((e) => e.category === "expression_lines"));
-  assert.ok(plan.excludedChanges.some((e) => e.category === "facial_contour"));
-  assert.ok(plan.excludedChanges.some((e) => e.category === "under_eye"));
+  assert.equal(plan.status, "planned");
+  assert.deepEqual(plan.changes.map((c) => c.category), ["expression_lines", "facial_contour", "under_eye"]);
 });
 
-test("K. optional video: no video evidence excludes expression_lines specifically, while a goal with real (non-video) evidence still succeeds", () => {
+test("K. expression lines are illustrated from the front photo when no video was provided", () => {
   const assessment = baseAssessment(["FACIAL_LINES", "FACIAL_DEFINITION"]);
   const plan = buildPredictionPlan({ assessment, analysis: withContourEvidence(emptyAnalysis(assessment)), frontPhoto: QUALITY_VALID_FRONT });
   assert.equal(plan.status, "planned");
-  assert.deepEqual(plan.changes.map((c) => c.category), ["facial_contour"]);
-  assert.ok(plan.excludedChanges.some((e) => e.category === "expression_lines"));
+  assert.deepEqual(plan.changes.map((c) => c.category), ["expression_lines", "facial_contour"]);
 });
 
 test("L. invalid/empty goals: no selected concerns at all produces a not_eligible plan with empty goals", () => {

@@ -152,12 +152,10 @@ interface CategoryCandidate {
    */
   findObserved(observations: Observation<unknown>[], videoObservations: VideoObservation[]): EvidenceItem[];
   /**
-   * Whether an actual detected/measured signal (even if UNCALIBRATED) is
-   * required in addition to the self-report before this category may be
-   * illustrated. False only for skin_appearance, where no computer-vision
-   * method exists at all (see treatment-opportunities/evidence.ts's
-   * SKIN_VISUAL_OBSERVATION_IDS comment) — there, the front photo itself,
-   * which the image model actually edits, is the visual grounding.
+   * Whether a measurement is required before this category may be illustrated.
+   * False for every category this pathway draws: the front photo is what the
+   * image model edits, and the person already named the place. A measurement,
+   * when one exists, is still attached as evidence. It is not a gate.
    */
   requireObservationEvidence: boolean;
 }
@@ -169,7 +167,7 @@ const CATEGORY_CANDIDATES: readonly CategoryCandidate[] = [
     treatmentCategory: "NEUROMODULATOR",
     signalKinds: ["expression_lines"],
     findObserved: (_observations, videoObservations) => findVideoEvidence(videoObservations, "expression_lines"),
-    requireObservationEvidence: true,
+    requireObservationEvidence: false,
   },
   {
     category: "facial_contour",
@@ -177,7 +175,7 @@ const CATEGORY_CANDIDATES: readonly CategoryCandidate[] = [
     treatmentCategory: "FACIAL_CONTOURING",
     signalKinds: ["facial_definition", "facial_contour"],
     findObserved: (observations) => findStructureEvidence(observations, isContourEvidenceId),
-    requireObservationEvidence: true,
+    requireObservationEvidence: false,
   },
   {
     category: "under_eye",
@@ -186,7 +184,7 @@ const CATEGORY_CANDIDATES: readonly CategoryCandidate[] = [
     signalKinds: ["under_eye"],
     findObserved: (observations) =>
       observations.filter((o) => o.id === "eyeArea.visibleUnderEyeDarkness" && o.value === true).map((o) => ({ kind: "observation" as const, id: o.id, label: o.label, source: o.source })),
-    requireObservationEvidence: true,
+    requireObservationEvidence: false,
   },
   {
     category: "skin_appearance",
