@@ -61,8 +61,6 @@ export interface IllustrationControls {
 }
 
 const FRAME = "relative aspect-[4/5] overflow-hidden rounded-2xl";
-const CAPTION = "mt-3 text-center text-[11px] font-medium uppercase tracking-[0.22em] text-muted";
-const PHOTO_BAR = "absolute inset-x-0 top-0 bg-dark-surface/92 px-3 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.24em] text-dark-foreground";
 
 function Arrow() {
   return (
@@ -84,9 +82,9 @@ function BeforeFrame({ url }: { url: string | null }) {
         ) : (
           <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted">Your front photo will appear here.</div>
         )}
-        <span className={PHOTO_BAR}>Current look</span>
+        <span className="absolute bottom-3 left-3 rounded-full bg-dark-surface/92 px-3 py-1.5 text-xs font-medium text-dark-foreground">Before</span>
       </div>
-      <figcaption className={CAPTION}>Before</figcaption>
+      <figcaption className="sr-only">Before</figcaption>
     </figure>
   );
 }
@@ -95,10 +93,10 @@ function EmptyAfter({ children }: { children: React.ReactNode }) {
   return (
     <figure>
       <div className={`${FRAME} flex items-center justify-center border border-border bg-surface px-8 text-center`} role="img" aria-label="Illustrative after: not available yet">
-        <span className={PHOTO_BAR}>Illustrative view</span>
+        <span className="absolute bottom-3 left-3 rounded-full bg-dark-surface/92 px-3 py-1.5 text-xs font-medium text-dark-foreground">After</span>
         <div className="font-serif text-xl leading-snug tracking-tight text-muted">{children}</div>
       </div>
-      <figcaption className={CAPTION}>{ILLUSTRATIVE_AFTER.label}</figcaption>
+      <figcaption className="sr-only">{ILLUSTRATIVE_AFTER.label}</figcaption>
     </figure>
   );
 }
@@ -112,11 +110,10 @@ function AfterFrame({ slot }: { slot: AfterSlot }) {
       <div className={`${FRAME} border border-border bg-surface`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={slot.url} alt="Illustrative after (AI-generated visualization)" className="h-full w-full object-cover" />
-        <span className={PHOTO_BAR}>Illustrative view</span>
-        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-foreground">{ILLUSTRATIVE_AFTER.aiLabel}</span>
+        <span className="absolute bottom-3 left-3 rounded-full bg-dark-surface/92 px-3 py-1.5 text-xs font-medium text-dark-foreground">After</span>
         {slot.isMock && <span className="absolute bottom-3 right-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Mock image — development only</span>}
       </div>
-      <figcaption className={CAPTION}>{ILLUSTRATIVE_AFTER.label}</figcaption>
+      <figcaption className="sr-only">{ILLUSTRATIVE_AFTER.label}</figcaption>
       <p className="mt-1 text-xs text-muted">{ILLUSTRATIVE_AFTER.shortNotice}</p>
     </figure>
   );
@@ -166,20 +163,20 @@ function Notice({ isMock }: { isMock?: boolean }) {
   );
 }
 
-/** A card per visualized area — area name and a concise, consumer-facing description of what changed, never a suitability or need claim. Exported so the dev-only composite test (DevIllustrationTest.tsx) can preview the same card design. */
+/** The strip under the pair: one cell per illustrated area. Appearance words only — never a treatment name. */
 export function VisualizedAreaCards({ areas, title }: { areas: VisualizedArea[]; title: string }) {
   if (areas.length === 0) return null;
   return (
-    <div className="mt-8">
-      <h3 className="text-center text-[11px] font-medium uppercase tracking-[0.22em] text-muted">{title}</h3>
-      <div className="mx-auto mt-4 max-w-xl divide-y divide-border text-left">
+    <div className="mt-4 overflow-hidden rounded-2xl bg-dark-surface text-dark-foreground">
+      <h3 className="sr-only">{title}</h3>
+      <ul className={`grid ${areas.length > 1 ? "sm:grid-cols-2" : ""} ${areas.length > 2 ? "lg:grid-cols-3" : ""}`}>
         {areas.map((a) => (
-          <div key={a.area} className="py-5">
-            <h4 className="font-serif text-xl tracking-tight">{a.area}</h4>
-            <p className="mt-2 text-sm leading-6 text-muted">{a.description}</p>
-          </div>
+          <li key={a.area} className="px-5 py-5 text-center">
+            <p className="text-sm font-medium">{a.area}</p>
+            <p className="mt-1.5 text-xs leading-5 text-dark-muted">{a.description}</p>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

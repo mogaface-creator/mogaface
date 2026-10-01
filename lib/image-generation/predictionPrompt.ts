@@ -26,20 +26,18 @@ function focusesFor(plan: PredictionPlan, category: VisualizationCategory): stri
 export function buildPredictionIllustrationPrompt(plan: PredictionPlan): string {
   if (plan.changes.length === 0) return "";
   const lines = [
-    "Edit the supplied portrait of this same person. Use this photo as the source. Do not replace the person.",
-    "Look at what is actually visible in this photo. Change only the places named below. If a named place is not visible, leave it unchanged.",
-    "Keep the same pose, framing, camera angle, lighting, and background.",
-    "The result must look like a real photograph of the same person, and the difference must be easy to see beside the original.",
-    "Apply only the following approved change(s):",
+    "Edit this photograph. The result is the after image in a side-by-side pair with the original.",
+    "Keep the same person, pose, crop, camera angle, lighting, clothing, and background. Do not replace the person.",
+    "Change only the places named below. Make each named change easy to see beside the original. If a named place is not visible in this photo, leave it unchanged.",
+    "Apply only these changes:",
   ];
   for (const change of plan.changes) {
     lines.push(`- ${change.visualInstruction}`);
     for (const focus of focusesFor(plan, change.category)) lines.push(`- Where to apply it on this photo: ${focus}`);
   }
+  lines.push("Leave every feature that is not named above exactly as it is in this photo.");
   lines.push(CROSS_ANGLE_CONSISTENCY);
-  lines.push(`Do not change any of the following unless it is explicitly part of an approved change: ${plan.preserve.join("; ")}.`);
-  lines.push("Do not create a dramatic transformation.");
-  lines.push("The output must remain recognizably the same person.");
+  lines.push("The output must look like a real photograph and remain recognizably the same person.");
   return lines.join("\n");
 }
 
