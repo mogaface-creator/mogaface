@@ -6,6 +6,7 @@
  * for the one consumer allowed to read it.
  */
 
+import type { LeadContact } from "../leads/contact.ts";
 import type { Assessment } from "../assessment/types.ts";
 import type { MogaFaceAnalysis } from "../observation/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
@@ -74,6 +75,12 @@ export interface AnalysisRecord {
    * path. Absent on records created before this field existed.
    */
   illustrationUses?: number;
+  /**
+   * How the clinic reaches this person. Absent when the visit did not include
+   * contact details. Never copied onto `assessment`, and never sent to an image
+   * or interpretation model.
+   */
+  contact?: LeadContact;
 }
 
 /** What the client receives after a successful POST /api/analysis-session — the capability needed to later request an illustration. Never the record itself. */

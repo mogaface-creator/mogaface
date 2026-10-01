@@ -58,6 +58,7 @@
 
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { sanitizeAssessment } from "../assessment/schema.ts";
+import { parseLeadContact } from "../leads/contact.ts";
 import { isValidObservation } from "../observation/validate.ts";
 import type { MogaFaceAnalysis } from "../observation/types.ts";
 import { FACIAL_ANALYSIS_METHODOLOGY_VERSION } from "../observation/versions.ts";
@@ -181,7 +182,7 @@ async function logSupabaseFailure(operation: string, res: Response | null, err?:
  * Map — when production persistence is unavailable (see the module comment).
  */
 export async function createAnalysisRecord(
-  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown },
+  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown },
   deps: AnalysisSessionStoreDeps = {},
 ): Promise<AnalysisSessionHandle | null> {
   const { env, fetchImpl } = resolveDeps(deps);
@@ -218,6 +219,7 @@ export async function createAnalysisRecord(
   const tokenHash = hashToken(sessionToken);
   const now = Date.now();
   const expiresAt = new Date(now + TTL_MS).toISOString();
+  const contact = parseLeadContact(input.contact);
   const record: AnalysisRecord = {
     id,
     version: ANALYSIS_RECORD_VERSION,
@@ -229,7 +231,18 @@ export async function createAnalysisRecord(
     createdAt: new Date(now).toISOString(),
     status: "active",
     availableAngles,
+    ...(contact ? { contact } : {}),
   };
+
+  if (configured && contact) {
+    const leadRes = await supabaseRequest(
+      env,
+      "/leads",
+      { method: "POST", headers: { prefer: "return=minimal" }, body: JSON.stringify({ analysis_id: id, name: contact.name, phone: contact.phone, email: contact.email, location: contact.location }) },
+      fetchImpl,
+    ).catch(() => null);
+    if (!leadRes?.ok) await logSupabaseFailure("saveLead", leadRes, null);
+  }
 
   if (configured) {
     let networkErr: unknown;

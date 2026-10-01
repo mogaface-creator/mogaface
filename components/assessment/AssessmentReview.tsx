@@ -27,6 +27,7 @@ import { SNAPSHOT_VERSION } from "@/lib/results/types.ts";
 import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
 import type { TreatmentOpportunity } from "@/lib/treatment-opportunities/types.ts";
 import { createAnalysisSession } from "@/lib/analysis-session/client.ts";
+import { parseLeadContact } from "@/lib/leads/contact.ts";
 import type { AnalysisSessionHandle } from "@/lib/analysis-session/types.ts";
 import { PHOTO_VISUALIZATION_CONSENT_SENTENCE, type PhotoVisualizationConsent } from "@/lib/visualization/consent.ts";
 
@@ -147,6 +148,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   // asks for photo-visualization consent, as the direct continuation of the single "Analyze My Face"
   // click, never before or after it. Also carries the analysisId/sessionToken the Continue button needs.
   const [confirmingVisualization, setConfirmingVisualization] = useState<AnalysisSessionHandle | null>(null);
+  const [contact, setContact] = useState({ name: "", phone: "", email: "", location: "" });
+  const lead = parseLeadContact(contact);
   const [creatingSession, setCreatingSession] = useState(false);
   // Tracks which File object each current record was produced from, so a
   // second "Start Analysis" click only reprocesses slots whose photo
@@ -220,6 +223,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
       hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
       hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
+      ...(lead ? { contact: lead } : {}),
     });
     setCreatingSession(false);
     if (session?.illustrationEligible) {
@@ -376,10 +380,38 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         )}
       </div>
 
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-muted">Your details</h3>
+        <p className="mt-2 text-sm text-muted">The clinic uses these to reach you about your results. They are not used to create the image.</p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {(
+            [
+              ["name", "Name", "text", "Your name"],
+              ["phone", "Phone", "tel", "Phone number"],
+              ["email", "Email", "email", "Email address"],
+              ["location", "Location", "text", "City"],
+            ] as const
+          ).map(([key, label, type, placeholder]) => (
+            <label key={key} className="block">
+              <span className="text-sm font-medium">{label}</span>
+              <input
+                type={type}
+                autoComplete={key === "name" ? "name" : key === "phone" ? "tel" : key === "email" ? "email" : "address-level2"}
+                placeholder={placeholder}
+                value={contact[key]}
+                onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
+                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              />
+            </label>
+          ))}
+        </div>
+        {!lead && <p className="mt-4 text-sm text-muted">Add your name, phone, email, and city to continue.</p>}
+      </div>
+
       <StepNav
         onBack={onBack}
         onNext={analyzeMyFace}
-        nextDisabled={!validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning || confirmingVisualization !== null}
+        nextDisabled={!lead || !validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning || confirmingVisualization !== null}
         nextLabel={isRunning ? "Analyzing…" : "Analyze My Face"}
       />
 

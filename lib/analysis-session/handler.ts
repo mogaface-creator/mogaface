@@ -31,11 +31,11 @@ export async function handleCreateAnalysisSession(request: Request, deps: Analys
   if (!body || typeof body !== "object") {
     return Response.json({ error: "invalid_request" }, { status: 400 });
   }
-  const { assessment, analysis, photoQualityValid, hasLeftFortyFive, hasRightFortyFive } = body as Record<string, unknown>;
+  const { assessment, analysis, photoQualityValid, hasLeftFortyFive, hasRightFortyFive, contact } = body as Record<string, unknown>;
 
   let handle;
   try {
-    handle = await createAnalysisRecord({ assessment, analysis, photoQualityValid, hasLeftFortyFive, hasRightFortyFive }, deps);
+    handle = await createAnalysisRecord({ assessment, analysis, photoQualityValid, hasLeftFortyFive, hasRightFortyFive, contact }, deps);
   } catch (err) {
     // Production persistence is unavailable — fail closed with a generic error. Never the
     // Supabase response body, never a stack trace, never SUPABASE_SERVICE_ROLE_KEY.
