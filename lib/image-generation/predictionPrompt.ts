@@ -17,6 +17,18 @@ export function isPredictionPlan(plan: VisualizationPlan): plan is PredictionPla
   return typeof extra.consistency === "string" && typeof extra.purpose === "string" && Array.isArray(extra.prohibited);
 }
 
+/** Hair, beard, and everything around the face stay as photographed unless that place was named. */
+function lockedFeatures(plan: PredictionPlan): string[] {
+  const named = new Set(plan.changes.map((change) => change.category));
+  const lines: string[] = [];
+  if (!named.has("hair_appearance")) {
+    lines.push("Copy the hair exactly. Same hairline, length, volume, curls, color, and the same amount of forehead showing. Do not add hair, remove hair, or restyle it.");
+  }
+  lines.push("Copy the beard, moustache, and any facial hair exactly. Copy the ears, neck, clothing, accessories, and background exactly.");
+  lines.push("Do not smooth, blur, or enhance any skin that is not inside a place named above.");
+  return lines;
+}
+
 function focusesFor(plan: PredictionPlan, category: VisualizationCategory): string[] {
   const specific = (plan.focus ?? []).filter((focus) => focus.category === category).map((focus) => focus.text);
   return specific.length > 0 ? specific : [CATEGORY_FOCUS[category]];
@@ -36,6 +48,7 @@ export function buildPredictionIllustrationPrompt(plan: PredictionPlan): string 
     for (const focus of focusesFor(plan, change.category)) lines.push(`- Where to apply it on this photo: ${focus}`);
   }
   lines.push("Leave every feature that is not named above exactly as it is in this photo.");
+  lines.push(...lockedFeatures(plan));
   lines.push(CROSS_ANGLE_CONSISTENCY);
   lines.push("The output must look like a real photograph and remain recognizably the same person.");
   return lines.join("\n");

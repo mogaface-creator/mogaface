@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AssessmentProgress } from "./AssessmentProgress";
 import { AssessmentIntro } from "./AssessmentIntro";
 import { ClinicIntakeSection } from "./ClinicIntakeSection";
+import { asksByIds, previewCanContinue, visibleScreens } from "@/lib/assessment/intakeFlow.ts";
 import { PhotoInstructions } from "./PhotoInstructions";
 import { PhotoCaptureStep } from "./PhotoCaptureStep";
 import type { SessionFiles } from "./PhotoCollection";
@@ -16,32 +17,14 @@ import { clearAllMedia, deleteMedia, getMedia, putMedia } from "@/lib/assessment
 import { mediaMetadataFor } from "@/lib/assessment/photoMeta.ts";
 import { PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 
-const STEP_ORDER = [
-  "intro",
-  "about",
-  "comfort",
-  "breathing",
-  "body",
-  "skin",
-  "recovery",
-  "report",
-  "photoInstructions",
-  "photoCollection",
-  "review",
-] as const;
+const STEP_ORDER = ["intro", "preview", "photoInstructions", "photoCollection", "review"] as const;
 type StepId = (typeof STEP_ORDER)[number];
 
 const PROGRESS_INDEX: Partial<Record<StepId, number>> = {
-  about: 0,
-  comfort: 1,
-  breathing: 2,
-  body: 3,
-  skin: 4,
-  recovery: 5,
-  report: 6,
-  photoInstructions: 7,
-  photoCollection: 7,
-  review: 8,
+  preview: 0,
+  photoInstructions: 1,
+  photoCollection: 1,
+  review: 2,
 };
 
 // This component is only ever mounted client-side (see app/assessment/page.tsx,
@@ -54,6 +37,7 @@ function initialAssessment(): Assessment {
 export function AssessmentShell() {
   const [assessment, setAssessment] = useState<Assessment>(initialAssessment);
   const [stepId, setStepId] = useState<StepId>("intro");
+  const [cursor, setCursor] = useState(0);
   const [sessionFiles, setSessionFiles] = useState<SessionFiles>({});
   // The optional expression video (camera recording or a chosen file). Its bytes are
   // cached in IndexedDB (see mediaStore.ts) so it survives a reload like the photos do.
@@ -135,6 +119,36 @@ export function AssessmentShell() {
     setStepId(STEP_ORDER[Math.max(stepIndex - 1, 0)]);
     window.scrollTo({ top: 0 });
   };
+  const toTop = () => window.scrollTo({ top: 0 });
+  const screens = visibleScreens(assessment.clinicIntake);
+  const safeCursor = Math.min(cursor, Math.max(screens.length - 1, 0));
+  const preview = screens[safeCursor];
+
+  const begin = () => {
+    setCursor(0);
+    setStepId("preview");
+    toTop();
+  };
+  const previewNext = (updated?: Assessment) => {
+    const source = updated?.clinicIntake ? updated : assessment;
+    const currentId = screens[safeCursor]?.id;
+    const nextScreens = visibleScreens(source.clinicIntake);
+    const index = currentId ? nextScreens.findIndex((screen) => screen.id === currentId) : -1;
+    if (index >= 0 && index < nextScreens.length - 1) setCursor(index + 1);
+    else setStepId("photoInstructions");
+    toTop();
+  };
+  const previewBack = () => {
+    if (safeCursor > 0) setCursor(safeCursor - 1);
+    else setStepId("intro");
+    toTop();
+  };
+  const backToQuestions = () => {
+    const last = visibleScreens(assessment.clinicIntake);
+    setCursor(Math.max(last.length - 1, 0));
+    setStepId("preview");
+    toTop();
+  };
 
   const handleStartOver = () => {
     if (typeof window !== "undefined" && !window.confirm("Start over? This clears your saved assessment on this device.")) {
@@ -147,6 +161,7 @@ export function AssessmentShell() {
     setSessionVideo(null);
     setAssessment(createEmptyAssessment());
     setMediaHydrated(true); // a fresh assessment has no metadata to restore, so there's nothing left to check
+    setCursor(0);
     setStepId("intro");
   };
 
@@ -156,20 +171,35 @@ export function AssessmentShell() {
     <>
       <Header />
       <main className="flex-1">
-        <div className="mx-auto max-w-2xl px-6 py-16">
+        <div className={`mx-auto max-w-2xl px-6 ${stepId === "preview" ? "py-10" : "py-16"}`}>
           {progressIndex !== undefined && (
             <div className="mb-10">
               <AssessmentProgress currentStep={progressIndex} />
             </div>
           )}
 
-          {stepId === "intro" && <AssessmentIntro onBegin={goNext} />}
+          {stepId === "intro" && <AssessmentIntro onBegin={begin} />}
 
-          {(stepId === "about" || stepId === "comfort" || stepId === "breathing" || stepId === "body" || stepId === "skin" || stepId === "recovery" || stepId === "report") && (
-            <ClinicIntakeSection section={stepId} assessment={assessment} onChange={(next) => patch(next)} onNext={goNext} onBack={goBack} />
+          {stepId === "preview" && preview && (
+            <ClinicIntakeSection
+              asks={asksByIds(preview.askIds)}
+              title={preview.title}
+              counter={`${String(safeCursor + 1).padStart(2, "0")} / ${String(screens.length).padStart(2, "0")}`}
+              assessment={assessment}
+              onChange={(next) => patch(next)}
+              onNext={previewNext}
+              onBack={previewBack}
+              nextDisabled={!previewCanContinue(preview.id, assessment.clinicIntake)}
+              autoAdvance={preview.auto}
+            />
           )}
 
-          {stepId === "photoInstructions" && <PhotoInstructions onNext={goNext} onBack={goBack} />}
+          {stepId === "photoInstructions" && (
+            <PhotoInstructions
+              onNext={goNext}
+              onBack={backToQuestions}
+            />
+          )}
 
           {stepId === "photoCollection" && (
             <PhotoCaptureStep
@@ -197,7 +227,7 @@ export function AssessmentShell() {
           )}
         </div>
       </main>
-      <Footer />
+      {stepId !== "preview" && <Footer />}
     </>
   );
 }

@@ -222,7 +222,7 @@ function sanitizeReply(value: unknown): Record<string, string> {
   const source = isObject(value) ? value : {};
   const reply: Record<string, string> = {};
   for (const ask of allAsks()) {
-    if (ask.kind === "multi" || ask.kind === "dislikes" || ask.kind === "places" || ask.kind === "height" || ask.kind === "weight") continue;
+    if (ask.kind === "multi" || ask.kind === "dislikes" || ask.kind === "places" || ask.kind === "details" || ask.kind === "height" || ask.kind === "weight") continue;
     const raw = source[ask.id];
     if (ask.kind === "yesno") reply[ask.id] = oneOf(raw, YES_NO) ?? "";
     else if (ask.kind === "choice") reply[ask.id] = oneOf(raw, (ask.options ?? []).map((option) => option.value)) ?? "";
@@ -335,10 +335,16 @@ export function pickedOf(intake: ClinicIntake, id: string): string[] {
   return [];
 }
 
+function answerMatches(intake: ClinicIntake, id: string, when: NonNullable<Ask["when"]>): boolean {
+  if (when.filled) return replyOf(intake, id).trim().length > 0 || pickedOf(intake, id).length > 0;
+  const expected = when.is ?? "";
+  return replyOf(intake, id) === expected || pickedOf(intake, id).includes(expected);
+}
+
 export function askVisible(intake: ClinicIntake, ask: Ask): boolean {
   if (!ask.when) return true;
-  if (ask.when.id) return replyOf(intake, ask.when.id) === ask.when.is;
-  return (ask.when.any ?? []).some((id) => replyOf(intake, id) === ask.when?.is);
+  if (ask.when.id) return answerMatches(intake, ask.when.id, ask.when);
+  return (ask.when.any ?? []).some((id) => answerMatches(intake, id, ask.when!));
 }
 
 /** Writes one ask, and keeps the older single fields the rest of the app already reads. */
@@ -367,17 +373,28 @@ export function setAnswer(assessment: Assessment, id: string, value: string): As
   if (id === "morningPuffiness") partial.morningPuffiness = oneOf(value, PUFFINESS);
   if (id === "trainingPhase") partial.trainingPhase = oneOf(value, TRAINING_PHASE);
   if (id === "pregnantOrBreastfeeding") partial.pregnantOrBreastfeeding = oneOf(value, PREGNANCY);
+  if (id === "dislikeDuration") {
+    const ask = allAsks().find((item) => item.id === id);
+    const label = ask?.options?.find((option) => option.value === value)?.label ?? "";
+    const dislikes = assessment.clinicIntake.dislikes.map((item, index) => (index === 0 ? { ...item, duration: label } : item)) as ClinicIntake["dislikes"];
+    partial.dislikes = dislikes;
+  }
   return withIntake(assessment, partial);
 }
 
 export function setPicked(assessment: Assessment, id: string, values: string[]): Assessment {
   const ask = allAsks().find((item) => item.id === id);
   const allowed = (ask?.options ?? []).map((option) => option.value);
-  const nextValues = listOf(values, allowed, ask?.max ?? allowed.length);
+  let nextValues = listOf(values, allowed, ask?.max ?? allowed.length);
+  if (id === "clinicFlags") {
+    const hadNone = (assessment.clinicIntake.picked.clinicFlags ?? []).includes("none");
+    nextValues = nextValues.includes("none") && !hadNone ? ["none"] : nextValues.filter((value) => value !== "none");
+  }
   const picked = { ...assessment.clinicIntake.picked, [id]: nextValues };
   const partial: Partial<ClinicIntake> = { picked };
   if (id === "lookDirections") partial.lookDirections = nextValues as LookDirection[];
   if (id === "skinProblems") partial.skinProblems = nextValues as SkinProblem[];
+  if (id === "clinicFlags") partial.pregnantOrBreastfeeding = nextValues.includes("pregnant") ? "yes" : "no";
   return withIntake(assessment, partial);
 }
 
@@ -450,14 +467,18 @@ export function intakeReviewSections(intake: ClinicIntake): { title: string; row
       for (const ask of question.asks) {
         if (!askVisible(intake, ask)) continue;
         if (ask.kind === "dislikes") {
-          intake.dislikes.forEach((dislike, index) => {
-            rows.push({
-              label: `Dislike ${index + 1}`,
-              value: dislike.words ? `${dislike.words}${dislike.duration ? ` — for ${dislike.duration}` : ""}` : "Not answered",
-            });
+          const filled = intake.dislikes.filter((dislike) => dislike.words.trim().length > 0);
+          rows.push({
+            label: ask.prompt,
+            value: filled.length
+              ? filled.map((dislike) => (dislike.duration ? `${dislike.words} — for ${dislike.duration}` : dislike.words)).join("; ")
+              : "Not answered",
           });
+        } else if (ask.kind === "details") {
+          continue;
         } else if (ask.kind === "places") {
-          rows.push({ label: ask.prompt, value: intake.places.length ? intake.places.join(", ") : "Not answered" });
+          const labels = intake.places.map((place) => ask.options?.find((option) => option.value === place)?.label ?? place);
+          rows.push({ label: ask.prompt, value: labels.length ? labels.join(", ") : "Not answered" });
         } else if (ask.kind === "height") {
           rows.push({ label: ask.prompt, value: intake.heightCm === null ? "Not answered" : `${intake.heightCm} cm` });
         } else if (ask.kind === "weight") {
@@ -471,5 +492,5 @@ export function intakeReviewSections(intake: ClinicIntake): { title: string; row
       }
     }
     return { title: SECTION_TITLES[section], rows, stack: true as const };
-  });
+  }).filter((section) => section.rows.length > 0);
 }

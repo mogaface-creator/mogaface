@@ -1,14 +1,4 @@
-export const ASSESSMENT_PROGRESS_STEPS = [
-  "About you",
-  "Comfort",
-  "Breathing and jaw",
-  "Body",
-  "Skin and health",
-  "Sleep",
-  "Report",
-  "Photos",
-  "Review",
-] as const;
+export const ASSESSMENT_PROGRESS_STEPS = ["Questions", "Photos", "Review"] as const;
 
 interface AssessmentProgressProps {
   /** 0-indexed into ASSESSMENT_PROGRESS_STEPS. */

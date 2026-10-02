@@ -11,18 +11,24 @@ function chipClass(selected: boolean, disabled: boolean) {
   return "border-border text-foreground hover:border-accent/50";
 }
 
+/** Full-width rows on a phone, compact chips from the sm breakpoint up. */
+const TAP = "min-h-12 w-full rounded-full border px-4 text-left text-base transition-colors sm:min-h-0 sm:w-auto sm:px-4 sm:py-2 sm:text-center sm:text-sm";
+const TAP_ROW = "mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap";
+
 interface SingleChoiceGroupProps<T extends string> {
   label: string;
   options: Option<T>[];
   value: T | null;
   onChange: (value: T) => void;
+  /** Keeps the label for assistive tech but hides it visually when a heading above already says it. */
+  hideLabel?: boolean;
 }
 
-export function SingleChoiceGroup<T extends string>({ label, options, value, onChange }: SingleChoiceGroupProps<T>) {
+export function SingleChoiceGroup<T extends string>({ label, options, value, onChange, hideLabel }: SingleChoiceGroupProps<T>) {
   return (
     <fieldset>
-      <legend className="text-sm font-medium">{label}</legend>
-      <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+      <legend className={hideLabel ? "sr-only" : "text-sm font-medium"}>{label}</legend>
+      <div className={TAP_ROW} role="radiogroup" aria-label={label}>
         {options.map((option) => {
           const selected = value === option.value;
           return (
@@ -32,7 +38,7 @@ export function SingleChoiceGroup<T extends string>({ label, options, value, onC
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`rounded-full border px-4 py-2 text-sm transition-colors ${chipClass(selected, false)}`}
+              className={`${TAP} ${chipClass(selected, false)}`}
             >
               {option.label}
             </button>
@@ -83,7 +89,7 @@ export function MultiChoiceGroup<T extends string>({
           {max ? ` (${value.length}/${max} selected)` : ""}
         </p>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className={TAP_ROW}>
         {options.map((option) => {
           const selected = value.includes(option.value);
           const disabled = !selected && atMax;
@@ -94,7 +100,7 @@ export function MultiChoiceGroup<T extends string>({
               aria-pressed={selected}
               disabled={disabled}
               onClick={() => toggle(option.value)}
-              className={`rounded-full border px-4 py-2 text-sm transition-colors ${chipClass(selected, disabled)}`}
+              className={`${TAP} ${chipClass(selected, disabled)}`}
             >
               {option.label}
             </button>
