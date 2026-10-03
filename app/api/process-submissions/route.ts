@@ -24,13 +24,15 @@ import type { SubmissionRow } from "@/lib/submissions/store";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { buildReportSummary } from "@/lib/submissions/reportSummary";
 import { getAnalysisRecord } from "@/lib/analysis-session/store";
+import { resolveLeadData } from "@/lib/submissions/lead";
+import { generatePdfReport } from "@/lib/submissions/pdfReport";
+import { sendReportEmail } from "@/lib/submissions/emailDelivery";
 
-// Vercel route segment config: allow up to 300s for image generation.
+// Vercel route segment config: allow up to 300s for image generation & PDF delivery.
 // Vercel Pro/Enterprise supports 300s; Hobby is capped at 60s.
 export const maxDuration = 300;
 
-
-const MAX_SUBMISSIONS_PER_RUN = 5; // keep well within Vercel's 60s function timeout
+const MAX_SUBMISSIONS_PER_RUN = 5; // keep well within Vercel timeout limits
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -75,12 +77,17 @@ async function processOne(submission: SubmissionRow): Promise<{ id: string; outc
     // 1. Resolve the analysis record (treatment opportunities + assessment)
     let record = null;
     if (submission.analysis_id) {
-      // The session token is no longer available post-submission (it's one-time).
-      // We read the record directly from Supabase by analysis_id using the service role.
       record = await getAnalysisRecordById(submission.analysis_id);
     }
 
-    // 2. Decode the before photo
+    // 2. Resolve client lead details (name, email, phone, stated concerns)
+    const lead = await resolveLeadData({
+      leadId: submission.lead_id,
+      analysisId: submission.analysis_id,
+      record,
+    });
+
+    // 3. Decode the before photo
     if (!submission.before_image_base64 || !submission.before_image_mime) {
       await updateSubmission(id, {
         status: "failed",
@@ -92,38 +99,103 @@ async function processOne(submission: SubmissionRow): Promise<{ id: string; outc
 
     const beforeBytes = Buffer.from(submission.before_image_base64, "base64");
 
-    // 3. Generate the AI after-image
-    const imageResult = await generateAfterImage({
-      beforeBytes,
-      beforeMime: submission.before_image_mime as "image/png" | "image/jpeg" | "image/webp",
-      record,
-    });
+    // 4. Resolve the AI after-image: reuse if previously generated, otherwise call OpenAI
+    let afterBase64 = submission.after_image_base64;
+    let afterMime = submission.after_image_mime;
 
-    // 4. Build report summary
+    if (!afterBase64) {
+      const imageResult = await generateAfterImage({
+        beforeBytes,
+        beforeMime: submission.before_image_mime as "image/png" | "image/jpeg" | "image/webp",
+        record,
+      });
+
+      if (imageResult.ok) {
+        afterBase64 = imageResult.base64;
+        afterMime = imageResult.mime;
+      } else {
+        // Build summary even if image failed to preserve findings
+        const fallbackSummary = record
+          ? await buildReportSummary(record)
+          : { summary: "Your personalized facial analysis has been completed.", areas: [] };
+
+        await updateSubmission(id, {
+          status: "failed",
+          emailError: `Image generation failed: ${imageResult.reason}`,
+          retryCount: (submission.retry_count ?? 0) + 1,
+          reportSummary: fallbackSummary.summary,
+          detectedAreas: fallbackSummary.areas,
+        });
+        return { id, outcome: "failed", reason: imageResult.reason };
+      }
+    }
+
+    const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
+
+    // 5. Build clinical report summary & detected opportunities
     const summaryResult = record
       ? await buildReportSummary(record)
       : { summary: "Your personalized facial analysis has been completed.", areas: [] };
 
-    // 5. Update the row with results
-    if (imageResult.ok) {
+    // 6. Generate the high-resolution branded 2-page PDF
+    const pdfBytes = await generatePdfReport({
+      clientName: lead.name,
+      clientEmail: lead.email,
+      clientPhone: lead.phone,
+      clientLocation: lead.location,
+      referenceId: id,
+      beforeImageBytes: beforeBytes,
+      afterImageBytes: afterBytes,
+      reportSummary: summaryResult.summary,
+      detectedAreas: summaryResult.areas,
+      intakeConcerns: lead.places.length > 0 ? lead.places : undefined,
+    });
+
+    // 7. Deliver PDF Report via Resend Email
+    if (lead.email) {
+      const emailResult = await sendReportEmail({
+        toEmail: lead.email,
+        clientName: lead.name,
+        referenceId: id,
+        pdfBytes,
+        reportSummary: summaryResult.summary,
+      });
+
+      if (emailResult.ok) {
+        await updateSubmission(id, {
+          status: "done",
+          afterImageBase64: afterBase64,
+          afterImageMime: afterMime ?? undefined,
+          reportSummary: summaryResult.summary,
+          detectedAreas: summaryResult.areas,
+          emailSentAt: new Date().toISOString(),
+          emailError: undefined,
+        });
+        return { id, outcome: "done" };
+      } else {
+        // Email delivery failed — mark failed for automatic cron retry
+        await updateSubmission(id, {
+          status: "failed",
+          afterImageBase64: afterBase64,
+          afterImageMime: afterMime ?? undefined,
+          reportSummary: summaryResult.summary,
+          detectedAreas: summaryResult.areas,
+          emailError: `Email delivery failed: ${emailResult.error}`,
+          retryCount: (submission.retry_count ?? 0) + 1,
+        });
+        return { id, outcome: "failed", reason: emailResult.error };
+      }
+    } else {
+      // No email provided (e.g. phone-only lead or manual intake)
       await updateSubmission(id, {
         status: "done",
-        afterImageBase64: imageResult.base64,
-        afterImageMime: imageResult.mime,
+        afterImageBase64: afterBase64,
+        afterImageMime: afterMime ?? undefined,
         reportSummary: summaryResult.summary,
         detectedAreas: summaryResult.areas,
+        emailError: "No email address on lead record — PDF generated and ready for direct dispatch",
       });
       return { id, outcome: "done" };
-    } else {
-      // Image generation failed — mark failed for retry
-      await updateSubmission(id, {
-        status: "failed",
-        emailError: imageResult.reason,
-        retryCount: (submission.retry_count ?? 0) + 1,
-        reportSummary: summaryResult.summary,
-        detectedAreas: summaryResult.areas,
-      });
-      return { id, outcome: "failed", reason: imageResult.reason };
     }
   } catch (err) {
     const reason = err instanceof Error ? err.message : "unknown_error";

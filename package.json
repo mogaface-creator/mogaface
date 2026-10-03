@@ -13,8 +13,11 @@
     "@mediapipe/tasks-vision": "^1.0.1",
     "@phosphor-icons/react": "^2.1.10",
     "next": "16.3.6",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "resend": "^6.32.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
