@@ -72,50 +72,50 @@ export default function Home() {
         {/* ========================================================= */}
         {/* HERO SECTION WITH INTERACTIVE BEFORE/AFTER SPOTLIGHT      */}
         {/* ========================================================= */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-surface-warm/60 via-background to-background pt-16 pb-20 sm:pt-24 sm:pb-28">
+        <section className="relative overflow-hidden bg-gradient-to-b from-surface-warm/60 via-background to-background pt-8 pb-14 sm:pt-20 sm:pb-24 lg:pt-24 lg:pb-28">
           {/* Subtle Ambient Glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-accent/8 blur-[120px] pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[350px] sm:h-[500px] w-full max-w-[800px] rounded-full bg-accent/8 blur-[100px] sm:blur-[120px] pointer-events-none" />
 
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-8 lg:gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               {/* Hero Copy */}
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3.5 py-1.5 text-xs font-semibold text-accent backdrop-blur-xs">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-accent backdrop-blur-xs">
                   <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                   AI Clinical Facial Architecture
                 </div>
 
-                <h1 className="mt-6 font-serif text-5xl leading-[0.98] tracking-tight text-balance sm:text-6xl lg:text-7xl">
+                <h1 className="mt-4 sm:mt-6 font-serif text-3xl sm:text-5xl lg:text-7xl leading-[1.05] sm:leading-[0.98] tracking-tight text-balance">
                   See your targeted aesthetic potential.
-                  <span className="mt-2 block font-light italic text-accent">
+                  <span className="mt-1 sm:mt-2 block font-light italic text-accent">
                     On your own face, in 60 seconds.
                   </span>
                 </h1>
 
-                <div aria-hidden className="mt-8 h-px w-20 bg-accent" />
+                <div aria-hidden className="mt-4 sm:mt-8 h-px w-16 sm:w-20 bg-accent" />
 
-                <p className="mt-8 max-w-xl text-base leading-8 text-body-text sm:text-lg">
+                <p className="mt-4 sm:mt-8 max-w-xl text-sm sm:text-lg leading-6 sm:leading-8 text-body-text">
                   Upload your photos and discover your bespoke facial symmetry, contour harmonization,
                   and 3D aesthetic simulation. Delivered as a confidential <strong>2-page Clinical Dossier</strong>{" "}
                   straight to your email.
                 </p>
 
                 {/* Trust Badges */}
-                <div className="mt-6 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs font-medium text-secondary-text">
+                <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-y-2 gap-x-4 sm:gap-x-6 text-xs font-medium text-secondary-text">
                   <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
-                    60-Second AI Turnaround
+                    60-Second Turnaround
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
-                    2-Page Clinical PDF Dossier
+                    2-Page PDF Dossier
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                     100% Confidential
@@ -123,15 +123,15 @@ export default function Home() {
                 </div>
 
                 {/* CTAs */}
-                <div className="mt-10 flex flex-wrap items-center gap-5">
-                  <Link href="/assessment">
-                    <Button size="lg" className="shadow-elevated">
+                <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5">
+                  <Link href="/assessment" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto justify-center shadow-elevated">
                       Start Your Facial Assessment
                     </Button>
                   </Link>
                   <a
                     href="#transformations"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-accent"
+                    className="inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:text-accent"
                   >
                     View Transformations
                     <span aria-hidden>↓</span>
@@ -141,9 +141,9 @@ export default function Home() {
 
               {/* Hero Spotlight: Interactive Before/After Slider */}
               <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-                <div className="relative rounded-3xl border border-border/80 bg-surface-warm p-4 shadow-elevated">
-                  <div className="mb-3 flex items-center justify-between px-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-accent">
+                <div className="relative rounded-2xl sm:rounded-3xl border border-border/80 bg-surface-warm p-3 sm:p-4 shadow-elevated">
+                  <div className="mb-2.5 flex items-center justify-between px-1 sm:px-2">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-accent">
                       Live Comparison Simulation
                     </span>
                     <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent">
@@ -160,12 +160,12 @@ export default function Home() {
                     className="w-full"
                   />
 
-                  <div className="mt-4 flex items-center justify-between rounded-xl bg-background/80 p-3 text-xs">
+                  <div className="mt-3 sm:mt-4 flex items-center justify-between rounded-xl bg-background/80 p-2.5 sm:p-3 text-xs">
                     <div>
-                      <p className="font-bold text-foreground">Targeted Vector:</p>
-                      <p className="text-muted">Tear Trough &amp; Midface Harmony</p>
+                      <p className="font-bold text-foreground text-xs sm:text-sm">Targeted Vector:</p>
+                      <p className="text-muted text-[11px] sm:text-xs">Tear Trough &amp; Midface Harmony</p>
                     </div>
-                    <span className="font-serif font-bold text-accent">+35% Volume Lift</span>
+                    <span className="font-serif font-bold text-accent text-xs sm:text-sm">+35% Volume Lift</span>
                   </div>
                 </div>
               </div>
@@ -177,14 +177,14 @@ export default function Home() {
         {/* TRUST METRICS RIBBON                                      */}
         {/* ========================================================= */}
         <section aria-label="Key Performance Metrics" className="border-y border-border bg-surface">
-          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-10 lg:grid-cols-4">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-6 py-8 sm:py-10 lg:grid-cols-4">
             {TRUST_METRICS.map((metric) => (
-              <div key={metric.label} className="text-center sm:text-left">
-                <p className="font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              <div key={metric.label} className="text-center sm:text-left p-2">
+                <p className="font-serif text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
                   {metric.value}
                 </p>
-                <p className="mt-1 font-heading text-sm font-bold text-foreground">{metric.label}</p>
-                <p className="text-xs text-muted">{metric.sub}</p>
+                <p className="mt-0.5 sm:mt-1 font-heading text-xs sm:text-sm font-bold text-foreground">{metric.label}</p>
+                <p className="text-[11px] sm:text-xs text-muted">{metric.sub}</p>
               </div>
             ))}
           </div>
@@ -208,30 +208,30 @@ export default function Home() {
         {/* ========================================================= */}
         {/* HOW IT WORKS (4 Step Pathway)                             */}
         {/* ========================================================= */}
-        <section id="how-it-works" className="scroll-mt-20 border-t border-border bg-background py-24 sm:py-32">
-          <div className="mx-auto max-w-6xl px-6">
+        <section id="how-it-works" className="scroll-mt-20 border-t border-border bg-background py-16 sm:py-24 lg:py-32">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="max-w-2xl">
               <p className="eyebrow text-[11px]">The Pathway</p>
-              <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
+              <h2 className="mt-3 font-serif text-3xl sm:text-5xl leading-[1.05] tracking-tight">
                 Four simple steps, from your photos
                 <span className="block font-light italic text-accent">to a tangible clinical dossier.</span>
               </h2>
             </div>
 
-            <ol className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-10 sm:mt-16 grid gap-4 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step) => (
                 <li
                   key={step.number}
-                  className="relative flex flex-col justify-between rounded-3xl border border-border bg-surface-warm p-8 shadow-subtle transition-all hover:shadow-medium"
+                  className="relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-border bg-surface-warm p-5 sm:p-8 shadow-subtle transition-all hover:shadow-medium"
                 >
                   <div>
-                    <span className="font-serif text-3xl font-bold text-accent/40 tabular-nums">
+                    <span className="font-serif text-2xl sm:text-3xl font-bold text-accent/40 tabular-nums">
                       {step.number}
                     </span>
-                    <h3 className="mt-4 font-heading text-xl font-bold text-foreground">
+                    <h3 className="mt-3 sm:mt-4 font-heading text-lg sm:text-xl font-bold text-foreground">
                       {step.title}
                     </h3>
-                    <p className="mt-3 text-xs leading-6 text-body-text">{step.body}</p>
+                    <p className="mt-2 sm:mt-3 text-xs leading-5 sm:leading-6 text-body-text">{step.body}</p>
                   </div>
                 </li>
               ))}
@@ -242,13 +242,13 @@ export default function Home() {
         {/* ========================================================= */}
         {/* MEDICAL INTEGRITY STATEMENT                               */}
         {/* ========================================================= */}
-        <section className="bg-dark-surface py-20 text-dark-foreground">
-          <div className="mx-auto max-w-6xl px-6 text-center">
+        <section className="bg-dark-surface py-14 sm:py-20 text-dark-foreground">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
             <p className="eyebrow text-gold text-[11px]">Clinical Standards</p>
-            <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-balance">
+            <h2 className="mt-2 sm:mt-3 font-serif text-2xl sm:text-4xl text-balance">
               Designed for clinical alignment, not unrealistic fantasy.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-dark-body">
+            <p className="mx-auto mt-3 sm:mt-4 max-w-2xl text-xs sm:text-sm leading-6 sm:leading-7 text-dark-body">
               MogaFace does not distort your skull, change your ethnicity, or generate plastic cartoon faces.
               Every vector calculation is grounded in real surgical and dermatological tissue mechanics to give
               you an achievable, elegant visual communication tool.
@@ -259,25 +259,25 @@ export default function Home() {
         {/* ========================================================= */}
         {/* FREQUENTLY ASKED QUESTIONS                                */}
         {/* ========================================================= */}
-        <section id="faq" className="scroll-mt-20 border-t border-border bg-surface py-24 sm:py-32">
-          <div className="mx-auto max-w-6xl px-6">
+        <section id="faq" className="scroll-mt-20 border-t border-border bg-surface py-16 sm:py-24 lg:py-32">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center max-w-xl mx-auto">
               <p className="eyebrow text-[11px]">Questions &amp; Answers</p>
-              <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
+              <h2 className="mt-3 font-serif text-3xl sm:text-5xl leading-[1.05] tracking-tight">
                 Frequently asked questions.
               </h2>
             </div>
 
-            <div className="mx-auto mt-12 max-w-3xl divide-y divide-border">
+            <div className="mx-auto mt-8 sm:mt-12 max-w-3xl divide-y divide-border">
               {QUESTIONS.map((item) => (
-                <details key={item.q} className="group py-6">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-heading text-lg font-semibold text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
+                <details key={item.q} className="group py-4 sm:py-6">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4 font-heading text-base sm:text-lg font-semibold text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
                     {item.q}
-                    <span aria-hidden className="font-serif text-2xl leading-none text-accent transition-transform group-open:rotate-45">
+                    <span aria-hidden className="font-serif text-xl sm:text-2xl leading-none text-accent transition-transform group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="mt-4 text-sm leading-7 text-body-text">{item.a}</p>
+                  <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-6 sm:leading-7 text-body-text">{item.a}</p>
                 </details>
               ))}
             </div>
@@ -287,19 +287,19 @@ export default function Home() {
         {/* ========================================================= */}
         {/* FINAL CONVERSION CALL TO ACTION                           */}
         {/* ========================================================= */}
-        <section className="border-t border-border bg-gradient-to-b from-background to-surface-warm py-24 sm:py-32">
-          <div className="mx-auto max-w-4xl px-6 text-center">
-            <h2 className="font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl text-balance">
+        <section className="border-t border-border bg-gradient-to-b from-background to-surface-warm py-16 sm:py-24 lg:py-32">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+            <h2 className="font-serif text-3xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-balance">
               Ready to see your targeted aesthetic potential?
             </h2>
-            <div aria-hidden className="mx-auto mt-8 h-px w-20 bg-accent" />
-            <p className="mx-auto mt-8 max-w-xl text-base leading-7 text-body-text sm:text-lg">
+            <div aria-hidden className="mx-auto mt-6 sm:mt-8 h-px w-16 sm:w-20 bg-accent" />
+            <p className="mx-auto mt-6 sm:mt-8 max-w-xl text-sm sm:text-lg leading-6 sm:leading-7 text-body-text">
               Take the 60-second assessment today. Discover your Golden Ratio balance and receive your
               confidential 2-page Medical Dossier directly in your inbox.
             </p>
-            <div className="mt-10 flex justify-center">
-              <Link href="/assessment">
-                <Button size="lg" className="shadow-elevated">
+            <div className="mt-8 sm:mt-10 flex justify-center">
+              <Link href="/assessment" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto justify-center shadow-elevated">
                   Start Your Free Assessment
                 </Button>
               </Link>
