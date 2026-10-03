@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 import { getSubmission } from "@/lib/submissions/store";
 import { processOne } from "@/app/api/process-submissions/route";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest): Promise<Response> {
   const { searchParams } = new URL(request.url);

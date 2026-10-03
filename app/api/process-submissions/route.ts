@@ -28,9 +28,8 @@ import { resolveLeadData } from "@/lib/submissions/lead";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
 import { sendReportEmail } from "@/lib/submissions/emailDelivery";
 
-// Vercel route segment config: allow up to 300s for image generation & PDF delivery.
-// Vercel Pro/Enterprise supports 300s; Hobby is capped at 60s.
-export const maxDuration = 300;
+// Vercel route segment config: 60s max on Hobby plan
+export const maxDuration = 60;
 
 const MAX_SUBMISSIONS_PER_RUN = 5; // keep well within Vercel timeout limits
 

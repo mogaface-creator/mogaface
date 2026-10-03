@@ -18,7 +18,7 @@ import { handleMultiAngleIllustrationRequest } from "@/lib/image-generation/mult
 // When enabled, a request still has to present a valid analysis-session token.
 // That verified session is the subject, and the stored record counts uses,
 // so the image provider is not an open proxy. See lib/image-generation/trustedHandler.ts.
-export const maxDuration = 120; // up to three sequential image-edit calls
+export const maxDuration = 60;
 
 export function POST(request: Request) {
   return handleMultiAngleIllustrationRequest(request, { env: process.env });
