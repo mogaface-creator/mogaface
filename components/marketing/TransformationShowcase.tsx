@@ -37,8 +37,8 @@ const CASES: CaseStudy[] = [
   {
     id: "case-2",
     category: "jawline",
-    name: "Aakash M.",
-    age: "28",
+    name: "Lucas M.",
+    age: "32",
     focusArea: "Mandibular Angle & Jawline Sharpness",
     beforeSrc: "/images/transformations/male_jawline_before.webp",
     afterSrc: "/images/transformations/male_jawline_after.webp",
@@ -48,14 +48,14 @@ const CASES: CaseStudy[] = [
       { label: "Submental Fullness", value: "Streamlined" },
     ],
     clinicalFinding:
-      "Sharp lower mandibular definition and refined cervical angle, eliminating fatigue signals while preserving authentic facial character.",
+      "Crisp lower mandibular definition and refined cervical angle, eliminating fatigue signals while preserving authentic masculine character.",
   },
   {
     id: "case-3",
     category: "skin",
-    name: "Claire D.",
-    age: "35",
-    focusArea: "Radiance & Harmonized Soft Tissue",
+    name: "Sofia V.",
+    age: "28",
+    focusArea: "Midface Contour & Complexion Radiance",
     beforeSrc: "/images/transformations/female_glow_before.webp",
     afterSrc: "/images/transformations/female_glow_after.webp",
     metrics: [
@@ -64,23 +64,23 @@ const CASES: CaseStudy[] = [
       { label: "Smile Symmetry", value: "Balanced" },
     ],
     clinicalFinding:
-      "Luminous complexion enhancement paired with midface lift and structured lateral support, elevating everyday charisma.",
+      "Luminous complexion enhancement paired with midface malar contouring, softening nasolabial shadows and elevating everyday charisma.",
   },
   {
     id: "case-4",
-    category: "jawline",
-    name: "Mateo S.",
-    age: "31",
-    focusArea: "Charisma & Structural Jawline Architecture",
+    category: "all",
+    name: "Marcus D.",
+    age: "35",
+    focusArea: "Full Facial Balancing & Forehead Architecture",
     beforeSrc: "/images/transformations/male_lifestyle_before.webp",
     afterSrc: "/images/transformations/male_lifestyle_after.webp",
     metrics: [
-      { label: "Facial Proportion", value: "Golden Ratio" },
-      { label: "Grooming Harmony", value: "Optimized" },
+      { label: "Forehead Line Depth", value: "-45% Softened" },
+      { label: "Periorbital Rest", value: "Energized" },
       { label: "Profile Confidence", value: "Elevated" },
     ],
     clinicalFinding:
-      "Integrated jawline sharpening and perioral harmonization, translating tired indoor baseline into magnetic real-world presence.",
+      "Integrated forehead line relaxation and under-eye hollow restoration, translating tired indoor baseline into an energized, confident clinical projection.",
   },
 ];
 
