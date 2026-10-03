@@ -14,7 +14,7 @@
 import { isSupabaseConfigured, supabaseRequest } from "../analysis-session/supabaseClient.ts";
 import type { SupabaseEnv } from "../analysis-session/supabaseClient.ts";
 
-export const DELIVERY_DELAY_MS = 30 * 60_000; // 30 minutes
+export const DELIVERY_DELAY_MS = 60 * 1000; // 60 seconds (1 minute) for testing
 
 export type SubmissionStatus = "pending" | "processing" | "done" | "failed";
 
@@ -148,21 +148,30 @@ export async function createSubmission(
  * Fetches all pending submissions whose send_after time has passed.
  * Called by the job runner endpoint every time it fires.
  */
-export async function getPendingSubmissions(deps: SubmissionStoreDeps = {}): Promise<SubmissionRow[]> {
+export async function getPendingSubmissions(
+  options: { force?: boolean } = {},
+  deps: SubmissionStoreDeps = {},
+): Promise<SubmissionRow[]> {
   const { env, fetchImpl } = resolveDeps(deps);
   const configured = isSupabaseConfigured(env);
   if (!configured) {
     warnFallback();
     const now = new Date().toISOString();
     return [...fallback.values()].filter(
-      (r) => (r.status === "pending" || r.status === "failed") && r.retry_count < 3 && r.send_after <= now,
+      (r) =>
+        (r.status === "pending" || r.status === "failed") &&
+        r.retry_count < 3 &&
+        (options.force || r.send_after <= now),
     );
   }
 
-  const now = encodeURIComponent(new Date().toISOString());
+  const query = options.force
+    ? `/submissions?status=in.(pending,failed)&retry_count=lt.3&select=*&order=created_at.desc&limit=10`
+    : `/submissions?status=in.(pending,failed)&retry_count=lt.3&send_after=lte.${encodeURIComponent(new Date().toISOString())}&select=*&order=send_after.asc&limit=10`;
+
   const res = await supabaseRequest(
     env,
-    `/submissions?status=in.(pending,failed)&retry_count=lt.3&send_after=lte.${now}&select=*&order=send_after.asc&limit=10`,
+    query,
     { method: "GET" },
     fetchImpl,
   ).catch(() => null);

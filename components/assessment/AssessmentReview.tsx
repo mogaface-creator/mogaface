@@ -247,9 +247,11 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     if (!result.ok) {
       console.error("[submit] Failed to create submission:", result.reason);
     }
-    // Always navigate to /submitted — the lead details are already saved on
-    // the analysis session row; the submission failure is recoverable by ops.
-    router.push("/submitted");
+    const targetUrl =
+      result.ok && result.submissionId
+        ? `/submitted?id=${encodeURIComponent(result.submissionId)}`
+        : "/submitted";
+    router.push(targetUrl);
   };
 
   return (

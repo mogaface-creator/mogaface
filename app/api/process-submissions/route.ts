@@ -39,7 +39,12 @@ function isAuthorized(request: NextRequest): boolean {
   // In development without a secret, allow all (dev-only, never production).
   if (!secret) return process.env.NODE_ENV !== "production";
   const auth = request.headers.get("authorization") ?? "";
-  return auth === `Bearer ${secret}`;
+  if (auth === `Bearer ${secret}`) return true;
+
+  // Also accept ?key=<secret> or ?secret=<secret> in URL query for easy browser testing
+  const url = new URL(request.url);
+  const param = url.searchParams.get("key") || url.searchParams.get("secret");
+  return param === secret;
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -47,7 +52,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const pending = await getPendingSubmissions();
+  const url = new URL(request.url);
+  const force = url.searchParams.get("force") === "true";
+
+  const pending = await getPendingSubmissions({ force });
   const toProcess = pending.slice(0, MAX_SUBMISSIONS_PER_RUN);
 
   if (toProcess.length === 0) {
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 // Vercel Cron also calls GET — same handler
 export const GET = POST;
 
-async function processOne(submission: SubmissionRow): Promise<{ id: string; outcome: "done" | "failed"; reason?: string }> {
+export async function processOne(submission: SubmissionRow): Promise<{ id: string; outcome: "done" | "failed"; reason?: string }> {
   const { id } = submission;
 
   // Claim the row
