@@ -19,7 +19,7 @@
  */
 
 import type { NextRequest } from "next/server";
-import { getPendingSubmissions, getSubmission, updateSubmission } from "@/lib/submissions/store";
+import { getPendingSubmissions, updateSubmission } from "@/lib/submissions/store";
 import type { SubmissionRow } from "@/lib/submissions/store";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { buildReportSummary } from "@/lib/submissions/reportSummary";

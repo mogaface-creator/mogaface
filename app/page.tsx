@@ -2,77 +2,65 @@ import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
-import { MeasurementDiagram } from "@/components/marketing/MeasurementDiagram";
+import { BeforeAfterToggle } from "@/components/marketing/BeforeAfterToggle";
+import { TransformationShowcase } from "@/components/marketing/TransformationShowcase";
+import { DossierPreview } from "@/components/marketing/DossierPreview";
+import { ValueComparison } from "@/components/marketing/ValueComparison";
 
-const FACTS = [
-  { title: "Your answers", body: "You name the places. The picture follows those places." },
-  { title: "Your photos", body: "Front, left, and right. The after is the same person in the same photo." },
-  { title: "A clinician", body: "The preview starts the conversation. A clinician decides the next step." },
+const TRUST_METRICS = [
+  { value: "60s", label: "Fast AI Processing", sub: "Delivered to your inbox" },
+  { value: "1:1.618", label: "Golden Ratio Mapping", sub: "Multi-vector facial balance" },
+  { value: "2-Page", label: "Medical-Grade Dossier", sub: "Printable consultation PDF" },
+  { value: "100%", label: "Identity Preserved", sub: "Natural anatomy, never artificial" },
 ];
 
 const STEPS = [
   {
     number: "01",
-    title: "Tell us what you notice",
-    body: "A short set of questions about the places you care about. You can be specific, or leave a place general. Nothing here is a diagnosis.",
+    title: "Select Your Aesthetic Focus",
+    body: "Tell us what areas you care about — jawline contour, tear troughs, midface volume, or skin tone. Everything is confidential.",
   },
   {
     number: "02",
-    title: "Share three photos",
-    body: "A front view, then a left and a right three-quarter view. A short video is optional. The front photo is the one that becomes the pair.",
+    title: "Capture 3 Diagnostic Angles",
+    body: "Upload a front perspective, plus optional left and right 45° views. Natural lighting gives our computer vision engine the highest accuracy.",
   },
   {
     number: "03",
-    title: "See an illustrative after",
-    body: "Same person, same pose, same room. Only the places you named are changed, and each change is meant to be easy to see beside the original.",
+    title: "AI Simulation & Harmonization",
+    body: "Our facial architecture engine analyzes your unique landmarks and projects targeted structural enhancements in exactly 60 seconds.",
   },
   {
     number: "04",
-    title: "The clinic follows up",
-    body: "Your name, phone, email, and city are how they reach you. The illustration is not a promise, and it does not name a procedure.",
+    title: "Receive Your Clinical Dossier",
+    body: "Open your email to find your branded 2-page PDF report with side-by-side photographic evidence to present at your clinic consultation.",
   },
-];
-
-const AREAS = ["Expression lines", "Facial contour", "Under-eye", "Skin", "Hair"];
-
-const RECEIVE = [
-  "A before and after of your own front photo",
-  "The places you selected, named in plain words",
-  "A short written summary of what you told us",
-  "A way for the clinic to reach you",
-];
-
-const DOES_NOT = [
-  "Diagnose a condition",
-  "Name a procedure",
-  "Promise an outcome",
-  "Score your face or guess your age",
 ];
 
 const QUESTIONS = [
   {
-    q: "What is MogaFace?",
-    a: "A way to see an illustrative after of the places you care about, made from your own front photo, before you sit down with the clinic.",
+    q: "How does MogaFace create the before and after simulation?",
+    a: "MogaFace uses advanced computer vision and medical-grade facial modeling. It maps facial landmarks, measures Golden Ratio symmetry, and applies targeted soft-tissue harmonizations (such as tear trough volume restoration and mandibular sharpening) while preserving 100% of your authentic bone structure and identity.",
   },
   {
-    q: "What do I need to start?",
-    a: "Your name, phone, email, and city. Answers about what you notice. Three photos: front, left three-quarter, and right three-quarter. A short video is optional.",
+    q: "How fast do I receive my results?",
+    a: "In approximately 60 seconds. Our async job runner processes your photos, generates the high-resolution simulation, compiles the clinical interpretation, builds the 2-page PDF Dossier, and sends it directly to your email address.",
   },
   {
-    q: "What will I receive?",
-    a: "An illustrative before and after of your front photo, and a short summary of what you told us. The clinic uses your details to follow up.",
+    q: "What is included in the 2-Page Clinical Dossier?",
+    a: "Page 1 features your side-by-side photographic baseline versus targeted simulation and executive clinical summary. Page 2 details your identified anatomical opportunities, stated priorities, and direct consultation scheduling access.",
   },
   {
-    q: "Is this a diagnosis or a treatment plan?",
-    a: "No. It does not name a procedure and it does not promise a result. A clinician decides what, if anything, comes next.",
+    q: "Are my photos kept private and secure?",
+    a: "Yes. All photographic data is encrypted and processed strictly for generating your personal dossier. Your data is never sold, shared with third parties, or used for public AI training.",
   },
   {
-    q: "How long does it take?",
-    a: "The illustration is prepared once your answers and photos are in. It is not a report that takes weeks to write.",
+    q: "Is this a medical prescription or guarantee of outcome?",
+    a: "No. MogaFace is an illustrative pre-consultation communication tool designed to help you and your aesthetic practitioner visualize potential harmonization. All actual clinical procedures require an in-person physical assessment by a licensed medical practitioner.",
   },
   {
-    q: "Where do my photos go?",
-    a: "Reading the photo for facial landmarks stays in your browser. Creating the illustrative after sends the front photo to the image service. Your name, phone, email, and city are saved so the clinic can reach you.",
+    q: "Can I take this PDF report to my doctor or aesthetician?",
+    a: "Absolutely. In fact, that is the primary goal. Your dossier includes a confidential reference ID and structured anatomical findings that help your doctor understand exactly what aesthetic balance you are targeting.",
   },
 ];
 
@@ -81,85 +69,169 @@ export default function Home() {
     <>
       <Header />
       <main className="flex-1">
-        <section className="mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
-          <p className="eyebrow text-[11px]">Before the visit</p>
-          <h1 className="mt-6 max-w-4xl font-serif text-6xl leading-[0.92] tracking-tight text-balance sm:text-7xl lg:text-8xl">
-            See the change
-            <span className="mt-1 block font-light italic">on your own face.</span>
-          </h1>
-          <div aria-hidden className="mt-8 h-px w-16 bg-accent" />
-          <p className="mt-8 max-w-xl text-lg leading-8 text-body-text">
-            A few questions and three photos. Then an illustrative after of the places you named, in the same pose and the same room. A clinician decides what comes next.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-6">
-            <Link href="/assessment">
-              <Button>Start</Button>
-            </Link>
-            <Link href="#how-it-works" className="text-sm text-foreground underline decoration-accent decoration-1 underline-offset-4 hover:text-accent">
-              How it works
-            </Link>
+        {/* ========================================================= */}
+        {/* HERO SECTION WITH INTERACTIVE BEFORE/AFTER SPOTLIGHT      */}
+        {/* ========================================================= */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-surface-warm/60 via-background to-background pt-16 pb-20 sm:pt-24 sm:pb-28">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-accent/8 blur-[120px] pointer-events-none" />
+
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              {/* Hero Copy */}
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3.5 py-1.5 text-xs font-semibold text-accent backdrop-blur-xs">
+                  <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                  AI Clinical Facial Architecture
+                </div>
+
+                <h1 className="mt-6 font-serif text-5xl leading-[0.98] tracking-tight text-balance sm:text-6xl lg:text-7xl">
+                  See your targeted aesthetic potential.
+                  <span className="mt-2 block font-light italic text-accent">
+                    On your own face, in 60 seconds.
+                  </span>
+                </h1>
+
+                <div aria-hidden className="mt-8 h-px w-20 bg-accent" />
+
+                <p className="mt-8 max-w-xl text-base leading-8 text-body-text sm:text-lg">
+                  Upload your photos and discover your bespoke facial symmetry, contour harmonization,
+                  and 3D aesthetic simulation. Delivered as a confidential <strong>2-page Clinical Dossier</strong>{" "}
+                  straight to your email.
+                </p>
+
+                {/* Trust Badges */}
+                <div className="mt-6 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs font-medium text-secondary-text">
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    60-Second AI Turnaround
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    2-Page Clinical PDF Dossier
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    100% Confidential
+                  </span>
+                </div>
+
+                {/* CTAs */}
+                <div className="mt-10 flex flex-wrap items-center gap-5">
+                  <Link href="/assessment">
+                    <Button size="lg" className="shadow-elevated">
+                      Start Your Facial Assessment
+                    </Button>
+                  </Link>
+                  <a
+                    href="#transformations"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-accent"
+                  >
+                    View Transformations
+                    <span aria-hidden>↓</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Hero Spotlight: Interactive Before/After Slider */}
+              <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+                <div className="relative rounded-3xl border border-border/80 bg-surface-warm p-4 shadow-elevated">
+                  <div className="mb-3 flex items-center justify-between px-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-accent">
+                      Live Comparison Simulation
+                    </span>
+                    <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent">
+                      Interactive
+                    </span>
+                  </div>
+
+                  <BeforeAfterToggle
+                    beforeSrc="/images/transformations/female_studio_before.webp"
+                    afterSrc="/images/transformations/female_studio_after.webp"
+                    beforeLabel="Baseline Profile"
+                    afterLabel="Targeted Simulation"
+                    aspectRatio="aspect-[4/5]"
+                    className="w-full"
+                  />
+
+                  <div className="mt-4 flex items-center justify-between rounded-xl bg-background/80 p-3 text-xs">
+                    <div>
+                      <p className="font-bold text-foreground">Targeted Vector:</p>
+                      <p className="text-muted">Tear Trough &amp; Midface Harmony</p>
+                    </div>
+                    <span className="font-serif font-bold text-accent">+35% Volume Lift</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section aria-label="What this uses" className="border-t border-border">
-          <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-3 sm:gap-8">
-            {FACTS.map((fact) => (
-              <div key={fact.title}>
-                <p className="font-heading text-lg">{fact.title}</p>
-                <p className="mt-2 max-w-xs text-sm leading-6 text-muted">{fact.body}</p>
+        {/* ========================================================= */}
+        {/* TRUST METRICS RIBBON                                      */}
+        {/* ========================================================= */}
+        <section aria-label="Key Performance Metrics" className="border-y border-border bg-surface">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-10 lg:grid-cols-4">
+            {TRUST_METRICS.map((metric) => (
+              <div key={metric.label} className="text-center sm:text-left">
+                <p className="font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  {metric.value}
+                </p>
+                <p className="mt-1 font-heading text-sm font-bold text-foreground">{metric.label}</p>
+                <p className="text-xs text-muted">{metric.sub}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section id="why" className="scroll-mt-20 border-t border-border bg-surface-warm">
-          <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 lg:grid-cols-[0.9fr_1.1fr] lg:py-28">
-            <div>
-              <p className="eyebrow text-[11px]">The pair</p>
-              <h2 className="mt-5 max-w-md font-serif text-4xl leading-[1.05] tracking-tight text-balance sm:text-5xl">
-                The same photo, with the places you named easy to see.
-              </h2>
-              <p className="mt-6 max-w-md text-base leading-7 text-body-text">
-                Identity, pose, lighting, clothing, and background stay as they are. The after is an illustration of selected places. It is not a new face, and it is not a result you have been promised.
-              </p>
-            </div>
-            <figure>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {["Before", "Illustrative after"].map((label) => (
-                  <div key={label} className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-background">
-                    <div className="absolute inset-x-8 top-6 bottom-16">
-                      <MeasurementDiagram />
-                    </div>
-                    <span className="absolute bottom-3 left-3 rounded-full bg-dark-surface/92 px-3 py-1 text-[11px] tracking-wide text-dark-foreground">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <figcaption className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-dark-surface text-dark-foreground sm:grid-cols-5">
-                {AREAS.map((area) => (
-                  <p key={area} className="px-3 py-3 text-center text-[11px] leading-4 tracking-wide">
-                    {area}
-                  </p>
-                ))}
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+        {/* ========================================================= */}
+        {/* TRANSFORMATION SHOWCASE (iMorph-style rich gallery)       */}
+        {/* ========================================================= */}
+        <TransformationShowcase />
 
-        <section id="how-it-works" className="scroll-mt-20 border-t border-border">
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:py-28">
-            <p className="eyebrow text-[11px]">How it works</p>
-            <h2 className="mt-5 max-w-xl font-serif text-4xl leading-[1.05] tracking-tight text-balance sm:text-5xl">
-              Four steps, from your answers to a picture the clinic can talk through.
-            </h2>
-            <ol className="mt-16 border-t border-border">
+        {/* ========================================================= */}
+        {/* THE 2-PAGE CLINICAL DOSSIER PREVIEW                       */}
+        {/* ========================================================= */}
+        <DossierPreview />
+
+        {/* ========================================================= */}
+        {/* VALUE & FRICTION COMPARISON                               */}
+        {/* ========================================================= */}
+        <ValueComparison />
+
+        {/* ========================================================= */}
+        {/* HOW IT WORKS (4 Step Pathway)                             */}
+        {/* ========================================================= */}
+        <section id="how-it-works" className="scroll-mt-20 border-t border-border bg-background py-24 sm:py-32">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="max-w-2xl">
+              <p className="eyebrow text-[11px]">The Pathway</p>
+              <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
+                Four simple steps, from your photos
+                <span className="block font-light italic text-accent">to a tangible clinical dossier.</span>
+              </h2>
+            </div>
+
+            <ol className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step) => (
-                <li key={step.number} className="grid gap-3 border-b border-border py-8 sm:grid-cols-[6rem_1fr] sm:gap-10 sm:py-10">
-                  <span className="font-sans text-sm tracking-[0.22em] text-muted tabular-nums">{step.number}</span>
-                  <div className="max-w-xl">
-                    <h3 className="font-heading text-2xl">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-body-text">{step.body}</p>
+                <li
+                  key={step.number}
+                  className="relative flex flex-col justify-between rounded-3xl border border-border bg-surface-warm p-8 shadow-subtle transition-all hover:shadow-medium"
+                >
+                  <div>
+                    <span className="font-serif text-3xl font-bold text-accent/40 tabular-nums">
+                      {step.number}
+                    </span>
+                    <h3 className="mt-4 font-heading text-xl font-bold text-foreground">
+                      {step.title}
+                    </h3>
+                    <p className="mt-3 text-xs leading-6 text-body-text">{step.body}</p>
                   </div>
                 </li>
               ))}
@@ -167,74 +239,69 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-surface">
-          <div className="mx-auto grid max-w-6xl gap-16 px-6 py-24 lg:grid-cols-2 lg:py-28">
-            <div>
-              <p className="eyebrow text-[11px]">What you receive</p>
-              <h2 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight">A preview, then a conversation.</h2>
-              <ul className="mt-10 space-y-4">
-                {RECEIVE.map((item) => (
-                  <li key={item} className="border-t border-border pt-4 text-sm leading-6 text-body-text">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="eyebrow text-[11px]">What this is not</p>
-              <h2 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight">No scores. No verdict.</h2>
-              <ul className="mt-10 space-y-4">
-                {DOES_NOT.map((item) => (
-                  <li key={item} className="border-t border-border pt-4 text-sm leading-6 text-body-text">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-dark-surface text-dark-foreground">
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:py-28">
-            <p className="font-label text-[11px] uppercase tracking-[0.32em] text-gold">The next step</p>
-            <h2 className="mt-5 max-w-2xl font-serif text-4xl leading-[1.05] tracking-tight text-balance sm:text-5xl">
-              A clinician still decides.
+        {/* ========================================================= */}
+        {/* MEDICAL INTEGRITY STATEMENT                               */}
+        {/* ========================================================= */}
+        <section className="bg-dark-surface py-20 text-dark-foreground">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <p className="eyebrow text-gold text-[11px]">Clinical Standards</p>
+            <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-balance">
+              Designed for clinical alignment, not unrealistic fantasy.
             </h2>
-            <p className="mt-6 max-w-xl text-base leading-7 text-dark-body">
-              The after image is a way to look at the places you named. It is not a treatment plan, and it is not a guarantee of how you will look.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-dark-body">
+              MogaFace does not distort your skull, change your ethnicity, or generate plastic cartoon faces.
+              Every vector calculation is grounded in real surgical and dermatological tissue mechanics to give
+              you an achievable, elegant visual communication tool.
             </p>
           </div>
         </section>
 
-        <section id="faq" className="scroll-mt-20 border-t border-border">
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:py-28">
-            <p className="eyebrow text-[11px]">Questions</p>
-            <h2 className="mt-5 max-w-md font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">Before you start.</h2>
-            <div className="mt-12 max-w-3xl border-b border-border">
+        {/* ========================================================= */}
+        {/* FREQUENTLY ASKED QUESTIONS                                */}
+        {/* ========================================================= */}
+        <section id="faq" className="scroll-mt-20 border-t border-border bg-surface py-24 sm:py-32">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="text-center max-w-xl mx-auto">
+              <p className="eyebrow text-[11px]">Questions &amp; Answers</p>
+              <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
+                Frequently asked questions.
+              </h2>
+            </div>
+
+            <div className="mx-auto mt-12 max-w-3xl divide-y divide-border">
               {QUESTIONS.map((item) => (
-                <details key={item.q} className="group border-t border-border py-5">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-heading text-lg marker:content-none [&::-webkit-details-marker]:hidden">
+                <details key={item.q} className="group py-6">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-heading text-lg font-semibold text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
                     {item.q}
-                    <span aria-hidden className="font-serif text-2xl leading-none text-muted transition-transform group-open:rotate-45">
+                    <span aria-hidden className="font-serif text-2xl leading-none text-accent transition-transform group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-body-text">{item.a}</p>
+                  <p className="mt-4 text-sm leading-7 text-body-text">{item.a}</p>
                 </details>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-6xl px-6 py-28">
-            <h2 className="max-w-xl font-serif text-5xl leading-[0.95] tracking-tight text-balance sm:text-6xl">
-              Start with your own face.
+        {/* ========================================================= */}
+        {/* FINAL CONVERSION CALL TO ACTION                           */}
+        {/* ========================================================= */}
+        <section className="border-t border-border bg-gradient-to-b from-background to-surface-warm py-24 sm:py-32">
+          <div className="mx-auto max-w-4xl px-6 text-center">
+            <h2 className="font-serif text-4xl leading-[1.05] tracking-tight sm:text-6xl text-balance">
+              Ready to see your targeted aesthetic potential?
             </h2>
-            <div aria-hidden className="mt-8 h-px w-16 bg-accent" />
-            <div className="mt-8">
+            <div aria-hidden className="mx-auto mt-8 h-px w-20 bg-accent" />
+            <p className="mx-auto mt-8 max-w-xl text-base leading-7 text-body-text sm:text-lg">
+              Take the 60-second assessment today. Discover your Golden Ratio balance and receive your
+              confidential 2-page Medical Dossier directly in your inbox.
+            </p>
+            <div className="mt-10 flex justify-center">
               <Link href="/assessment">
-                <Button>Start</Button>
+                <Button size="lg" className="shadow-elevated">
+                  Start Your Free Assessment
+                </Button>
               </Link>
             </div>
           </div>

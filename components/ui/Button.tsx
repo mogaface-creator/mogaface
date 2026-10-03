@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 
 type Variant = "primary" | "secondary" | "ghost";
+type Size = "sm" | "md" | "lg";
 
 // "Regal" gradient (Royal Amethyst → Deep Plum) for the primary CTA, per the
 // brand guide's own gradient-usage note ("CTA buttons, dark feature sections").
@@ -10,14 +11,21 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   ghost: "text-muted hover:text-foreground",
 };
 
+const SIZE_CLASSES: Record<Size, string> = {
+  sm: "px-4 py-2 text-xs",
+  md: "px-6 py-3 text-sm",
+  lg: "px-8 py-4 text-base",
+};
+
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-[opacity,transform] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${VARIANT_CLASSES[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[opacity,transform] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...props}
     />
   );
