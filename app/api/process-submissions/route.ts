@@ -27,6 +27,7 @@ import { getAnalysisRecord } from "@/lib/analysis-session/store";
 import { resolveLeadData } from "@/lib/submissions/lead";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
 import { sendReportEmail } from "@/lib/submissions/emailDelivery";
+import { runClinicalVisionScan } from "@/lib/submissions/clinicalVision";
 
 // Vercel route segment config: 60s max on Hobby plan
 export const maxDuration = 60;
@@ -106,6 +107,15 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
 
     const beforeBytes = Buffer.from(submission.before_image_base64, "base64");
 
+    // 3.5 Multi-Modal Clinical Aesthetic Vision Diagnostic Scanner
+    // Evaluates facial vectors, Golden Ratio symmetry, and tissue laxity
+    const visionResult = await runClinicalVisionScan({
+      beforeBytes,
+      beforeMime: submission.before_image_mime || "image/jpeg",
+      clientName: lead.name,
+      intakeConcerns: lead.places.length > 0 ? lead.places : undefined,
+    });
+
     // 4. Resolve the AI after-image: reuse if previously generated, otherwise call OpenAI
     let afterBase64 = submission.after_image_base64;
     let afterMime = submission.after_image_mime;
@@ -115,6 +125,7 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
         beforeBytes,
         beforeMime: submission.before_image_mime as "image/png" | "image/jpeg" | "image/webp",
         record,
+        clinicalVision: visionResult,
       });
 
       if (imageResult.ok) {
@@ -126,12 +137,17 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
           ? await buildReportSummary(record)
           : { summary: "Your personalized facial analysis has been completed.", areas: [] };
 
+        const failedSummary = visionResult.executiveSummary || fallbackSummary.summary;
+        const failedAreas = visionResult.opportunities.length > 0
+          ? visionResult.opportunities
+          : fallbackSummary.areas;
+
         await updateSubmission(id, {
           status: "failed",
           emailError: `Image generation failed: ${imageResult.reason}`,
           retryCount: (submission.retry_count ?? 0) + 1,
-          reportSummary: fallbackSummary.summary,
-          detectedAreas: fallbackSummary.areas,
+          reportSummary: failedSummary,
+          detectedAreas: failedAreas,
         });
         return { id, outcome: "failed", reason: imageResult.reason };
       }
@@ -140,9 +156,15 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
     // 5. Build clinical report summary & detected opportunities
+    // Prioritize high-fidelity Vision diagnostics over generic fallback summaries
     const summaryResult = record
       ? await buildReportSummary(record)
       : { summary: "Your personalized facial analysis has been completed.", areas: [] };
+
+    const reportSummary = visionResult.executiveSummary || summaryResult.summary;
+    const detectedAreas = visionResult.opportunities.length > 0
+      ? visionResult.opportunities
+      : summaryResult.areas;
 
     // 6. Generate the high-resolution branded 2-page PDF
     const pdfBytes = await generatePdfReport({
@@ -153,9 +175,11 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
       referenceId: id,
       beforeImageBytes: beforeBytes,
       afterImageBytes: afterBytes,
-      reportSummary: summaryResult.summary,
-      detectedAreas: summaryResult.areas,
+      reportSummary,
+      detectedAreas,
       intakeConcerns: lead.places.length > 0 ? lead.places : undefined,
+      harmonyScore: visionResult.harmonyScore,
+      symmetryIndex: visionResult.symmetryIndex,
     });
 
     // 7. Deliver PDF Report via Resend Email
@@ -165,7 +189,7 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
         clientName: lead.name,
         referenceId: id,
         pdfBytes,
-        reportSummary: summaryResult.summary,
+        reportSummary,
       });
 
       if (emailResult.ok) {
@@ -173,8 +197,8 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
           status: "done",
           afterImageBase64: afterBase64,
           afterImageMime: afterMime ?? undefined,
-          reportSummary: summaryResult.summary,
-          detectedAreas: summaryResult.areas,
+          reportSummary,
+          detectedAreas,
           emailSentAt: new Date().toISOString(),
           emailError: undefined,
         });
@@ -185,8 +209,8 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
           status: "failed",
           afterImageBase64: afterBase64,
           afterImageMime: afterMime ?? undefined,
-          reportSummary: summaryResult.summary,
-          detectedAreas: summaryResult.areas,
+          reportSummary,
+          detectedAreas,
           emailError: `Email delivery failed: ${emailResult.error}`,
           retryCount: (submission.retry_count ?? 0) + 1,
         });
@@ -198,8 +222,8 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
         status: "done",
         afterImageBase64: afterBase64,
         afterImageMime: afterMime ?? undefined,
-        reportSummary: summaryResult.summary,
-        detectedAreas: summaryResult.areas,
+        reportSummary,
+        detectedAreas,
         emailError: "No email address on lead record — PDF generated and ready for direct dispatch",
       });
       return { id, outcome: "done" };

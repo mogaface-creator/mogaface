@@ -14,6 +14,7 @@ import { DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS, OPENAI_IMAGE_EDITS_URL, 
 import { validateGeneratedImage } from "../image-generation/output";
 import type { AnalysisRecord } from "../analysis-session/types";
 import type { ImageMime } from "../image-generation/output";
+import type { ClinicalVisionResult } from "./clinicalVision";
 
 export type ImageJobResult =
   | { ok: true; base64: string; mime: string }
@@ -24,6 +25,8 @@ export interface ImageJobInput {
   beforeMime: ImageMime;
   /** null when no analysis session exists — generates a generic improvement image */
   record: AnalysisRecord | null;
+  /** Clinical vision diagnostics from OpenAI Vision */
+  clinicalVision?: ClinicalVisionResult | null;
 }
 
 const EXTENSION: Record<string, string> = {
@@ -49,9 +52,17 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   const mimeType = input.beforeMime;
   const ext = EXTENSION[mimeType] || "jpg";
 
-  // Build targeted aesthetic refinements based on the patient's record if available
+  // Build targeted aesthetic refinements based on Clinical Vision diagnostic findings first
   const specificRefinements: string[] = [];
-  if (input.record?.opportunities && input.record.opportunities.length > 0) {
+
+  if (input.clinicalVision?.simulationDirectives && input.clinicalVision.simulationDirectives.length > 0) {
+    for (const directive of input.clinicalVision.simulationDirectives) {
+      const cleanDirective = directive.trim().replace(/^[-*•]\s*/, "");
+      if (cleanDirective) {
+        specificRefinements.push(`- ${cleanDirective}`);
+      }
+    }
+  } else if (input.record?.opportunities && input.record.opportunities.length > 0) {
     for (const opp of input.record.opportunities) {
       const concern = (opp.concern || "").toLowerCase();
       const cat = (opp.category || "").toLowerCase();

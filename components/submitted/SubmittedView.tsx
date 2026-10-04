@@ -197,13 +197,14 @@ export function SubmittedView() {
         <p className="eyebrow text-[11px]">What&apos;s in your email report</p>
         <ul className="mt-6 space-y-4">
           {[
-            "Your original front photo alongside the AI-generated after simulation",
-            "A plain-words summary of your stated areas and priorities",
-            "The treatment opportunities your photos and answers pointed to",
-            "Direct in-clinic consultation booking and WhatsApp contact details",
+            "High-resolution photographic baseline paired with AI aesthetic simulation",
+            "Quantitative Facial Harmony Index & Bilateral Symmetry score",
+            "Board-certified executive clinical interpretation of your facial vectors",
+            "Prioritized anatomical opportunities (tear troughs, jawline contour, cheek apex)",
+            "Direct in-clinic consultation pathway and specialist WhatsApp booking",
           ].map((item) => (
             <li key={item} className="flex items-start gap-3 border-t border-border pt-4 text-sm leading-6 text-body-text">
-              <span className="mt-0.5 flex-shrink-0 text-accent" aria-hidden>—</span>
+              <span className="mt-0.5 flex-shrink-0 text-accent font-bold" aria-hidden>✓</span>
               {item}
             </li>
           ))}

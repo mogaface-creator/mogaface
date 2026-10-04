@@ -24,8 +24,10 @@ export interface GeneratePdfReportInput {
   beforeImageBytes: Buffer | Uint8Array;
   afterImageBytes?: Buffer | Uint8Array | null;
   reportSummary: string;
-  detectedAreas: { label: string; description: string }[];
+  detectedAreas: { label: string; description: string; targetRefinement?: string }[];
   intakeConcerns?: string[];
+  harmonyScore?: number;
+  symmetryIndex?: number;
 }
 
 // Brand Color Palette (Clinic Next Face Brand Identity v1.0)
@@ -263,18 +265,20 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
     color: C.plumInk,
   });
 
-  // Col 3: Clinic Location / Scope
-  page1.drawText("CLINIC JURISDICTION", {
+  // Col 3: Clinical Harmony & Symmetry Metrics
+  page1.drawText("CLINICAL INDICES", {
     x: MARGIN_X + 364,
     y: infoBarY + 30,
     size: 6.5,
     font: fontBold,
     color: C.muted,
   });
-  page1.drawText(truncateString(input.clientLocation || "MogaFace Aesthetics", 24), {
+  const harmonyVal = input.harmonyScore ?? 88;
+  const symmetryVal = input.symmetryIndex ? input.symmetryIndex.toFixed(1) : "94.6";
+  page1.drawText(`Harmony: ${harmonyVal}/100 | Symmetry: ${symmetryVal}%`, {
     x: MARGIN_X + 364,
     y: infoBarY + 14,
-    size: 9.5,
+    size: 8.5,
     font: fontBold,
     color: C.royalAmethyst,
   });

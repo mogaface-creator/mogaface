@@ -117,6 +117,8 @@ export async function GET(request: NextRequest): Promise<Response> {
         },
       ],
       intakeConcerns: ["Jawline Definition", "Under-Eye Volume", "Midface Balance"],
+      harmonyScore: 89,
+      symmetryIndex: 95.8,
     });
 
     return new Response(Buffer.from(pdfBytes), {
