@@ -302,6 +302,7 @@ function AskField({
         <input
           type="number"
           inputMode="numeric"
+          placeholder={isHeight ? "e.g. 175" : "e.g. 70"}
           min={isHeight ? 100 : 30}
           max={isHeight ? 250 : 300}
           value={value ?? ""}
@@ -323,7 +324,7 @@ function AskField({
         <input
           type="text"
           value={dislike.words}
-          placeholder="Forehead lines"
+          placeholder="e.g. Under-eye hollows, jawline definition, forehead lines"
           onChange={(event) => {
             const words = event.target.value;
             const dislikes = intake.dislikes.map((item, index) => (index === 0 ? { ...item, words, duration: words.trim() ? item.duration : "" } : item)) as ClinicIntake["dislikes"];

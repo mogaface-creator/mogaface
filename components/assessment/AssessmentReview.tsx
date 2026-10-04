@@ -47,44 +47,22 @@ interface SummarySection {
 }
 
 function buildSections(assessment: Assessment, availablePhotoCount: number): SummarySection[] {
-  return [
-    ...intakeReviewSections(assessment.clinicIntake),
-    {
+  const intakeSections = intakeReviewSections(assessment.clinicIntake);
+
+  // Only include legacy sections if the user actually populated them (avoiding "Not provided" ghost cards)
+  const legacySections: SummarySection[] = [];
+
+  if (assessment.profile.genderPresentation) {
+    legacySections.push({
       title: "Profile",
       rows: [
-        { label: "Age", value: assessment.profile.ageYears !== null ? `${assessment.profile.ageYears} years` : "Not provided" },
-        { label: "Height", value: assessment.profile.heightCm !== null ? `${assessment.profile.heightCm} cm` : "Not provided" },
-        { label: "Weight", value: assessment.profile.weightKg !== null ? `${assessment.profile.weightKg} kg` : "Not provided" },
         { label: "Gender presentation", value: labelFor(GENDER_OPTIONS, assessment.profile.genderPresentation) },
       ],
-    },
-    {
-      title: "Goals",
-      rows: [
-        { label: "Areas", value: labelsFor(GOAL_AREA_OPTIONS, assessment.goals.areas) },
-        { label: "Top priorities", value: labelsFor(GOAL_PRIORITY_OPTIONS, assessment.goals.priorities) },
-      ],
-    },
-    {
-      title: "Face & skin concerns",
-      rows: [
-        {
-          label: "Concerns",
-          value: labelsFor(
-            APPEARANCE_CONCERN_CATALOG.map((c) => ({ value: c.id, label: c.label })),
-            assessment.appearanceConcerns.selected,
-          ),
-        },
-        {
-          label: "Most important",
-          value: labelsFor(
-            APPEARANCE_CONCERN_CATALOG.map((c) => ({ value: c.id, label: c.label })),
-            assessment.appearanceConcerns.priorities,
-          ),
-        },
-      ],
-    },
-    {
+    });
+  }
+
+  if (assessment.hair.length || assessment.hair.texture || assessment.hair.density) {
+    legacySections.push({
       title: "Hair",
       rows: [
         { label: "Length", value: labelFor(LENGTH_OPTIONS, assessment.hair.length) },
@@ -92,25 +70,37 @@ function buildSections(assessment: Assessment, availablePhotoCount: number): Sum
         { label: "Density", value: labelFor(DENSITY_OPTIONS, assessment.hair.density) },
         { label: "Haircut frequency", value: labelFor(FREQUENCY_OPTIONS, assessment.hair.haircutFrequency) },
       ],
-    },
-    {
+    });
+  }
+
+  if (assessment.facialHair.currentStyle) {
+    legacySections.push({
       title: "Facial hair",
       rows: [{ label: "Current style", value: labelFor(FACIAL_HAIR_STYLE_OPTIONS, assessment.facialHair.currentStyle) }],
-    },
-    {
+    });
+  }
+
+  if (assessment.lifestyle.exerciseFrequency || assessment.lifestyle.dailyActivity) {
+    legacySections.push({
       title: "Lifestyle",
       rows: [
-        { label: "Sleep", value: labelFor(SLEEP_OPTIONS, assessment.lifestyle.sleepHours) },
         { label: "Exercise", value: labelFor(EXERCISE_OPTIONS, assessment.lifestyle.exerciseFrequency) },
         { label: "Daily activity", value: labelFor(ACTIVITY_OPTIONS, assessment.lifestyle.dailyActivity) },
       ],
-    },
-    {
+    });
+  }
+
+  if (assessment.style.currentStyle) {
+    legacySections.push({
       title: "Style",
       rows: [{ label: "Current style", value: labelFor(CURRENT_STYLE_OPTIONS, assessment.style.currentStyle) }],
-    },
+    });
+  }
+
+  return [
+    ...intakeSections,
+    ...legacySections,
     {
-      // Counts actual available files, not just metadata — see mediaAvailability.ts.
       title: "Photos",
       rows: [{ label: "Uploaded", value: `${availablePhotoCount} / ${PHOTO_SLOTS.length}` }],
     },
