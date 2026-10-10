@@ -54,6 +54,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const url = new URL(request.url);
   const force = url.searchParams.get("force") === "true";
+  const regenerate = url.searchParams.get("regenerate") === "true";
 
   const pending = await getPendingSubmissions({ force });
   const toProcess = pending.slice(0, MAX_SUBMISSIONS_PER_RUN);
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const results: { id: string; outcome: "done" | "failed"; reason?: string }[] = [];
 
   for (const submission of toProcess) {
-    const outcome = await processOne(submission);
+    const outcome = await processOne(submission, { regenerate });
     results.push(outcome);
   }
 
@@ -75,7 +76,10 @@ export async function POST(request: NextRequest): Promise<Response> {
 // Vercel Cron also calls GET — same handler
 export const GET = POST;
 
-export async function processOne(submission: SubmissionRow): Promise<{ id: string; outcome: "done" | "failed"; reason?: string }> {
+export async function processOne(
+  submission: SubmissionRow,
+  options?: { regenerate?: boolean },
+): Promise<{ id: string; outcome: "done" | "failed"; reason?: string }> {
   const { id } = submission;
 
   // Claim the row
@@ -118,9 +122,11 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
       intakeConcerns: concerns.length > 0 ? concerns : undefined,
     });
 
-    // 4. Resolve the AI after-image: reuse if previously generated, otherwise call OpenAI
-    let afterBase64 = submission.after_image_base64;
-    let afterMime = submission.after_image_mime;
+    const regenerate = !!options?.regenerate;
+
+    // 4. Resolve the AI after-image: reuse if previously generated (unless regenerate=true), otherwise call OpenAI
+    let afterBase64 = regenerate ? null : submission.after_image_base64;
+    let afterMime = regenerate ? null : submission.after_image_mime;
 
     if (!afterBase64) {
       const imageResult = await generateAfterImage({
