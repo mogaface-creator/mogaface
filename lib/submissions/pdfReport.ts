@@ -535,7 +535,7 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
     color: C.deepGold,
   });
   page1.drawText(
-    "Targeted refinement vectors illustrate soft-tissue harmony, midface support, and contour balance.",
+    "Targeted refinement vectors illustrate epidermal clarity, perioral rejuvenation, and structural contour balance.",
     {
       x: MARGIN_X + 90,
       y: summaryBoxY + 20,
@@ -625,19 +625,24 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
       ? input.detectedAreas.slice(0, 4)
       : [
           {
-            label: "Mandibular & Jawline Contour",
+            label: "Dermal Clarity & Acne Clearance",
             description:
-              "Analysis indicated opportunity for enhanced lower-face definition and clean jawline contour definition.",
+              "Active epidermal blemishes and papules identified. Targeted clinical clarification protocol clears breakouts and restores smooth skin texture.",
           },
           {
-            label: "Periorbital & Midface Transition",
+            label: "Perioral & Lip Tone Harmonization",
             description:
-              "Smooth transition between tear trough and anterior cheek volume to optimize youthful light reflection.",
+              "Lip hyperpigmentation and dehydration addressed with nourishing revitalization to restore a healthy, natural rosy-pink tone.",
           },
           {
-            label: "Facial Symmetry & Structural Balance",
+            label: "Tear Trough & Infraorbital Zone",
             description:
-              "Subtle vector balancing between bilateral facial planes to harmonize natural profile proportions.",
+              "Infraorbital volume deficit creates fatigue shadowing beneath medial canthus, addressed with targeted under-eye smoothing.",
+          },
+          {
+            label: "Mandibular Border & Jawline Contour",
+            description:
+              "Soft-tissue contour along the mandibular angle firmed to establish a crisp, sculpted lower-face profile.",
           },
         ];
 

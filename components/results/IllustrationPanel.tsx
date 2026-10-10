@@ -115,7 +115,7 @@ function AfterFrame({ slot }: { slot: AfterSlot }) {
         <span className="absolute bottom-3 left-3 rounded-full bg-dark-surface/92 px-3 py-1.5 text-xs font-medium text-dark-foreground">After</span>
         {slot.isMock && <span className="absolute bottom-3 right-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Mock image — development only</span>}
       </div>
-      <figcaption className="sr-only">{ILLUSTRATIVE_AFTER.label}</figcaption>
+      <figcaption className="sr-only">{ILLUSTRATIVE_AFTER.label} ({ILLUSTRATIVE_AFTER.aiLabel})</figcaption>
       <p className="mt-1 text-xs text-muted">{ILLUSTRATIVE_AFTER.shortNotice}</p>
     </figure>
   );

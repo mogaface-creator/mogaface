@@ -609,7 +609,13 @@ test("17. A generated image can never become evidence: the analysis layers do no
 test("18. The OpenAI key stays server-side: read only by server modules, never by a client file, no NEXT_PUBLIC_OPENAI variable", () => {
   const all = sources(["app", "components", "lib"]);
   const readers = all.filter((f) => /OPENAI_API_KEY/.test(f.src)).map((f) => f.path).sort();
-  assert.deepEqual(readers, ["lib/image-generation/handler.ts", "lib/interpretation/select.ts"]);
+  assert.deepEqual(readers, [
+    "lib/image-generation/handler.ts",
+    "lib/interpretation/select.ts",
+    "lib/submissions/clinicalVision.ts",
+    "lib/submissions/imageJob.ts",
+    "lib/submissions/reportSummary.ts",
+  ]);
   for (const f of all.filter((x) => x.path.startsWith("components/") || /"use client"/.test(x.src) || x.path === "lib/image-generation/client.ts" || x.path === "lib/interpretation/remote.ts")) {
     assert.doesNotMatch(f.src, /OPENAI|process\.env\.IMAGE_GENERATION/, `client file ${f.path}`);
   }

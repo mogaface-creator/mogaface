@@ -93,13 +93,24 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
 
   const prompt = [
     "Edit this portrait to show an aesthetic glow-up following non-surgical aesthetic medical treatments.",
-    "CRITICAL IDENTITY REQUIREMENT: Maintain 100% exact facial identity, bone structure, eye shape, nose shape, and natural characteristics. The person must remain immediately and undeniably recognizable as themselves.",
-    "Keep the exact same pose, crop, angle, hair, clothing, and background.",
-    "Apply these aesthetic refinements with professional clinical precision:",
-    ...specificRefinements,
-    "- Add flattering studio portrait lighting with soft directional light and vibrant catchlights in the eyes.",
+    "CRITICAL IDENTITY REQUIREMENT: Maintain 100% exact facial identity, ethnic features, skull bone structure, eye shape, nose structure, facial hair pattern (if any), eyebrows, and overall facial geometry. The person must remain immediately and unmistakably recognizable as the exact same individual.",
+    "Keep the exact same pose, camera crop, angle, head tilt, clothing, and background.",
+    "",
+    "MANDATORY CLINICAL AESTHETIC CORRECTIONS (Treatable skin and soft-tissue conditions MUST be corrected):",
+    "- COMPLETE ACNE & PIMPLE CLEARANCE: Completely eliminate and erase ALL active pimples, acne breakouts, red papules, pustules, bumps, blackheads, and post-inflammatory dark spots across the entire face (especially forehead, glabella between eyebrows, cheeks, chin, and temples). The skin must be transformed to look completely clear, clean, smooth, healthy, and blemish-free with natural, refined pore texture. Absolutely NO pimples, pustules, or red bumps should remain.",
+    "- LIP REJUVENATION & BRIGHTENING: Rejuvenate, hydrate, and brighten any dark, hyperpigmented, brown, or dull lips. Infuse the lips with a healthy, fresh, deeply hydrated, naturally even pink/rosy tone with a crisp, soft vermilion border. Never leave lips dark, dry, or discolored.",
+    "- PERIORBITAL TEAR TROUGH RESTORATION: Eliminate dark under-eye circles and smooth hollow tear troughs for an awake, rested, refreshed gaze.",
+    "- MANDIBULAR & JAWLINE DEFINITION: Firm and sculpt the lower jawline and chin contour for clean, defined lower-face architecture.",
+    "",
+    ...(specificRefinements.length > 0 ? [
+      "PATIENT-SPECIFIC CLINICAL DIRECTIVES:",
+      ...specificRefinements,
+      "",
+    ] : []),
+    "PHOTOGRAPHIC FINISH & REALISM:",
+    "- Apply flattering clinical studio portrait lighting: soft directional light, subtle cheekbone radiance, and crisp catchlights in the eyes.",
     "- Relaxed, confident, attractive micro-expression.",
-    "The output must look like a high-resolution, unretouched real DSLR photo of this exact person looking their absolute healthiest, most radiant, and attractive.",
+    "The output must look like a high-resolution, unretouched real DSLR photo of this exact person looking their absolute healthiest, clearest, and most attractive — NOT an airbrushed, cartoon, or AI filter look.",
   ].join("\n");
 
   try {

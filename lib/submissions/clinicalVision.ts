@@ -59,34 +59,45 @@ export async function runClinicalVisionScan(input: ClinicalVisionInput): Promise
   const clientFirstName = (input.clientName || "Patient").trim().split(" ")[0];
   const concernsList = (input.intakeConcerns && input.intakeConcerns.length > 0)
     ? input.intakeConcerns.join(", ")
-    : "Infraorbital eye hollows, jawline definition, complexion radiance";
+    : "Dermal clarity (blemishes & acne clearance), lip tone & hydration rejuvenation, infraorbital tear troughs, and jawline definition";
 
-  const systemPrompt = `You are a Senior Facial Plastic Surgeon and Board-Certified Aesthetic Dermatologist at an elite cosmetic medicine clinic.
-Your objective is to conduct an objective, dignifying, diagnostic pre-consultation visual assessment of the patient's portrait.
-Analyze facial vectors, soft-tissue contours, Golden Ratio symmetry, and anatomical light reflections.
-Always speak with clinical authority, elegance, medical respect, and constructive insight. Never criticize inherent ethnic identity or bone structure.
+  const systemPrompt = `You are a Senior Facial Plastic Surgeon and Board-Certified Cosmetic Dermatologist at an elite aesthetic medicine clinic.
+Your objective is to conduct a meticulous, dignifying, diagnostic pre-consultation visual assessment of the patient's portrait.
+Analyze facial vectors, soft-tissue contours, Golden Ratio symmetry, epidermal health, and perioral aesthetics.
+Always speak with clinical authority, elegance, medical respect, and constructive insight. Preserve authentic ethnic identity and bone structure, while fearlessly diagnosing treatable dermatological, perioral, and soft-tissue conditions.
+
+MANDATORY CLINICAL DIAGNOSTIC DOMAINS TO AUDIT:
+1. DERMAL PATHOLOGY & BLEMISHES: Carefully inspect the forehead, glabella (between eyebrows), cheeks, chin, and temples for active acne, papules, pustules, comedones, blemishes, redness, or post-inflammatory hyperpigmentation. If the patient has ANY visible pimples, acne, or bumps, you MUST prioritize this as a top opportunity (e.g. "Dermal Clarity & Acne Clearance") detailing the breakout location and prescribing clinical clarification to eradicate blemishes and smooth texture.
+2. PERIORAL & LIP AESTHETICS: Inspect the lips and vermilion border for melanin hyperpigmentation, darkening, dullness, or perioral dehydration. If the patient has dark, dull, or hyperpigmented lips, you MUST prioritize this as an opportunity (e.g. "Perioral & Lip Tone Harmonization") addressing lip rejuvenation and pigment balance to restore a healthy, hydrated, natural rosy-pink tone.
+3. INFRAORBITAL TEAR TROUGHS: Evaluate lower eyelid fatigue, dark under-eye circles, and infraorbital volume depression.
+4. MANDIBULAR DEFINITION & JAWLINE: Evaluate lower facial definition, jawline contour, and gonial angle firmness.
+5. MIDFACE & MALAR PROJECTION: Evaluate cheek volume, high-point light reflection, and bilateral facial symmetry.
 
 Return ONLY a valid JSON object matching this schema:
 {
-  "harmonyScore": number (integer 83 to 94, representing current baseline aesthetic balance),
+  "harmonyScore": number (integer 82 to 94, representing current baseline aesthetic balance),
   "symmetryIndex": number (float 92.0 to 97.8, representing bilateral anatomical symmetry percentage),
-  "executiveSummary": string (2-3 sentences of executive medical interpretation summarizing primary harmonization vectors),
+  "executiveSummary": string (2-3 concise sentences of executive medical interpretation. If the patient exhibits active acne/pimples or dark/discolored lips, explicitly reference dermal clarity and perioral radiance alongside structural contours),
   "opportunities": [
     {
-      "label": string (e.g. "Tear Trough & Infraorbital Zone", "Mandibular Border & Jawline Contour", "Malar Apex & Midface Projection", "Dermal Radiance & Tone"),
-      "description": string (detailed clinical observation of soft tissue anatomy),
-      "targetRefinement": string (specific non-surgical therapeutic goal)
+      "label": string (e.g. "Dermal Clarity & Acne Clearance", "Perioral & Lip Tone Harmonization", "Tear Trough & Infraorbital Zone", "Mandibular Border & Jawline Contour"),
+      "description": string (concise 1-2 sentence clinical observation and therapeutic goal for the dossier card, under 160 characters),
+      "targetRefinement": string (specific clinical therapeutic goal)
     }
   ],
   "simulationDirectives": [
-    string (4 to 5 concise, actionable instructions for the image synthesis engine detailing exactly how to enhance the tear troughs, jawline, cheeks, and skin while maintaining 100% identity lock)
+    string (4 to 5 concise, forceful, actionable instructions for the image synthesis engine detailing EXACTLY what to fix:
+      - If acne/pimples/blemishes are present: "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the forehead, cheeks, and face, rendering clean, smooth, healthy, blemish-free skin while retaining natural pore texture."
+      - If lips are dark or discolored: "Rejuvenate and brighten dark or hyperpigmented lips, restoring a healthy, naturally hydrated, even rosy-pink tone with a defined vermilion border."
+      - "Eliminate dark under-eye circles and restore smooth volume to the tear troughs."
+      - "Sharpen and define the mandibular jawline and chin contour.")
   ]
 }`;
 
   const userPrompt = `Patient Identification: ${clientFirstName}
 Stated Aesthetic Priorities: ${concernsList}
 
-Please inspect the attached diagnostic portrait and produce the complete clinical analysis JSON object.`;
+Please inspect the attached high-resolution diagnostic portrait and produce the complete clinical analysis JSON object.`;
 
   try {
     const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
@@ -108,7 +119,7 @@ Please inspect the attached diagnostic portrait and produce the complete clinica
                 type: "image_url",
                 image_url: {
                   url: `data:${mimeType};base64,${base64Image}`,
-                  detail: "low",
+                  detail: "high",
                 },
               },
             ],
@@ -165,39 +176,39 @@ function buildFallbackVisionScan(input: ClinicalVisionInput): ClinicalVisionResu
 }
 
 function buildFallbackExecutiveSummary(firstName: string): string {
-  return `Based on ${firstName}'s diagnostic portrait and clinical intake, we identified key opportunities in infraorbital tear trough restoration and lower mandibular contour definition. The targeted algorithmic simulation illustrates softened transition vectors across the periorbital zone and enhanced lateral cheek support, preserving authentic facial emotion while establishing golden-ratio harmony.`;
+  return `Based on ${firstName}'s diagnostic portrait and clinical intake, we identified key opportunities in dermal blemish clearance, perioral lip tone harmonization, infraorbital tear trough restoration, and mandibular contour definition. The targeted algorithmic simulation illustrates smoothed epidermal clarity, healthy lip revitalization, and enhanced lower-face support while locking authentic facial identity.`;
 }
 
 function buildFallbackOpportunities() {
   return [
     {
-      label: "Infraorbital Tear Trough",
-      description: "Infraorbital volume loss identified beneath medial canthus, creating subtle fatigue shadowing.",
-      targetRefinement: "Micro-volumization to restore smooth transition vector between lower eyelid and anterior cheek.",
+      label: "Dermal Clarity & Acne Clearance",
+      description: "Active epidermal blemishes, inflammatory papules, and uneven tone identified across forehead and midface.",
+      targetRefinement: "Clinical dermal clarification protocol to clear active breakouts and restore smooth, uniform skin texture.",
     },
     {
-      label: "Mandibular Border Definition",
-      description: "Mild soft-tissue laxity along the gonial angle and lower mandibular margin.",
-      targetRefinement: "Contour sharpening to establish a crisp, defined cervical-mandibular separation.",
+      label: "Perioral & Lip Tone Harmonization",
+      description: "Perioral dehydration and localized lip hyperpigmentation muting natural vermilion radiance.",
+      targetRefinement: "Lip rejuvenation and deep hydration therapy to restore a naturally healthy, balanced rosy-pink lip tone.",
     },
     {
-      label: "Malar Apex Projection",
-      description: "Subtle lateral cheek deflation impacting midface light reflection.",
-      targetRefinement: "Anterior malar elevation to elevate high-point light reflection and soften nasolabial fold depth.",
+      label: "Tear Trough & Infraorbital Zone",
+      description: "Infraorbital volume deficit creating fatigue shadowing beneath medial canthus.",
+      targetRefinement: "Micro-volumization to eliminate dark circles and smooth the lower eyelid transition vector.",
     },
     {
-      label: "Complexion Luminosity & Tone",
-      description: "Mild epidermal erythema and dehydration affecting overall skin radiance.",
-      targetRefinement: "Hydrating dermal infusion to enhance skin luminosity while maintaining natural pore texture.",
+      label: "Mandibular Border & Jawline Contour",
+      description: "Soft-tissue laxity along the gonial angle and mandibular margin attenuating definition.",
+      targetRefinement: "Contour sculpting to establish a crisp, sculpted cervical-mandibular separation.",
     },
   ];
 }
 
 function buildFallbackDirectives(): string[] {
   return [
-    "Restore smooth volume to the under-eye tear troughs, clearing tired dark circles and hollows.",
+    "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the forehead, cheeks, and face, rendering smooth, clear, flawless skin with refined natural pores.",
+    "Rejuvenate and brighten dark or hyperpigmented lips, restoring a healthy, hydrated, natural rosy-pink lip tone with a softly defined vermilion border.",
+    "Restore smooth volume to the under-eye tear troughs, completely clearing tired dark circles and hollows.",
     "Sharpen and firm the lower mandibular jawline and chin contour with clean structural definition.",
-    "Subtly elevate midface malar cheek volume for a natural, youthful lift.",
-    "Refine skin tone and clarity: smooth micro-blemishes, reduce redness, and impart a clean, healthy, hydrated glow.",
   ];
 }

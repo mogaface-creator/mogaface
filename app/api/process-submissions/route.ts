@@ -109,11 +109,13 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
 
     // 3.5 Multi-Modal Clinical Aesthetic Vision Diagnostic Scanner
     // Evaluates facial vectors, Golden Ratio symmetry, and tissue laxity
+    const concerns = [...lead.places, ...lead.dislikes].filter(Boolean);
+
     const visionResult = await runClinicalVisionScan({
       beforeBytes,
       beforeMime: submission.before_image_mime || "image/jpeg",
       clientName: lead.name,
-      intakeConcerns: lead.places.length > 0 ? lead.places : undefined,
+      intakeConcerns: concerns.length > 0 ? concerns : undefined,
     });
 
     // 4. Resolve the AI after-image: reuse if previously generated, otherwise call OpenAI
@@ -177,7 +179,7 @@ export async function processOne(submission: SubmissionRow): Promise<{ id: strin
       afterImageBytes: afterBytes,
       reportSummary,
       detectedAreas,
-      intakeConcerns: lead.places.length > 0 ? lead.places : undefined,
+      intakeConcerns: concerns.length > 0 ? concerns : undefined,
       harmonyScore: visionResult.harmonyScore,
       symmetryIndex: visionResult.symmetryIndex,
     });
