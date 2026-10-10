@@ -214,7 +214,7 @@ export function SubmittedView() {
       {/* Reassurance */}
       <p className="mt-8 text-center text-sm text-muted">
         Didn&apos;t get the email? Check your spam folder, or{" "}
-        <Link href="/" className="underline decoration-accent underline-offset-4 hover:text-accent">
+        <Link href="/assessment?new=1" className="underline decoration-accent underline-offset-4 hover:text-accent">
           start a new assessment
         </Link>
         .

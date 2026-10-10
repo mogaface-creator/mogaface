@@ -29,6 +29,8 @@ import { parseLeadContact } from "@/lib/leads/contact.ts";
 import { intakeReviewSections } from "@/lib/assessment/clinicIntake.ts";
 import type { AnalysisSessionHandle } from "@/lib/analysis-session/types.ts";
 import { submitAssessment } from "@/lib/submissions/client.ts";
+import { clearAssessment } from "@/lib/assessment/storage.ts";
+import { clearAllMedia } from "@/lib/assessment/mediaStore.ts";
 
 function labelFor<T extends string>(options: { value: T; label: string }[], value: T | null): string {
   if (value === null) return "Not provided";
@@ -227,6 +229,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       router.push("/submitted");
       return;
     }
+
     setSubmitting(true);
     const result = await submitAssessment({
       frontPhotoFile: frontFile,
@@ -237,6 +240,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     if (!result.ok) {
       console.error("[submit] Failed to create submission:", result.reason);
     }
+    clearAssessment();
+    void clearAllMedia();
     const targetUrl =
       result.ok && result.submissionId
         ? `/submitted?id=${encodeURIComponent(result.submissionId)}`

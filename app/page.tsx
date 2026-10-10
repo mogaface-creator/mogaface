@@ -124,7 +124,7 @@ export default function Home() {
 
                 {/* CTAs */}
                 <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5">
-                  <Link href="/assessment" className="w-full sm:w-auto">
+                  <Link href="/assessment?new=1" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto justify-center shadow-elevated">
                       Start Your Facial Assessment
                     </Button>
@@ -298,7 +298,7 @@ export default function Home() {
               confidential 2-page Medical Dossier directly in your inbox.
             </p>
             <div className="mt-8 sm:mt-10 flex justify-center">
-              <Link href="/assessment" className="w-full sm:w-auto">
+              <Link href="/assessment?new=1" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto justify-center shadow-elevated">
                   Start Your Free Assessment
                 </Button>

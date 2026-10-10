@@ -26,7 +26,7 @@ export function Header() {
             </Link>
           ))}
           <Link
-            href="/assessment"
+            href="/assessment?new=1"
             className="rounded-full bg-[image:var(--gradient-regal)] px-4 py-2 text-sm font-medium text-accent-foreground shadow-[var(--shadow-subtle)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98]"
           >
             Start

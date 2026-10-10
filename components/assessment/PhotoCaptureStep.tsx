@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { photoMetadataFor } from "@/lib/assessment/photoMeta.ts";
-import { putMedia } from "@/lib/assessment/mediaStore.ts";
-import type { AssessmentPhoto, PhotoSlot } from "@/lib/assessment/types.ts";
+import { putMedia, deleteMedia } from "@/lib/assessment/mediaStore.ts";
+import { PHOTO_SLOTS, type AssessmentPhoto, type PhotoSlot } from "@/lib/assessment/types.ts";
 import { GuidedCameraCapture } from "./GuidedCameraCapture";
 import { PhotoCollection, type SessionFiles } from "./PhotoCollection";
 
@@ -43,9 +43,31 @@ export function PhotoCaptureStep({
     void putMedia(slot, file);
   };
 
+  const handleRetakeAll = () => {
+    Object.values(sessionFiles).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
+    onSessionFilesChange({});
+    onPhotosChange([]);
+    PHOTO_SLOTS.forEach(({ slot }) => void deleteMedia(slot));
+    setMode("camera");
+  };
+
+  const clearBar = photos.length > 0 ? (
+    <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs">
+      <span className="text-muted">{photos.length} photo(s) on file</span>
+      <button
+        type="button"
+        onClick={handleRetakeAll}
+        className="font-medium text-accent underline underline-offset-2 hover:opacity-85"
+      >
+        Retake / Replace all photos with camera
+      </button>
+    </div>
+  ) : null;
+
   if (mode === "upload") {
     return (
       <div>
+        {clearBar}
         <div className="mb-6 flex justify-end">
           <Button type="button" variant="secondary" onClick={() => setMode("camera")}>
             Use camera
@@ -65,13 +87,16 @@ export function PhotoCaptureStep({
   }
 
   return (
-    <GuidedCameraCapture
-      existingSlots={Object.keys(sessionFiles) as PhotoSlot[]}
-      onAcceptPhoto={acceptCapturedPhoto}
-      onVideo={onVideoFileChange}
-      onUseUpload={() => setMode("upload")}
-      onBack={onBack}
-      onFinished={onNext}
-    />
+    <div>
+      {clearBar}
+      <GuidedCameraCapture
+        existingSlots={Object.keys(sessionFiles) as PhotoSlot[]}
+        onAcceptPhoto={acceptCapturedPhoto}
+        onVideo={onVideoFileChange}
+        onUseUpload={() => setMode("upload")}
+        onBack={onBack}
+        onFinished={onNext}
+      />
+    </div>
   );
 }

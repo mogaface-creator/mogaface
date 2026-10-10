@@ -57,7 +57,7 @@ export function DossierPreview() {
             </div>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
-              <Link href="/assessment" className="w-full sm:w-auto">
+              <Link href="/assessment?new=1" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto shadow-elevated">Get Your Free Dossier</Button>
               </Link>
               <a

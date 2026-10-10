@@ -87,7 +87,7 @@ export function ValueComparison() {
             </ul>
 
             <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-dark-body/20">
-              <Link href="/assessment">
+              <Link href="/assessment?new=1">
                 <Button size="lg" className="w-full justify-center shadow-elevated">
                   Start Your 60-Second Assessment
                 </Button>

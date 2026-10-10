@@ -30,7 +30,18 @@ const PROGRESS_INDEX: Partial<Record<StepId, number>> = {
 // This component is only ever mounted client-side (see app/assessment/page.tsx,
 // which loads it with next/dynamic + ssr:false), so reading localStorage
 // directly in the initializer is safe — there is no server render to mismatch.
+function checkNewRequested(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("new") === "1" || params.get("reset") === "1";
+}
+
 function initialAssessment(): Assessment {
+  if (checkNewRequested()) {
+    clearAssessment();
+    void clearAllMedia();
+    return createEmptyAssessment();
+  }
   return loadAssessment() ?? createEmptyAssessment();
 }
 
@@ -53,6 +64,18 @@ export function AssessmentShell() {
   // the metadata loaded at mount. Runs once: later photo/video changes update sessionFiles
   // directly, they don't need to go through IndexedDB again.
   useEffect(() => {
+    if (checkNewRequested()) {
+      clearAssessment();
+      void clearAllMedia();
+      setSessionFiles({});
+      setSessionVideo(null);
+      setMediaHydrated(true);
+      if (typeof window !== "undefined" && window.history?.replaceState) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       const restoredFiles: SessionFiles = {};
@@ -125,6 +148,21 @@ export function AssessmentShell() {
   const preview = screens[safeCursor];
 
   const begin = () => {
+    clearAssessment();
+    void clearAllMedia();
+    Object.values(sessionFilesRef.current).forEach((f) => f && URL.revokeObjectURL(f.previewUrl));
+    setSessionFiles({});
+    setSessionVideo(null);
+    const fresh = createEmptyAssessment();
+    setAssessment(fresh);
+    saveAssessment(fresh);
+    setMediaHydrated(true);
+    setCursor(0);
+    setStepId("preview");
+    toTop();
+  };
+
+  const resume = () => {
     setCursor(0);
     setStepId("preview");
     toTop();
@@ -178,7 +216,13 @@ export function AssessmentShell() {
             </div>
           )}
 
-          {stepId === "intro" && <AssessmentIntro onBegin={begin} />}
+          {stepId === "intro" && (
+            <AssessmentIntro
+              onBegin={begin}
+              hasExistingData={assessment.photos.length > 0 || (assessment.clinicIntake.places && assessment.clinicIntake.places.length > 0)}
+              onResume={resume}
+            />
+          )}
 
           {stepId === "preview" && preview && (
             <ClinicIntakeSection

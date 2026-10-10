@@ -244,7 +244,7 @@ export function ResultsExperience() {
         <div className="space-y-4 text-center">
           <h1 className="font-serif text-3xl tracking-tight">No analysis found</h1>
           <p className="text-sm text-muted">Your results aren&apos;t stored between visits. Start a new assessment to see them here.</p>
-          <Link href="/assessment">
+          <Link href="/assessment?new=1">
             <Button>Start Your Assessment</Button>
           </Link>
         </div>
