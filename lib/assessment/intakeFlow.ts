@@ -73,7 +73,16 @@ export function previewCanContinue(screenId: string, intake: ClinicIntake): bool
   if (screenId === "bother") return intake.dislikes.some((dislike) => dislike.words.trim().length > 0);
   if (screenId === "howLong") return replyOf(intake, "dislikeDuration") !== "";
   if (screenId === "places") return intake.places.length > 0;
-  if (screenId === "size") return intake.heightCm !== null && intake.weightKg !== null;
+  if (screenId === "size") {
+    return (
+      intake.heightCm !== null &&
+      intake.heightCm >= 100 &&
+      intake.heightCm <= 250 &&
+      intake.weightKg !== null &&
+      intake.weightKg >= 30 &&
+      intake.weightKg <= 300
+    );
+  }
   if (screenId === "flags") return (intake.picked.clinicFlags ?? []).length > 0;
   if (screenId === "priorWhat") return replyOf(intake, "priorTreatments").trim().length > 0;
   if (screenId === "eventWhat") return replyOf(intake, "event").trim().length > 0;

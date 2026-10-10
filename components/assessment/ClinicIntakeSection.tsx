@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEvent } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { StepNav } from "./StepNav";
 import { MultiChoiceGroup, SingleChoiceGroup } from "./ChoiceGroup";
 import { concernLabel, toggleDetail, type AppearanceConcernDetailId } from "@/lib/assessment/appearanceConcerns.ts";
@@ -198,6 +198,66 @@ function FieldLabel({ ask }: { ask: Ask }) {
   );
 }
 
+function BodyMeasureField({
+  ask,
+  value,
+  isHeight,
+  assessment,
+  intake,
+  onCommit,
+}: {
+  ask: Ask;
+  value: number | null;
+  isHeight: boolean;
+  assessment: Assessment;
+  intake: ClinicIntake;
+  onCommit: (next: Assessment, ask: Ask) => void;
+}) {
+  const [text, setText] = useState<string>(value !== null ? String(value) : "");
+
+  useEffect(() => {
+    if (value !== null && Number(text) !== value) {
+      setText(String(value));
+    }
+  }, [value, text]);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const raw = event.target.value.replace(/\D/g, "");
+    setText(raw);
+    const next = raw === "" ? null : Number(raw);
+    onCommit(
+      projectBody(assessment, isHeight ? next : intake.heightCm, isHeight ? intake.weightKg : next),
+      ask
+    );
+  };
+
+  const num = text === "" ? null : Number(text);
+  const min = isHeight ? 100 : 30;
+  const max = isHeight ? 250 : 300;
+  const isOutOfRange = text !== "" && num !== null && (num < min || num > max);
+  const showHint = isOutOfRange && text.length >= (isHeight ? 3 : 2);
+
+  return (
+    <label className="block">
+      <FieldLabel ask={ask} />
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        placeholder={isHeight ? "e.g. 175" : "e.g. 70"}
+        value={text}
+        onChange={handleChange}
+        className={FIELD}
+      />
+      {showHint && (
+        <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+          {isHeight ? "Enter height between 100 and 250 cm" : "Enter weight between 30 and 300 kg"}
+        </p>
+      )}
+    </label>
+  );
+}
+
 function AskField({
   ask,
   assessment,
@@ -297,22 +357,15 @@ function AskField({
     const isHeight = ask.kind === "height";
     const value = isHeight ? intake.heightCm : intake.weightKg;
     return (
-      <label className="block">
-        <FieldLabel ask={ask} />
-        <input
-          type="number"
-          inputMode="numeric"
-          placeholder={isHeight ? "e.g. 175" : "e.g. 70"}
-          min={isHeight ? 100 : 30}
-          max={isHeight ? 250 : 300}
-          value={value ?? ""}
-          onChange={(event) => {
-            const next = event.target.value === "" ? null : Number(event.target.value);
-            onCommit(projectBody(assessment, isHeight ? next : intake.heightCm, isHeight ? intake.weightKg : next), ask);
-          }}
-          className={FIELD}
-        />
-      </label>
+      <BodyMeasureField
+        key={ask.id}
+        ask={ask}
+        value={value}
+        isHeight={isHeight}
+        assessment={assessment}
+        intake={intake}
+        onCommit={onCommit}
+      />
     );
   }
 

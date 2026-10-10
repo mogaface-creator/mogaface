@@ -434,7 +434,11 @@ export function projectBody(assessment: Assessment, heightCm: number | null, wei
   const weight = measure(weightKg, 30, 300);
   return {
     ...assessment,
-    clinicIntake: { ...assessment.clinicIntake, heightCm: height, weightKg: weight },
+    clinicIntake: {
+      ...assessment.clinicIntake,
+      heightCm: typeof heightCm === "number" && Number.isFinite(heightCm) && heightCm > 0 ? heightCm : null,
+      weightKg: typeof weightKg === "number" && Number.isFinite(weightKg) && weightKg > 0 ? weightKg : null,
+    },
     profile: { ...assessment.profile, heightCm: height, weightKg: weight },
   };
 }
