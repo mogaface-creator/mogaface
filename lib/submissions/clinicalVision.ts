@@ -73,17 +73,17 @@ MANDATORY CLINICAL DIAGNOSTIC DOMAINS TO AUDIT:
 3. DERMAL PATHOLOGY & BLEMISHES (Clinical Peels & Laser Resurfacing): Carefully inspect the forehead, glabella (between eyebrows), cheeks, chin, and temples for active acne, papules, pustules, comedones, blemishes, redness, or post-inflammatory hyperpigmentation. If present, prioritize "Dermal Clarity & Acne Clearance" to eradicate blemishes and smooth texture.
 4. FACIAL RHYTIDS & DYNAMIC WRINKLES (Botox / Neuromodulators): Inspect forehead horizontal lines, glabella frown lines (11s between eyebrows), crow's feet, and perioral creases. If lines or wrinkles are visible, diagnose dynamic facial rhytids, prescribing neuromodulator smoothing (Botox) to erase wrinkles and relax creases.
 5. PERIORAL & LIP AESTHETICS (Lip Hydration Therapy): Inspect the lips and vermilion border for melanin hyperpigmentation, darkening, dullness, or perioral dehydration. If lips are dark or dull, prioritize "Perioral & Lip Tone Harmonization" to restore healthy, hydrated rosy-pink vitality.
-6. HAIR & SCALP AUTHENTICITY: Inspect hair status. If the patient is completely bald, balding, or has a shaved head, explicitly mandate in the directives that the bald scalp must be preserved exactly, strictly forbidding artificial hair.
-7. COMPLEXION & ETHNIC INTEGRITY: Explicitly mandate that the patient's natural skin shade and melanin level (e.g. Indian/brown/tan) MUST be strictly preserved without any skin bleaching or whitening.
+6. HAIR & SCALP RESTORATION (Hairline & Follicular Rejuvenation): Inspect hair density, hairline recession, front thinning, and styling. If the patient has hair loss, receding hairline, front thinning, or messy unkempt hair, prescribe "Hair Restoration & Scalp Harmonization" to restore a full, healthy, dense hairline and a sharp, clean, attractive, modern hairstyle suited to their face. (If the patient is intentionally fully bald or clean-shaven, preserve a clean, healthy scalp).
+7. COMPLEXION & ETHNIC INTEGRITY: Strictly preserve the patient's natural skin shade and ethnic melanin level (brown/tan). Never bleach or whiten the skin.
 
 Return ONLY a valid JSON object matching this schema:
 {
   "harmonyScore": number (integer 82 to 94, representing current baseline aesthetic balance),
   "symmetryIndex": number (float 92.0 to 97.8, representing bilateral anatomical symmetry percentage),
-  "executiveSummary": string (2-3 concise sentences of executive medical interpretation synthesizing primary structural, dermal, and contour findings),
+  "executiveSummary": string (2-3 concise sentences of executive medical interpretation synthesizing primary structural, dermal, contour, and follicular findings),
   "opportunities": [
     {
-      "label": string (e.g. "Infraorbital Tear Trough & Dark Circles", "Mandibular Border & Submental Sculpting", "Dermal Clarity & Acne Clearance", "Facial Rhytids & Dynamic Line Smoothing", "Perioral & Lip Tone Harmonization"),
+      "label": string (e.g. "Hairline & Follicular Restoration", "Infraorbital Tear Trough & Dark Circles", "Mandibular Border & Submental Sculpting", "Dermal Clarity & Acne Clearance", "Facial Rhytids & Dynamic Line Smoothing", "Perioral & Lip Tone Harmonization"),
       "description": string (concise 1-2 sentence clinical observation and therapeutic goal for the dossier card, under 160 characters),
       "targetRefinement": string (specific clinical therapeutic goal)
     }
@@ -91,8 +91,14 @@ Return ONLY a valid JSON object matching this schema:
   "simulationDirectives": [
     string (3 to 5 concise action items detailing what to fix)
   ],
-  "imagePrompt": string (Write the EXACT, direct edit prompt for the OpenAI image model tailored specifically to THIS person. Use strong, direct instructions:
-"Make the jawline sharp, chiseled, and defined, noticeably reducing lower-cheek fullness and double chin. Completely clear and erase all active pimples, acne bumps, red marks, and blemishes from the forehead and cheeks, leaving smooth, clean, healthy skin. Smooth out dark under-eye circles and fill hollow tear troughs. [If forehead wrinkles present: Smooth dynamic expression lines and wrinkles.] [HAIR: If bald or shaved, keep completely bald; if hair present, keep exact hairstyle]. Strictly preserve the exact natural skin tone and melanin level (do not lighten, bleach, or whiten skin). Maintain 100% of their authentic identity, eyes, nose, facial hair, clothes, and background.")
+  "imagePrompt": string (Write the EXACT, direct edit prompt for the OpenAI image model tailored specifically to THIS person. Use strong, direct photographic instructions:
+"Realistic clinical aesthetic & hair restoration transformation of this person:
+1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style that suits their face.
+2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine/feminine jawline.
+3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.
+4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.
+5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.
+6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.")
 }
 `;
 
@@ -183,22 +189,27 @@ function buildFallbackVisionScan(input: ClinicalVisionInput): ClinicalVisionResu
 
 function buildFallbackImagePrompt(firstName: string, concerns?: string[]): string {
   return [
-    "Make the jawline sharp, chiseled, and defined, noticeably reducing lower-cheek fullness and double chin.",
-    "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the face, leaving clean, smooth, healthy skin texture.",
-    "Smooth out dark under-eye circles and fill hollow tear troughs for an alert, well-rested appearance.",
-    "Smooth forehead wrinkles and dynamic expression lines.",
-    "If the person is bald or has a shaved head, keep them completely bald (do not add hair). Keep exact hairstyle otherwise.",
-    "COMPLEXION LOCK: Strictly preserve their natural skin color and ethnic melanin depth (brown/tan). Under no circumstances bleach, lighten, or whiten the skin.",
-    "Maintain 100% of their unique facial identity, eyes, nose, facial hair, clothing, and background.",
-  ].join(" ");
+    `Realistic clinical aesthetic & hair restoration transformation of ${firstName}:`,
+    "1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style suited to their face.",
+    "2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine jawline.",
+    "3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.",
+    "4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.",
+    "5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.",
+    "6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.",
+  ].join("\n");
 }
 
 function buildFallbackExecutiveSummary(firstName: string): string {
-  return `Based on ${firstName}'s diagnostic portrait and clinical intake, we identified key opportunities in dermal blemish clearance, perioral lip tone harmonization, infraorbital tear trough restoration, and mandibular contour definition. The targeted algorithmic simulation illustrates smoothed epidermal clarity, healthy lip revitalization, and enhanced lower-face support while locking authentic facial identity.`;
+  return `Based on ${firstName}'s diagnostic portrait and clinical intake, we identified key opportunities in hair density and hairline restoration, dermal blemish clearance, perioral lip tone harmonization, and mandibular contour definition. The targeted algorithmic simulation illustrates restored follicular fullness, smoothed epidermal clarity, and sculpted lower-face support while locking authentic facial identity.`;
 }
 
 function buildFallbackOpportunities() {
   return [
+    {
+      label: "Hairline & Follicular Restoration",
+      description: "Frontal hairline recession and follicular thinning creating mid-scalp exposure.",
+      targetRefinement: "Follicular density restoration and precision hairline framing to restore youthful crown fullness.",
+    },
     {
       label: "Dermal Clarity & Acne Clearance",
       description: "Active epidermal blemishes, inflammatory papules, and uneven tone identified across forehead and midface.",

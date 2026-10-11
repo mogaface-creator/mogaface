@@ -91,20 +91,14 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     }
 
     prompt = [
-      "This person has come for an aesthetic transformation.",
-      "In this photo, I can see that he has facial fullness along the lower face and jawline, visible skin blemishes and acne marks, and under-eye fatigue.",
-      "",
-      "Let's fix all these things in this photo:",
-      "1. Completely clear and erase all active pimples, acne bumps, red marks, and blemishes across the entire face, leaving smooth, clean skin texture.",
-      "2. Slim the lower face and submental double chin, sculpting a sharp, defined, clean jawline separated from the neck.",
-      "3. Smooth out dark under-eye circles and fill hollow tear troughs for an alert, rested gaze.",
-      "4. Smooth dynamic forehead lines and wrinkles while keeping natural expression.",
+      "Realistic clinical aesthetic & hair restoration transformation of this person:",
+      "1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style suited to their face. (If completely bald or shaved, keep a clean scalp).",
+      "2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine/feminine jawline.",
+      "3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.",
+      "4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.",
+      "5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.",
+      "6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.",
       ...(specificRefinements.length > 0 ? specificRefinements : []),
-      "",
-      "CRITICAL IDENTITY & COMPLEXION RULES:",
-      "- STRICT COMPLEXION LOCK: Strictly preserve the person's exact natural skin shade and melanin level (brown/tan). DO NOT BLEACH, WHITEN, OR LIGHTEN THE SKIN.",
-      "- HAIR LOCK: If the person is bald or shaved, keep them completely bald. Do not add or change hair.",
-      "- IDENTITY LOCK: Preserve their authentic eyes, nose, facial hair, clothing, and background so they remain 100% recognizable.",
     ].join("\n");
   }
 
