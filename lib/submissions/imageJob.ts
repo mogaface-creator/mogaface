@@ -52,70 +52,59 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   const mimeType = input.beforeMime;
   const ext = EXTENSION[mimeType] || "jpg";
 
-  // Build targeted aesthetic refinements based on Clinical Vision diagnostic findings first
-  const specificRefinements: string[] = [];
+  // 1. Priority: Use the direct, personalized edit prompt crafted by GPT-4o Vision inspecting the patient's actual portrait
+  let prompt = input.clinicalVision?.imagePrompt?.trim();
 
-  if (input.clinicalVision?.simulationDirectives && input.clinicalVision.simulationDirectives.length > 0) {
-    for (const directive of input.clinicalVision.simulationDirectives) {
-      const cleanDirective = directive.trim().replace(/^[-*•]\s*/, "");
-      if (cleanDirective) {
-        specificRefinements.push(`- ${cleanDirective}`);
+  // 2. Fallback: Build targeted prompt from directives or intake record if no custom vision prompt
+  if (!prompt) {
+    const specificRefinements: string[] = [];
+
+    if (input.clinicalVision?.simulationDirectives && input.clinicalVision.simulationDirectives.length > 0) {
+      for (const directive of input.clinicalVision.simulationDirectives) {
+        const cleanDirective = directive.trim().replace(/^[-*•]\s*/, "");
+        if (cleanDirective) {
+          specificRefinements.push(`- ${cleanDirective}`);
+        }
+      }
+    } else if (input.record?.opportunities && input.record.opportunities.length > 0) {
+      for (const opp of input.record.opportunities) {
+        const concern = (opp.concern || "").toLowerCase();
+        const cat = (opp.category || "").toLowerCase();
+        const title = (opp.title || "").toLowerCase();
+
+        if (concern.includes("contour") || cat.includes("contouring") || title.includes("jaw") || title.includes("chin")) {
+          specificRefinements.push("- Enhance jawline and mandibular border definition, carving a firm, sharp lower facial contour.");
+        } else if (concern.includes("under_eye") || title.includes("tear") || title.includes("eye") || title.includes("dark circle")) {
+          specificRefinements.push("- Restore smooth volume in the tear troughs and under-eye region, softening dark circles.");
+        } else if (concern.includes("lifting") || cat.includes("lifting")) {
+          specificRefinements.push("- Subtly elevate the midface and malar cheek volume for a natural lift.");
+        } else if (concern.includes("skin") || cat.includes("skin")) {
+          specificRefinements.push("- Refine skin tone and clarity: smooth blemishes and clear acne bumps.");
+        } else if (concern.includes("lines") || cat.includes("neuromodulator")) {
+          specificRefinements.push("- Soften dynamic expression lines across the forehead.");
+        }
       }
     }
-  } else if (input.record?.opportunities && input.record.opportunities.length > 0) {
-    for (const opp of input.record.opportunities) {
-      const concern = (opp.concern || "").toLowerCase();
-      const cat = (opp.category || "").toLowerCase();
-      const title = (opp.title || "").toLowerCase();
 
-      if (concern.includes("contour") || cat.includes("contouring") || title.includes("jaw") || title.includes("chin")) {
-        specificRefinements.push("- Enhance jawline and mandibular border definition, creating a firmer, sharper lower facial contour.");
-      } else if (concern.includes("under_eye") || title.includes("tear") || title.includes("eye") || title.includes("dark circle")) {
-        specificRefinements.push("- Restore smooth volume in the tear troughs and under-eye region, softening dark circles and eye bags for a refreshed, rested look.");
-      } else if (concern.includes("lifting") || cat.includes("lifting")) {
-        specificRefinements.push("- Subtly elevate the midface and malar cheek volume for a natural, youthful lift.");
-      } else if (concern.includes("skin") || cat.includes("skin")) {
-        specificRefinements.push("- Refine skin tone and clarity: smooth micro-blemishes, reduce redness, and impart a clean, healthy, hydrated glow.");
-      } else if (concern.includes("lines") || cat.includes("neuromodulator")) {
-        specificRefinements.push("- Soften dynamic expression lines across the forehead and periorbital area while preserving natural facial animation.");
-      }
-    }
-  }
-
-  // If no specific refinements found, use standard clinical glow-up targets
-  if (specificRefinements.length === 0) {
-    specificRefinements.push(
-      "- Restore smooth volume in the tear troughs and under-eye region, significantly softening dark circles and fatigue.",
-      "- Define and firm the jawline contour and chin angle for a clean, sculpted silhouette.",
-      "- Perfect skin clarity: clear uneven tone and minor blemishes, creating healthy radiant skin texture."
-    );
-  }
-
-  const prompt = [
-    "You are an expert aesthetic medicine imaging specialist generating the simulated clinical outcome of non-surgical cosmetic procedures (Botox, dermal fillers, acne laser resurfacing, and submental contouring) for ClinicNextFace aesthetics clinic.",
-    "",
-    "CRITICAL COMPLEXION & IDENTITY GUARDRAILS (STRICT COMPLIANCE REQUIRED):",
-    "1. ZERO SKIN BLEACHING / MAINTAIN NATURAL SKIN COLOR: Preserve the person's exact natural skin tone, melanin depth, and ethnic complexion. DO NOT BLEACH, LIGHTEN, OR WHITEN THE SKIN. If the person has South Asian, Indian, brown, tan, olive, or deep skin, they MUST REMAIN the exact same brown/tan skin shade. Clear the pimples, smooth the wrinkles, and slim the face, but NEVER make their skin fair or pale. Skin bleaching is completely unacceptable.",
-    "2. IDENTITY PRESERVATION: Maintain the person's authentic facial identity, eye shape, iris color, nose structure, facial hair pattern, and unique ethnic facial characteristics so they remain immediately and undeniably recognizable as the same individual.",
-    "3. HAIR & BALDNESS LOCK: Maintain the person's exact hairstyle, hairline, or complete baldness. If the person is bald or has a shaved head, they MUST remain completely bald. Never invent, add, or alter hair.",
-    "4. POSE & FRAMING: Keep the exact same camera angle, head tilt, clothing, and background.",
-    "",
-    "MANDATORY CLINICAL PROCEDURES TO APPLY (AESTHETIC CLINIC OUTCOMES):",
-    "- COMPLETE ACNE & BLEMISH ERADICATION (Clinical Peels & Laser Resurfacing): Completely eliminate and remove ALL active pimples, acne pustules, red papules, bumps, comedones, whiteheads, blackheads, and post-acne dark spots across the entire face (especially forehead, glabella, cheeks, and chin). The skin must become completely clear, clean, smooth, healthy, and blemish-free.",
-    "- WRINKLE & EXPRESSION LINE ERADICATION (Botox / Neuromodulators): Completely erase and smooth away all dynamic wrinkles, fine lines, forehead horizontal creases, glabellar frown lines (11s between eyebrows), crow's feet around the eyes, and nasolabial folds. The forehead and periorbital skin must appear youthfully relaxed, tight, and completely uncreased, exactly as produced by clinical Botox treatments.",
-    "- VISIBLE FACIAL SLIMMING & DOUBLE-CHIN REMOVAL (Submental Fat Dissolving & Jawline Contouring): Visibly slim and sculpt the lower face. Significantly debulk submental fullness (double chin) and reduce chubby lower-cheek heaviness. Carve out a crisp, defined, sharp jawline border that cleanly separates from the neck, eliminating double-chin sagging.",
-    "- TEAR TROUGH FILLER & DARK CIRCLE ERADICATION (Under-Eye Dermal Fillers): Completely fill and smooth sunken, hollow tear troughs beneath the eyes. Erase dark under-eye circles, shadowing, and bags. Create a seamless, youthful transition from lower eyelid to cheek for an awake, well-rested gaze.",
-    "- LIP REVITALIZATION & HYDRATION (Lip Hydration Therapy): Rejuvenate and hydrate dry or dull lips into a healthy, natural, deeply moisturized rosy tone with a clean vermilion border.",
-    "- MIDFACE CHEEK ELEVATION (Malar Fillers): Subtly elevate the midface malar apex projection for youthful cheek support.",
-    "",
-    ...(specificRefinements.length > 0 ? [
-      "PATIENT-SPECIFIC CLINICAL DIRECTIVES:",
-      ...specificRefinements,
+    prompt = [
+      "This person has come for an aesthetic transformation.",
+      "In this photo, I can see that he has facial fullness along the lower face and jawline, visible skin blemishes and acne marks, and under-eye fatigue.",
       "",
-    ] : []),
-    "PHOTOGRAPHIC FINISH & REALISM:",
-    "Produce a crisp, natural clinical photograph showing the genuine results of these medical procedures on this exact individual. The skin must be clear and wrinkle-free with authentic natural pore texture (not plastic blur, not skin bleached, not an AI filter).",
-  ].join("\n");
+      "Let's fix all these things in this photo:",
+      "1. Completely clear and erase all active pimples, acne bumps, red marks, and blemishes across the entire face, leaving smooth, clean skin texture.",
+      "2. Slim the lower face and submental double chin, sculpting a sharp, defined, clean jawline separated from the neck.",
+      "3. Smooth out dark under-eye circles and fill hollow tear troughs for an alert, rested gaze.",
+      "4. Smooth dynamic forehead lines and wrinkles while keeping natural expression.",
+      ...(specificRefinements.length > 0 ? specificRefinements : []),
+      "",
+      "CRITICAL IDENTITY & COMPLEXION RULES:",
+      "- STRICT COMPLEXION LOCK: Strictly preserve the person's exact natural skin shade and melanin level (brown/tan). DO NOT BLEACH, WHITEN, OR LIGHTEN THE SKIN.",
+      "- HAIR LOCK: If the person is bald or shaved, keep them completely bald. Do not add or change hair.",
+      "- IDENTITY LOCK: Preserve their authentic eyes, nose, facial hair, clothing, and background so they remain 100% recognizable.",
+    ].join("\n");
+  }
+
+  console.log(`[imageJob] Sending prompt to OpenAI Image Edits (${model}):\n${prompt}`);
 
   try {
     const postEdit = (modelName: string, size?: string, quality?: string) => {

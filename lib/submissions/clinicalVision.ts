@@ -35,6 +35,7 @@ export interface ClinicalVisionResult {
     targetRefinement: string;
   }[];
   simulationDirectives: string[];
+  imagePrompt?: string;
 }
 
 const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
@@ -88,16 +89,20 @@ Return ONLY a valid JSON object matching this schema:
     }
   ],
   "simulationDirectives": [
-    string (4 to 5 concise, forceful, actionable instructions for the image synthesis engine detailing EXACTLY what to fix based on the patient's real anatomy:
-      - If eyes are hollow/dark: "Fill deep tear troughs and completely eliminate black under-eye circles, restoring a bright, rested, refreshed gaze."
-      - If facial fat/double chin/blunt jawline: "Apply clinical slimming to the lower face and submental area, debulking fullness and sculpting a sharp, defined jawline with clean cervical-mandibular separation."
-      - If wrinkles/fine lines: "Completely erase all forehead lines, glabellar frown lines (11s), and crow's feet, rendering smoothly relaxed, uncreased skin (Botox simulation)."
-      - If acne/pimples: "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the face, rendering smooth, clear, blemish-free skin."
-      - If lips are dark: "Rejuvenate and brighten dark or hyperpigmented lips to a healthy, hydrated, natural rosy-pink tone."
-      - If bald/shaved: "Maintain authentic bald scalp / hairstyle exactly; strictly do not add or alter hair."
-      - ALWAYS: "Strictly preserve authentic natural skin tone and melanin level; DO NOT bleach, whiten, or lighten skin color.")
-  ]
-}`;
+    string (3 to 5 concise action items detailing what to fix)
+  ],
+  "imagePrompt": string (Write the EXACT, direct edit prompt for the OpenAI image model tailored specifically to THIS person. State what you observe on this person's face and what to fix in clear, natural instructions:
+"This person has come for an aesthetic transformation. In this photo, I can see that he/she has [state observed features: e.g. a fluffy lower face, double chin, and blunt jawline; active acne pimples, red spots, and marks across forehead and cheeks; dark under-eye circles; is bald / has short hair; has natural brown skin].
+Let's fix all these things in this photo:
+1. Erase all pimples, acne bumps, red spots, and blemishes from his face so his skin is completely smooth, clear, and blemish-free.
+2. Visibly slim the fluffy lower face and double chin, carving a sharp, clean, sculpted jawline.
+3. Smooth out dark under-eye circles and fill hollow tear troughs.
+4. Smooth dynamic forehead creases and frown lines.
+5. HAIR: [If bald or shaved, keep completely bald - do not add hair; if hair present, keep exact hairstyle].
+6. COMPLEXION LOCK: Strictly preserve their natural brown/tan skin tone and ethnic melanin level. DO NOT bleach, whiten, or lighten the skin under any circumstance.
+7. Maintain 100% of their unique facial identity, eyes, nose, facial hair, clothes, and background so they remain undeniably themselves.")
+}
+`;
 
   const userPrompt = `Patient Identification: ${clientFirstName}
 Stated Aesthetic Priorities: ${concernsList}
@@ -159,6 +164,9 @@ Please inspect the attached high-resolution diagnostic portrait and produce the 
       simulationDirectives: (parsed.simulationDirectives && parsed.simulationDirectives.length > 0)
         ? parsed.simulationDirectives
         : buildFallbackDirectives(),
+      imagePrompt: typeof parsed.imagePrompt === "string" && parsed.imagePrompt.trim().length > 0
+        ? parsed.imagePrompt.trim()
+        : buildFallbackImagePrompt(clientFirstName, input.intakeConcerns),
     };
   } catch (err) {
     console.error("[clinicalVision] Vision scan error:", err instanceof Error ? err.message : err);
@@ -177,7 +185,26 @@ function buildFallbackVisionScan(input: ClinicalVisionInput): ClinicalVisionResu
     executiveSummary: buildFallbackExecutiveSummary(name),
     opportunities: buildFallbackOpportunities(),
     simulationDirectives: buildFallbackDirectives(),
+    imagePrompt: buildFallbackImagePrompt(name, input.intakeConcerns),
   };
+}
+
+function buildFallbackImagePrompt(firstName: string, concerns?: string[]): string {
+  const concernText = concerns && concerns.length > 0 ? concerns.join(", ") : "acne clearance, jawline slimming, under-eye smoothing";
+  return [
+    `This person (${firstName}) has come for an aesthetic transformation.`,
+    `In this photo, I can see that he has facial fullness and a soft jawline, visible skin blemishes and acne marks, and under-eye fatigue.`,
+    `Priorities requested: ${concernText}.`,
+    "",
+    "Let's fix all these things in this photo:",
+    "1. Erase all visible pimples, acne bumps, redness, and blemishes across the face so the skin is clean, smooth, and blemish-free.",
+    "2. Slim the fluffy lower face and double chin, carving a sharp, defined, clean jawline.",
+    "3. Smooth out dark under-eye circles and fill hollow tear troughs for a well-rested appearance.",
+    "4. Smooth forehead wrinkles and dynamic expression lines.",
+    "5. HAIR: If the person is bald or has a shaved head, keep them completely bald (do not add hair). Keep exact hairstyle otherwise.",
+    "6. COMPLEXION GUARDRAIL: Strictly preserve their natural skin color and ethnic melanin depth (brown/tan). Under no circumstances bleach, lighten, or whiten the skin.",
+    "7. IDENTITY GUARDRAIL: Maintain 100% of their unique facial identity, eye shape, nose shape, facial hair, clothing, and background.",
+  ].join("\n");
 }
 
 function buildFallbackExecutiveSummary(firstName: string): string {
