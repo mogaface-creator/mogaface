@@ -92,18 +92,21 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   }
 
   const prompt = [
-    "Edit this portrait to show an aesthetic glow-up following non-surgical aesthetic medical treatments.",
-    "CRITICAL IDENTITY REQUIREMENT: Maintain 100% exact facial identity, ethnic features, skull bone structure, eye shape, nose structure, facial hair pattern (if any), eyebrows, and overall facial geometry. The person must remain immediately and unmistakably recognizable as the exact same individual.",
-    "Keep the exact same pose, camera crop, angle, head tilt, clothing, and background.",
+    "You are an expert aesthetic medicine imaging specialist generating the simulated clinical outcome of non-surgical cosmetic procedures (Botox, dermal fillers, acne laser resurfacing, and submental contouring) for ClinicNextFace aesthetics clinic.",
     "",
-    "HAIR INTEGRITY & BALDNESS LOCK: Maintain the person's exact hairstyle, hairline, or complete baldness. If the person is completely bald, balding, or has a shaved head, they MUST REMAIN COMPLETELY BALD. NEVER invent, add, or generate hair on a bald person.",
+    "CRITICAL COMPLEXION & IDENTITY GUARDRAILS (STRICT COMPLIANCE REQUIRED):",
+    "1. ZERO SKIN BLEACHING / MAINTAIN NATURAL SKIN COLOR: Preserve the person's exact natural skin tone, melanin depth, and ethnic complexion. DO NOT BLEACH, LIGHTEN, OR WHITEN THE SKIN. If the person has South Asian, Indian, brown, tan, olive, or deep skin, they MUST REMAIN the exact same brown/tan skin shade. Clear the pimples, smooth the wrinkles, and slim the face, but NEVER make their skin fair or pale. Skin bleaching is completely unacceptable.",
+    "2. IDENTITY PRESERVATION: Maintain the person's authentic facial identity, eye shape, iris color, nose structure, facial hair pattern, and unique ethnic facial characteristics so they remain immediately and undeniably recognizable as the same individual.",
+    "3. HAIR & BALDNESS LOCK: Maintain the person's exact hairstyle, hairline, or complete baldness. If the person is bald or has a shaved head, they MUST remain completely bald. Never invent, add, or alter hair.",
+    "4. POSE & FRAMING: Keep the exact same camera angle, head tilt, clothing, and background.",
     "",
-    "MANDATORY CLINICAL AESTHETIC CORRECTIONS (Treatable soft-tissue, contour, and skin issues MUST be corrected):",
-    "- HOLLOW EYES & BLACK DARK CIRCLE ERADICATION: If the eyes are sunken, hollow, or have black/dark under-eye circles or bags, perform complete infraorbital restoration: volumize deep tear troughs to create a smooth, seamless transition from lower eyelid to cheek. Completely erase black dark circles and pigmentation, transforming sunken, tired eyes into an alert, well-rested, refreshed, and vibrant gaze.",
-    "- FACIAL SLIMMING & SUBMENTAL JAWLINE SCULPTING: If the face exhibits heaviness, facial fat, soft jowls, or submental fullness (double chin / lack of jawline), apply clinical slimming: debulk submental fullness and lower cheek heaviness. Sculpt a sharp, defined, chiseled mandibular border and firm jawline with crisp cervical-mandibular separation (the jawline must cleanly separate from the neck, eliminating double-chin sagging).",
-    "- COMPLETE ACNE & PIMPLE CLEARANCE: Completely eliminate and erase ALL active pimples, acne breakouts, red papules, pustules, bumps, blackheads, and post-inflammatory dark spots across the entire face (especially forehead, glabella between eyebrows, cheeks, chin, and temples). Skin must look completely clear, clean, smooth, healthy, and blemish-free with natural, refined pore texture. Absolutely NO pimples, pustules, or red bumps should remain.",
-    "- LIP REJUVENATION & BRIGHTENING: Rejuvenate, hydrate, and brighten any dark, hyperpigmented, brown, or dull lips. Infuse the lips with a healthy, fresh, deeply hydrated, naturally even pink/rosy tone with a crisp, soft vermilion border. Never leave lips dark, dry, or discolored.",
-    "- MIDFACE & MALAR CHEEK ELEVATION: Subtly elevate the midface malar apex projection for youthful cheek support and softened nasolabial transitions.",
+    "MANDATORY CLINICAL PROCEDURES TO APPLY (AESTHETIC CLINIC OUTCOMES):",
+    "- COMPLETE ACNE & BLEMISH ERADICATION (Clinical Peels & Laser Resurfacing): Completely eliminate and remove ALL active pimples, acne pustules, red papules, bumps, comedones, whiteheads, blackheads, and post-acne dark spots across the entire face (especially forehead, glabella, cheeks, and chin). The skin must become completely clear, clean, smooth, healthy, and blemish-free.",
+    "- WRINKLE & EXPRESSION LINE ERADICATION (Botox / Neuromodulators): Completely erase and smooth away all dynamic wrinkles, fine lines, forehead horizontal creases, glabellar frown lines (11s between eyebrows), crow's feet around the eyes, and nasolabial folds. The forehead and periorbital skin must appear youthfully relaxed, tight, and completely uncreased, exactly as produced by clinical Botox treatments.",
+    "- VISIBLE FACIAL SLIMMING & DOUBLE-CHIN REMOVAL (Submental Fat Dissolving & Jawline Contouring): Visibly slim and sculpt the lower face. Significantly debulk submental fullness (double chin) and reduce chubby lower-cheek heaviness. Carve out a crisp, defined, sharp jawline border that cleanly separates from the neck, eliminating double-chin sagging.",
+    "- TEAR TROUGH FILLER & DARK CIRCLE ERADICATION (Under-Eye Dermal Fillers): Completely fill and smooth sunken, hollow tear troughs beneath the eyes. Erase dark under-eye circles, shadowing, and bags. Create a seamless, youthful transition from lower eyelid to cheek for an awake, well-rested gaze.",
+    "- LIP REVITALIZATION & HYDRATION (Lip Hydration Therapy): Rejuvenate and hydrate dry or dull lips into a healthy, natural, deeply moisturized rosy tone with a clean vermilion border.",
+    "- MIDFACE CHEEK ELEVATION (Malar Fillers): Subtly elevate the midface malar apex projection for youthful cheek support.",
     "",
     ...(specificRefinements.length > 0 ? [
       "PATIENT-SPECIFIC CLINICAL DIRECTIVES:",
@@ -111,9 +114,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
       "",
     ] : []),
     "PHOTOGRAPHIC FINISH & REALISM:",
-    "- Apply flattering clinical studio portrait lighting: soft directional light, subtle cheekbone radiance, and crisp catchlights in the eyes.",
-    "- Relaxed, confident, attractive micro-expression.",
-    "The output must look like a high-resolution, unretouched real DSLR photo of this exact person looking their absolute healthiest, clearest, and most attractive — NOT an airbrushed, cartoon, or AI filter look.",
+    "Produce a crisp, natural clinical photograph showing the genuine results of these medical procedures on this exact individual. The skin must be clear and wrinkle-free with authentic natural pore texture (not plastic blur, not skin bleached, not an AI filter).",
   ].join("\n");
 
   try {

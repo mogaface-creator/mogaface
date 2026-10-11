@@ -67,12 +67,13 @@ Analyze facial vectors, soft-tissue contours, Golden Ratio symmetry, epidermal h
 Always speak with clinical authority, elegance, medical respect, and constructive insight. Preserve authentic ethnic identity and bone structure, while fearlessly diagnosing treatable dermatological, perioral, and soft-tissue conditions.
 
 MANDATORY CLINICAL DIAGNOSTIC DOMAINS TO AUDIT:
-1. INFRAORBITAL HOLLOWS & DARK CIRCLES: Evaluate periorbital fatigue, sunken tear troughs, eye bags, and black/brown hyperpigmentation rings beneath the eyes. If present, diagnose infraorbital volume deficit and dark circle pigmentation, prescribing micro-volumization and periorbital depigmentation.
-2. MANDIBULAR DEFINITION, FACIAL FULLNESS & SUBMENTAL CONTOUR: Evaluate facial fat distribution, lower cheek heaviness, jowls, submental fullness (double chin), and blunted jawlines. If the patient has facial heaviness or lack of jawline, diagnose lower-face soft-tissue laxity/adiposity, prescribing submental slimming, cervical-mandibular angle sculpting, and sharp jawline definition.
-3. DERMAL PATHOLOGY & BLEMISHES: Carefully inspect the forehead, glabella (between eyebrows), cheeks, chin, and temples for active acne, papules, pustules, comedones, blemishes, redness, or post-inflammatory hyperpigmentation. If present, prioritize "Dermal Clarity & Acne Clearance" to eradicate blemishes and smooth texture.
-4. PERIORAL & LIP AESTHETICS: Inspect the lips and vermilion border for melanin hyperpigmentation, darkening, dullness, or perioral dehydration. If lips are dark or dull, prioritize "Perioral & Lip Tone Harmonization" to restore healthy, hydrated rosy-pink vitality.
-5. HAIR & SCALP AUTHENTICITY: Inspect hair status. If the patient is completely bald, balding, or has a shaved head, explicitly mandate in the directives that the bald scalp must be preserved exactly, strictly forbidding artificial hair.
-6. MIDFACE MALAR PROJECTION & GOLDEN RATIO SYMMETRY: Evaluate cheek volume, high-point light reflection, and bilateral facial symmetry.
+1. INFRAORBITAL HOLLOWS & DARK CIRCLES (Tear Trough Fillers): Evaluate periorbital fatigue, sunken tear troughs, eye bags, and black/brown hyperpigmentation rings beneath the eyes. If present, diagnose infraorbital volume deficit and dark circle pigmentation, prescribing micro-volumization and under-eye smoothing.
+2. MANDIBULAR DEFINITION, FACIAL FULLNESS & SUBMENTAL CONTOUR (Contouring & Fat Debulking): Evaluate facial fat distribution, lower cheek heaviness, jowls, submental fullness (double chin), and blunted jawlines. If the patient has facial heaviness or lack of jawline, diagnose lower-face soft-tissue adiposity, prescribing submental slimming, cervical-mandibular angle sculpting, and sharp jawline definition.
+3. DERMAL PATHOLOGY & BLEMISHES (Clinical Peels & Laser Resurfacing): Carefully inspect the forehead, glabella (between eyebrows), cheeks, chin, and temples for active acne, papules, pustules, comedones, blemishes, redness, or post-inflammatory hyperpigmentation. If present, prioritize "Dermal Clarity & Acne Clearance" to eradicate blemishes and smooth texture.
+4. FACIAL RHYTIDS & DYNAMIC WRINKLES (Botox / Neuromodulators): Inspect forehead horizontal lines, glabella frown lines (11s between eyebrows), crow's feet, and perioral creases. If lines or wrinkles are visible, diagnose dynamic facial rhytids, prescribing neuromodulator smoothing (Botox) to erase wrinkles and relax creases.
+5. PERIORAL & LIP AESTHETICS (Lip Hydration Therapy): Inspect the lips and vermilion border for melanin hyperpigmentation, darkening, dullness, or perioral dehydration. If lips are dark or dull, prioritize "Perioral & Lip Tone Harmonization" to restore healthy, hydrated rosy-pink vitality.
+6. HAIR & SCALP AUTHENTICITY: Inspect hair status. If the patient is completely bald, balding, or has a shaved head, explicitly mandate in the directives that the bald scalp must be preserved exactly, strictly forbidding artificial hair.
+7. COMPLEXION & ETHNIC INTEGRITY: Explicitly mandate that the patient's natural skin shade and melanin level (e.g. Indian/brown/tan) MUST be strictly preserved without any skin bleaching or whitening.
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -81,7 +82,7 @@ Return ONLY a valid JSON object matching this schema:
   "executiveSummary": string (2-3 concise sentences of executive medical interpretation synthesizing primary structural, dermal, and contour findings),
   "opportunities": [
     {
-      "label": string (e.g. "Infraorbital Tear Trough & Dark Circles", "Mandibular Border & Submental Sculpting", "Dermal Clarity & Acne Clearance", "Perioral & Lip Tone Harmonization"),
+      "label": string (e.g. "Infraorbital Tear Trough & Dark Circles", "Mandibular Border & Submental Sculpting", "Dermal Clarity & Acne Clearance", "Facial Rhytids & Dynamic Line Smoothing", "Perioral & Lip Tone Harmonization"),
       "description": string (concise 1-2 sentence clinical observation and therapeutic goal for the dossier card, under 160 characters),
       "targetRefinement": string (specific clinical therapeutic goal)
     }
@@ -90,9 +91,11 @@ Return ONLY a valid JSON object matching this schema:
     string (4 to 5 concise, forceful, actionable instructions for the image synthesis engine detailing EXACTLY what to fix based on the patient's real anatomy:
       - If eyes are hollow/dark: "Fill deep tear troughs and completely eliminate black under-eye circles, restoring a bright, rested, refreshed gaze."
       - If facial fat/double chin/blunt jawline: "Apply clinical slimming to the lower face and submental area, debulking fullness and sculpting a sharp, defined jawline with clean cervical-mandibular separation."
+      - If wrinkles/fine lines: "Completely erase all forehead lines, glabellar frown lines (11s), and crow's feet, rendering smoothly relaxed, uncreased skin (Botox simulation)."
       - If acne/pimples: "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the face, rendering smooth, clear, blemish-free skin."
       - If lips are dark: "Rejuvenate and brighten dark or hyperpigmented lips to a healthy, hydrated, natural rosy-pink tone."
-      - If bald/shaved: "Maintain authentic bald scalp / hairstyle exactly; strictly do not add or alter hair.")
+      - If bald/shaved: "Maintain authentic bald scalp / hairstyle exactly; strictly do not add or alter hair."
+      - ALWAYS: "Strictly preserve authentic natural skin tone and melanin level; DO NOT bleach, whiten, or lighten skin color.")
   ]
 }`;
 
@@ -208,9 +211,10 @@ function buildFallbackOpportunities() {
 
 function buildFallbackDirectives(): string[] {
   return [
-    "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the forehead, cheeks, and face, rendering smooth, clear, flawless skin with refined natural pores.",
-    "Rejuvenate and brighten dark or hyperpigmented lips, restoring a healthy, hydrated, natural rosy-pink lip tone with a softly defined vermilion border.",
-    "Restore smooth volume to the under-eye tear troughs, completely clearing tired dark circles and hollows.",
-    "Sharpen and firm the lower mandibular jawline and chin contour with clean structural definition.",
+    "Strictly preserve authentic natural skin tone and melanin level; DO NOT bleach, whiten, or lighten skin color.",
+    "Completely clear and erase all active pimples, acne bumps, redness, and blemishes from the face, rendering smooth, clear, blemish-free skin with natural pore texture.",
+    "Erase all dynamic forehead wrinkles, glabellar frown lines (11s), and crow's feet, leaving the skin youthfully uncreased and relaxed (Botox simulation).",
+    "Visibly slim the lower face and debulk submental fullness (double chin), sculpting a crisp, defined jawline separated cleanly from the neck.",
+    "Fill deep tear troughs and eliminate dark under-eye circles, restoring a bright, well-rested gaze.",
   ];
 }
