@@ -21,8 +21,8 @@ import { illustrationPromptFor } from "./provider.ts";
 import { ImageGenerationError } from "./types.ts";
 import type { ImageGenerationProvider } from "./types.ts";
 
-/** Used only when IMAGE_GENERATION_MODEL is unset — from OpenAI's published image-model list; confirm during the supervised live call. */
-export const DEFAULT_IMAGE_MODEL = "gpt-image-2.5-sunburst";
+/** Used only when IMAGE_GENERATION_MODEL is unset — OpenAI's ChatGPT image edit model for realistic aesthetic edits */
+export const DEFAULT_IMAGE_MODEL = "chatgpt-image-latest";
 export const OPENAI_IMAGE_EDITS_URL = "https://api.openai.com/v1/images/edits";
 export const DEFAULT_IMAGE_TIMEOUT_MS = 55_000;
 

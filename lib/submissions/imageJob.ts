@@ -43,7 +43,11 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     return { ok: false, reason: "image_provider_disabled" };
   }
 
-  const model = env.IMAGE_GENERATION_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
+  const rawModel = env.IMAGE_GENERATION_MODEL?.trim();
+  const model = (!rawModel || rawModel === "gpt-image-2.5-sunburst")
+    ? DEFAULT_IMAGE_MODEL
+    : rawModel;
+
   const timeoutMs = Number(env.IMAGE_GENERATION_TIMEOUT_MS) > 0
     ? Math.min(58_000, Math.max(10_000, Number(env.IMAGE_GENERATION_TIMEOUT_MS)))
     : DEFAULT_IMAGE_TIMEOUT_MS;
