@@ -34,12 +34,71 @@ export default function TestLabPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const optimizeImageForUpload = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      img.onload = () => {
+        const maxDim = 1536;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressed);
+          },
+          "image/jpeg",
+          0.88,
+        );
+      };
+      img.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
     setError(null);
+    setPhotoPreview(URL.createObjectURL(file));
+
+    // Optimize image in background for upload
+    try {
+      const optimized = await optimizeImageForUpload(file);
+      setPhotoFile(optimized);
+    } catch {
+      setPhotoFile(file);
+    }
   };
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +125,7 @@ export default function TestLabPage() {
 
     setLoading(true);
     setError(null);
-    setStepMessage("1/3 Scanning facial anatomy & hairline (GPT-4o Vision)...");
+    setStepMessage("1/3 Optimizing image & scanning facial anatomy (GPT-4o Vision)...");
 
     const timer1 = setTimeout(() => {
       setStepMessage("2/3 Rendering photorealistic aesthetic simulation (chatgpt-image-latest)...");
@@ -77,9 +136,14 @@ export default function TestLabPage() {
     }, 28000);
 
     try {
+      // Ensure file is optimized before sending across network
+      let fileToSend = photoFile;
+      if (fileToSend.size > 2 * 1024 * 1024) {
+        fileToSend = await optimizeImageForUpload(fileToSend);
+      }
+
       const formData = new FormData();
-      formData.append("photo", photoFile);
-      if (videoFile) formData.append("video", videoFile);
+      formData.append("photo", fileToSend);
       if (clientName) formData.append("clientName", clientName);
       if (customPrompt.trim()) formData.append("customPrompt", customPrompt.trim());
       formData.append("generatePdf", generatePdf ? "true" : "false");
@@ -92,9 +156,22 @@ export default function TestLabPage() {
       clearTimeout(timer1);
       clearTimeout(timer2);
 
-      const data = await res.json();
+      const resText = await res.text();
+      let data: SimulationResult;
+      try {
+        data = JSON.parse(resText);
+      } catch {
+        if (res.status === 413 || resText.includes("Request Entity Too Large")) {
+          throw new Error("Photo file was too large for the network upload. We have auto-compressed it; please tap Run again.");
+        }
+        if (res.status === 504 || resText.includes("Gateway Timeout")) {
+          throw new Error("OpenAI image generation took longer than usual. Please tap Run again.");
+        }
+        throw new Error(`Server returned error (${res.status}): ${resText.slice(0, 150)}`);
+      }
+
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Simulation failed. Please try again.");
+        throw new Error((data as unknown as { error?: string }).error || "Simulation failed. Please try again.");
       }
 
       setResult(data);
