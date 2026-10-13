@@ -100,12 +100,38 @@ flowchart TD
 
 ---
 
-## 7. Key Doubts & Decisions to Confirm
+## 7. Confirmed Decisions & Architectural Specifications
 
-1. **Simulation Engine Preference**:
-   * Do you prefer **Pathway A (Landmark-Guided Inpainting)** where the AI can only touch the skin blemishes and jawline edge, while eyes, nose, and mouth are physically untouchable?
-   * Or **Pathway B (Deterministic Anatomical Warping)** like Vectra plastic surgery software?
-2. **Hair Restoration Policy**:
-   * Should the system **strictly lock the patient's existing hair/scalp by default** (if bald, stay bald; if shaved, stay shaved), and only simulate hair restoration if the user explicitly opts in via a toggle?
-3. **Primary User Flow**:
-   * Should the `/test-lab` style instant on-screen Before/After visualizer become the primary homepage experience (fast scan -> see result immediately -> get dossier), or keep the multi-step questionnaire intake?
+Based on clinical alignment, the following three core decisions are finalized:
+
+1. **Simulation Engine: Landmark-Guided Inpainting Masking**
+   * **Mechanism**: Use MediaPipe Face Mesh landmarks to generate an immutable protection mask covering:
+     * Full T-Zone (Inter-canthal distance, eye contours, pupils, eyebrows)
+     * Nasal bridge, tip, and nostrils
+     * Mouth shape, vermilion border, and lips
+     * Skeletal framework and skull profile
+   * **Inpainting Target**: The generative model is constrained strictly to the active mask layer:
+     * Dermal blemishes, acne, hyperpigmentation on the cheeks/forehead
+     * Submental contouring & mandibular line definition (double-chin reduction)
+   * **Result**: Zero facial drift. The patient's core features are physically identical because those pixels originate directly from the source image.
+
+2. **Hair & Scalp Policy: Strict Default Lock**
+   * The patient's existing hairline, density, and haircut are strictly preserved by default (bald stays bald; shaved stays shaved).
+   * Hairline restoration will only be simulated if the patient explicitly toggles a `"Simulate Hair Restoration"` option.
+
+3. **Primary User Journey: Instant Visualizer Experience**
+   * Promote the instant on-screen visualizer (proven in `/test-lab`) as the primary patient experience:
+     1. Upload portrait/video with auto-compression.
+     2. Instant anatomical scan & treatment calculation.
+     3. Direct side-by-side interactive Before/After visualizer on screen.
+     4. One-click 2-Page Clinical Consultation Dossier PDF download.
+
+---
+
+## 8. Immediate Implementation Steps
+
+- [ ] **Step 1: MediaPipe Landmark Mask Generator**: Create an API utility to compute and composite the inpainting mask isolating skin blemishes and mandibular edge while locking eyes/nose/mouth.
+- [ ] **Step 2: Inpainting Pipeline Integration**: Pipe the masked image to the simulation endpoint using inpainting mode (`image` + `mask` + clinical prompt).
+- [ ] **Step 3: Hair Restoration Toggle**: Add a dedicated UI toggle to the consultation interface for optional hair simulation.
+- [ ] **Step 4: Homepage Visualizer Upgrade**: Wire the instant Before/After visualizer directly into the primary patient intake flow.
+
