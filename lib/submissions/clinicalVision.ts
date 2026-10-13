@@ -73,8 +73,9 @@ MANDATORY CLINICAL DIAGNOSTIC DOMAINS TO AUDIT:
 3. DERMAL PATHOLOGY & BLEMISHES (Clinical Peels & Laser Resurfacing): Carefully inspect the forehead, glabella (between eyebrows), cheeks, chin, and temples for active acne, papules, pustules, comedones, blemishes, redness, or post-inflammatory hyperpigmentation. If present, prioritize "Dermal Clarity & Acne Clearance" to eradicate blemishes and smooth texture.
 4. FACIAL RHYTIDS & DYNAMIC WRINKLES (Botox / Neuromodulators): Inspect forehead horizontal lines, glabella frown lines (11s between eyebrows), crow's feet, and perioral creases. If lines or wrinkles are visible, diagnose dynamic facial rhytids, prescribing neuromodulator smoothing (Botox) to erase wrinkles and relax creases.
 5. PERIORAL & LIP AESTHETICS (Lip Hydration Therapy): Inspect the lips and vermilion border for melanin hyperpigmentation, darkening, dullness, or perioral dehydration. If lips are dark or dull, prioritize "Perioral & Lip Tone Harmonization" to restore healthy, hydrated rosy-pink vitality.
-6. HAIR & SCALP RESTORATION (Hairline & Follicular Rejuvenation): Inspect hair density, hairline recession, front thinning, and styling. If the patient has hair loss, receding hairline, front thinning, or messy unkempt hair, prescribe "Hair Restoration & Scalp Harmonization" to restore a full, healthy, dense hairline and a sharp, clean, attractive, modern hairstyle suited to their face. (If the patient is intentionally fully bald or clean-shaven, preserve a clean, healthy scalp).
-7. COMPLEXION & ETHNIC INTEGRITY: Strictly preserve the patient's natural skin shade and ethnic melanin level (brown/tan). Never bleach or whiten the skin.
+6. HAIR STATUS & SCALP AUTHENTICITY: Inspect the hair. If the patient is bald, balding, shaved, or has very short/buzzed hair, MANDATE that their bald/shaved head MUST BE PRESERVED EXACTLY with a clean, healthy scalp. DO NOT ADD OR INVENT ARTIFICIAL HAIR. If the patient has hair, maintain their natural hair texture and clean grooming.
+7. STRICT IDENTITY & ANATOMICAL BONE LOCK: This MUST remain 100% the exact same recognizable individual. Do NOT replace them with a different person or generic model. Keep their exact nose shape, eye shape, eyebrows, skull proportions, and facial width.
+8. COMPLEXION & ETHNIC INTEGRITY: Strictly preserve the patient's natural skin shade and ethnic melanin level (brown/tan). Never bleach or whiten the skin.
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -83,7 +84,7 @@ Return ONLY a valid JSON object matching this schema:
   "executiveSummary": string (2-3 concise sentences of executive medical interpretation synthesizing primary structural, dermal, contour, and follicular findings),
   "opportunities": [
     {
-      "label": string (e.g. "Hairline & Follicular Restoration", "Infraorbital Tear Trough & Dark Circles", "Mandibular Border & Submental Sculpting", "Dermal Clarity & Acne Clearance", "Facial Rhytids & Dynamic Line Smoothing", "Perioral & Lip Tone Harmonization"),
+      "label": string (e.g. "Dermal Clarity & Acne Clearance", "Mandibular Border & Submental Sculpting", "Infraorbital Tear Trough & Dark Circles", "Facial Rhytids & Dynamic Line Smoothing", "Perioral & Lip Tone Harmonization"),
       "description": string (concise 1-2 sentence clinical observation and therapeutic goal for the dossier card, under 160 characters),
       "targetRefinement": string (specific clinical therapeutic goal)
     }
@@ -92,13 +93,19 @@ Return ONLY a valid JSON object matching this schema:
     string (3 to 5 concise action items detailing what to fix)
   ],
   "imagePrompt": string (Write the EXACT, direct edit prompt for the OpenAI image model tailored specifically to THIS person. Use strong, direct photographic instructions:
-"Realistic clinical aesthetic & hair restoration transformation of this person:
-1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style that suits their face.
-2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine/feminine jawline.
-3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.
-4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.
-5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.
-6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.")
+"Perform realistic, non-surgical clinical aesthetic enhancements on this EXACT individual:
+STRICT IDENTITY & BONE LOCK:
+- This MUST remain 100% the same recognizable individual. Do NOT replace him/her with a different person.
+- Keep their exact bone structure: same nose shape, eye shape, eyebrows, skull proportions, and facial width.
+- HAIR STATUS: [If bald or shaved: Keep their bald/shaved scalp exactly as it is, cleanly groomed. DO NOT ADD HAIR. If hair present: keep their exact natural hairstyle cleanly groomed].
+- COMPLEXION: Strictly preserve their natural brown/tan skin tone without any bleaching or lightening.
+
+CLINICAL AESTHETIC REFINEMENTS:
+1. Dermal clarity: Remove all visible dark spots, blemishes, pimples, and uneven pigmentation on the face, leaving clean, healthy skin with authentic natural pore texture (no plastic blur, no wax doll look).
+2. Submental contouring: Tighten and firm the soft tissue under the chin and along their natural jawline border, reducing lower-face fullness.
+3. Under-eye refresh: Soften under-eye dark circles and fatigue shadows.
+4. Keep the exact same background, lighting direction, clothing, and head angle.
+The final result must look like an authentic, high-resolution photograph of the exact same person looking their absolute best.")
 }
 `;
 
@@ -189,13 +196,19 @@ function buildFallbackVisionScan(input: ClinicalVisionInput): ClinicalVisionResu
 
 function buildFallbackImagePrompt(firstName: string, concerns?: string[]): string {
   return [
-    `Realistic clinical aesthetic & hair restoration transformation of ${firstName}:`,
-    "1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style suited to their face.",
-    "2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine jawline.",
-    "3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.",
-    "4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.",
-    "5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.",
-    "6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.",
+    `Perform subtle, realistic non-surgical clinical aesthetic enhancements on ${firstName}:`,
+    "STRICT IDENTITY & BONE LOCK (CRITICAL):",
+    "- This MUST remain 100% the exact same recognizable individual. Do NOT replace him/her with a different person.",
+    "- Keep their exact bone structure: same nose shape, eye shape, eyebrows, skull proportions, and facial width.",
+    "- HAIR STATUS: If bald or shaved, keep their bald/shaved scalp exactly as it is (DO NOT ADD HAIR). If hair present, keep their exact natural hairstyle cleanly groomed.",
+    "- COMPLEXION: Strictly preserve their natural brown/tan skin tone without any bleaching or lightening.",
+    "",
+    "CLINICAL AESTHETIC REFINEMENTS:",
+    "1. Dermal clarity: Remove all visible dark spots, blemishes, pimples, and uneven pigmentation on the face, leaving clean, healthy skin with authentic natural pore texture (no plastic blur, no wax doll look).",
+    "2. Submental contouring: Tighten and firm the soft tissue under the chin and along their natural jawline border, reducing lower-face fullness.",
+    "3. Under-eye refresh: Soften under-eye dark circles and fatigue shadows.",
+    "4. Keep the exact same background, lighting direction, clothing, and head angle.",
+    "The final result must look like an authentic, high-resolution photograph of the exact same person looking their absolute best.",
   ].join("\n");
 }
 

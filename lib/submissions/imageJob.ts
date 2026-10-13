@@ -91,13 +91,19 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     }
 
     prompt = [
-      "Realistic clinical aesthetic & hair restoration transformation of this person:",
-      "1. HAIR RESTORATION & HAIRSTYLE: Fix any hair loss, receding hairline, or thinning. Restore a full, healthy, dense hairline and style the hair into a clean, sharp, well-groomed, attractive modern style suited to their face. (If completely bald or shaved, keep a clean scalp).",
-      "2. JAWLINE & CHIN: Visibly slim facial fullness and double chin, carving a sharp, defined, sculpted masculine/feminine jawline.",
-      "3. SKIN & COMPLEXION: Completely clear all acne, pimples, and blemishes. Keep realistic photographic skin texture with visible natural pores — absolutely NO plastic blur, NO wax figure look, and NO airbrushed doll filter.",
-      "4. EYES: Refresh under-eye circles and tired eye bags, keeping the eyes completely natural, sharp, and lifelike with realistic specular highlights.",
-      "5. COMPLEXION: Strictly preserve the authentic natural brown/tan skin tone without any bleaching or lightening.",
-      "6. The final result must look like an authentic, high-resolution photograph of the same person looking their absolute best.",
+      "Perform subtle, realistic non-surgical clinical aesthetic enhancements on this EXACT individual:",
+      "STRICT IDENTITY & BONE LOCK (CRITICAL):",
+      "- This MUST remain 100% the exact same recognizable individual. Do NOT replace him/her with a different person.",
+      "- Keep their exact bone structure: same nose shape, eye shape, eyebrows, skull proportions, and facial width.",
+      "- HAIR STATUS: If bald or shaved, keep their bald/shaved scalp exactly as it is (DO NOT ADD HAIR). If hair present, keep their exact natural hairstyle cleanly groomed.",
+      "- COMPLEXION: Strictly preserve their natural brown/tan skin tone without any bleaching or lightening.",
+      "",
+      "CLINICAL AESTHETIC REFINEMENTS:",
+      "1. Dermal clarity: Remove all visible dark spots, blemishes, pimples, and uneven pigmentation on the face, leaving clean, healthy skin with authentic natural pore texture (no plastic blur, no wax doll look).",
+      "2. Submental contouring: Tighten and firm the soft tissue under the chin and along their natural jawline border, reducing lower-face fullness.",
+      "3. Under-eye refresh: Soften under-eye dark circles and fatigue shadows.",
+      "4. Keep the exact same background, lighting direction, clothing, and head angle.",
+      "The final result must look like an authentic, high-resolution photograph of the exact same person looking their absolute best.",
       ...(specificRefinements.length > 0 ? specificRefinements : []),
     ].join("\n");
   }
