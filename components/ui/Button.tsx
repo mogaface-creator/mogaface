@@ -1,20 +1,23 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "accent-outline";
 type Size = "sm" | "md" | "lg";
 
-// "Regal" gradient (Royal Amethyst → Deep Plum) for the primary CTA, per the
-// brand guide's own gradient-usage note ("CTA buttons, dark feature sections").
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: "bg-[image:var(--gradient-regal)] text-accent-foreground shadow-[var(--shadow-medium)] hover:opacity-90",
-  secondary: "border border-border text-foreground hover:bg-surface-warm",
-  ghost: "text-muted hover:text-foreground",
+  primary:
+    "bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-700 text-white shadow-md shadow-violet-500/20 hover:from-violet-500 hover:to-indigo-500 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]",
+  secondary:
+    "border border-slate-200 bg-white text-slate-900 shadow-xs hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98]",
+  ghost:
+    "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 active:scale-[0.98]",
+  "accent-outline":
+    "border border-violet-200 bg-violet-50/60 text-violet-700 hover:bg-violet-100/70 hover:border-violet-300 active:scale-[0.98]",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
-  sm: "px-4 py-2 text-xs",
-  md: "px-6 py-3 text-sm",
-  lg: "px-8 py-4 text-base",
+  sm: "px-3.5 py-1.5 text-xs font-semibold rounded-full",
+  md: "px-5 py-2.5 text-sm font-semibold rounded-full",
+  lg: "px-7 py-3.5 text-base font-semibold rounded-full",
 };
 
 export function Button({
@@ -25,7 +28,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[opacity,transform] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...props}
     />
   );

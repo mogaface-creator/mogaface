@@ -22,6 +22,7 @@ export interface SubmissionRow {
   id: string;
   lead_id: string | null;
   analysis_id: string | null;
+  photo_visualization_consent?: "granted" | "declined";
   status: SubmissionStatus;
   send_after: string;
   after_image_base64: string | null;
@@ -38,6 +39,7 @@ export interface SubmissionRow {
 }
 
 export interface CreateSubmissionInput {
+  photoVisualizationConsent: "granted" | "declined";
   leadId: string | null;
   analysisId: string | null;
   /** The raw front-photo bytes for PDF generation. Stored as base64. */
@@ -46,9 +48,10 @@ export interface CreateSubmissionInput {
 }
 
 export interface UpdateSubmissionInput {
+  photo_visualization_consent?: "granted" | "declined";
   status: SubmissionStatus;
-  afterImageBase64?: string;
-  afterImageMime?: string;
+  afterImageBase64?: string | null;
+  afterImageMime?: string | null;
   reportSummary?: string;
   detectedAreas?: { label: string; description: string }[];
   emailSentAt?: string;
@@ -103,6 +106,7 @@ export async function createSubmission(
     lead_id: input.leadId,
     analysis_id: input.analysisId,
     status: "pending",
+    photo_visualization_consent: input.photoVisualizationConsent,
     send_after: sendAfter,
     after_image_base64: null,
     after_image_mime: null,
@@ -123,6 +127,7 @@ export async function createSubmission(
       lead_id: input.leadId,
       analysis_id: input.analysisId,
       status: "pending",
+    photo_visualization_consent: input.photoVisualizationConsent,
       send_after: sendAfter,
       before_image_base64: row.before_image_base64,
       before_image_mime: input.beforeImageMime,

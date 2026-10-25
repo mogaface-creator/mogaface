@@ -62,12 +62,12 @@ export function BeforeAfterToggle({
     <div className={`relative flex flex-col ${className}`}>
       {/* Mode Switcher Tabs */}
       <div className="mb-2.5 flex items-center justify-between px-1">
-        <div className="flex rounded-full bg-surface-warm p-1 border border-border text-xs font-medium text-muted">
+        <div className="flex rounded-full bg-slate-100 p-0.5 border border-slate-200/80 text-xs font-medium text-slate-500">
           <button
             type="button"
             onClick={() => setMode("slider")}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              mode === "slider" ? "bg-accent text-white shadow-xs" : "hover:text-foreground"
+            className={`cursor-pointer rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+              mode === "slider" ? "bg-white text-violet-700 shadow-2xs" : "hover:text-slate-900"
             }`}
           >
             Drag Slider
@@ -75,15 +75,15 @@ export function BeforeAfterToggle({
           <button
             type="button"
             onClick={() => setMode("toggle")}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              mode === "toggle" ? "bg-accent text-white shadow-xs" : "hover:text-foreground"
+            className={`cursor-pointer rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+              mode === "toggle" ? "bg-white text-violet-700 shadow-2xs" : "hover:text-slate-900"
             }`}
           >
             Tap to Morph
           </button>
         </div>
-        <span className="text-[11px] tracking-wide text-muted font-medium">
-          {mode === "slider" ? "Drag slider to compare" : "Tap image to switch"}
+        <span className="text-[11px] tracking-wide text-slate-500 font-medium">
+          {mode === "slider" ? "Slide left/right to compare" : "Tap image to crossfade"}
         </span>
       </div>
 
@@ -106,7 +106,7 @@ export function BeforeAfterToggle({
         }}
         onTouchEnd={() => setIsInteracting(false)}
         onTouchMove={handleTouchMove}
-        className={`group relative w-full ${aspectRatio} select-none overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 bg-surface shadow-elevated cursor-ew-resize touch-none`}
+        className={`group relative w-full ${aspectRatio} select-none overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-100 shadow-lg cursor-ew-resize touch-none`}
       >
         {mode === "slider" ? (
           <>
@@ -120,7 +120,7 @@ export function BeforeAfterToggle({
                 className="object-cover object-center pointer-events-none"
                 priority
               />
-              <span className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 rounded-full bg-accent/90 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold tracking-wide text-white shadow-sm pointer-events-none">
+              <span className="absolute bottom-3 right-3 rounded-full bg-violet-600/90 backdrop-blur-md px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wide text-white shadow-xs pointer-events-none">
                 {afterLabel}
               </span>
             </div>
@@ -138,18 +138,18 @@ export function BeforeAfterToggle({
                 className="object-cover object-center pointer-events-none"
                 priority
               />
-              <span className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 rounded-full bg-dark-surface/90 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold tracking-wide text-dark-foreground shadow-sm pointer-events-none whitespace-nowrap">
+              <span className="absolute bottom-3 left-3 rounded-full bg-slate-900/85 backdrop-blur-md px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wide text-white shadow-xs pointer-events-none whitespace-nowrap">
                 {beforeLabel}
               </span>
             </div>
 
             {/* Divider Line & Draggable Handle */}
             <div
-              className="absolute top-0 bottom-0 z-20 w-0.5 bg-white shadow-[0_0_12px_rgba(0,0,0,0.6)] pointer-events-none"
+              className="absolute top-0 bottom-0 z-20 w-0.5 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] pointer-events-none"
               style={{ left: `${sliderPosition}%` }}
             >
-              <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-white bg-accent text-white shadow-heavy ring-4 ring-black/10 transition-transform active:scale-110">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+              <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-white bg-violet-600 text-white shadow-xl ring-4 ring-violet-500/20 transition-transform active:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                   <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                   <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                 </svg>
@@ -183,10 +183,10 @@ export function BeforeAfterToggle({
             {/* Toggle Badge */}
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 pointer-events-none">
               <span
-                className={`rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-bold tracking-wide transition-all shadow-md ${
+                className={`rounded-full px-3 py-1 text-[11px] font-bold tracking-wide transition-all shadow-md ${
                   isShowingAfter
-                    ? "bg-accent text-white"
-                    : "bg-dark-surface/90 text-dark-foreground backdrop-blur-md"
+                    ? "bg-violet-600 text-white"
+                    : "bg-slate-900/90 text-white backdrop-blur-md"
                 }`}
               >
                 {isShowingAfter ? afterLabel : beforeLabel}
@@ -194,7 +194,7 @@ export function BeforeAfterToggle({
             </div>
 
             <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none px-4">
-              <span className="rounded-full bg-black/70 backdrop-blur-md px-3.5 py-1 text-[11px] sm:text-xs font-medium text-white shadow-lg text-center">
+              <span className="rounded-full bg-black/70 backdrop-blur-md px-3.5 py-1 text-[11px] font-medium text-white shadow-lg text-center">
                 Tap image to see {isShowingAfter ? "Baseline" : "Simulation"}
               </span>
             </div>

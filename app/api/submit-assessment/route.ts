@@ -62,6 +62,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     return Response.json({ error: "invalid_request" }, { status: 400 });
   }
 
+  if (!payload || typeof payload !== "object" || !["granted", "declined"].includes(String(payload.photoVisualizationConsent))) {
+    return Response.json({ error: "consent_required" }, { status: 400 });
+  }
+
   // Validate the photo bytes
   const bytes = new Uint8Array(await photo.arrayBuffer());
   const validatedPhoto = validateSourcePhoto(bytes, photo.type);
@@ -103,12 +107,17 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
   }
 
-  // Create the submission row (scheduled 30 min out)
+  if (payload.photoVisualizationConsent === "granted" && !resolvedAnalysisId) {
+    return Response.json({ error: "analysis_session_required" }, { status: 422 });
+  }
+
+  // Create the submission row
   const submissionId = await createSubmission({
     leadId: resolvedLeadId,
     analysisId: resolvedAnalysisId,
     beforeImageBytes: validatedPhoto.bytes,
     beforeImageMime: validatedPhoto.mimeType,
+    photoVisualizationConsent: payload.photoVisualizationConsent as "granted" | "declined",
   });
 
   if (!submissionId) {

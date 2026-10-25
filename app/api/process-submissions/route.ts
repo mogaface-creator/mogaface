@@ -22,17 +22,16 @@ import type { NextRequest } from "next/server";
 import { getPendingSubmissions, updateSubmission } from "@/lib/submissions/store";
 import type { SubmissionRow } from "@/lib/submissions/store";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
-import { buildReportSummary } from "@/lib/submissions/reportSummary";
 import { getAnalysisRecord } from "@/lib/analysis-session/store";
 import { resolveLeadData } from "@/lib/submissions/lead";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
 import { sendReportEmail } from "@/lib/submissions/emailDelivery";
 import { runClinicalVisionScan } from "@/lib/submissions/clinicalVision";
 
-// Vercel route segment config: 60s max on Hobby plan
-export const maxDuration = 60;
+// Requires a deployment plan supporting 180-second functions (scan + edit + review).
+export const maxDuration = 180;
 
-const MAX_SUBMISSIONS_PER_RUN = 5; // keep well within Vercel timeout limits
+const MAX_SUBMISSIONS_PER_RUN = 1; // keep well within Vercel timeout limits
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -111,24 +110,29 @@ export async function processOne(
 
     const beforeBytes = Buffer.from(submission.before_image_base64, "base64");
 
-    // 3.5 Multi-Modal Clinical Aesthetic Vision Diagnostic Scanner
-    // Evaluates facial vectors, Golden Ratio symmetry, and tissue laxity
+    // Restrict observations and edits to the user-selected areas.
     const concerns = [...lead.places, ...lead.dislikes].filter(Boolean);
 
-    const visionResult = await runClinicalVisionScan({
+    const consented = submission.photo_visualization_consent === "granted";
+    const selectedPlaces = record?.assessment.clinicIntake?.places ?? [];
+    const visionResult = consented ? await runClinicalVisionScan({
       beforeBytes,
       beforeMime: submission.before_image_mime || "image/jpeg",
-      clientName: lead.name,
-      intakeConcerns: concerns.length > 0 ? concerns : undefined,
-    });
+      intakeConcerns: selectedPlaces,
+      simulateHair: selectedPlaces.includes("HAIR"),
+    }) : null;
+    if (consented && visionResult?.status !== "ready") {
+      throw new Error("assessment_unavailable");
+    }
 
-    const regenerate = !!options?.regenerate;
+    // Cached previews predate the current plan and quality review; never deliver them.
+    void options;
 
-    // 4. Resolve the AI after-image: reuse if previously generated (unless regenerate=true), otherwise call OpenAI
-    let afterBase64 = regenerate ? null : submission.after_image_base64;
-    let afterMime = regenerate ? null : submission.after_image_mime;
+    // Generate a fresh preview and reject it if quality review fails.
+    let afterBase64: string | null = null;
+    let afterMime: string | null = null;
 
-    if (!afterBase64) {
+    if (consented && visionResult?.imagePrompt) {
       const imageResult = await generateAfterImage({
         beforeBytes,
         beforeMime: submission.before_image_mime as "image/png" | "image/jpeg" | "image/webp",
@@ -140,22 +144,12 @@ export async function processOne(
         afterBase64 = imageResult.base64;
         afterMime = imageResult.mime;
       } else {
-        // Build summary even if image failed to preserve findings
-        const fallbackSummary = record
-          ? await buildReportSummary(record)
-          : { summary: "Your personalized facial analysis has been completed.", areas: [] };
-
-        const failedSummary = visionResult.executiveSummary || fallbackSummary.summary;
-        const failedAreas = visionResult.opportunities.length > 0
-          ? visionResult.opportunities
-          : fallbackSummary.areas;
-
         await updateSubmission(id, {
           status: "failed",
           emailError: `Image generation failed: ${imageResult.reason}`,
           retryCount: (submission.retry_count ?? 0) + 1,
-          reportSummary: failedSummary,
-          detectedAreas: failedAreas,
+          reportSummary: visionResult.executiveSummary,
+          detectedAreas: visionResult.opportunities,
         });
         return { id, outcome: "failed", reason: imageResult.reason };
       }
@@ -163,16 +157,10 @@ export async function processOne(
 
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
-    // 5. Build clinical report summary & detected opportunities
-    // Prioritize high-fidelity Vision diagnostics over generic fallback summaries
-    const summaryResult = record
-      ? await buildReportSummary(record)
-      : { summary: "Your personalized facial analysis has been completed.", areas: [] };
-
-    const reportSummary = visionResult.executiveSummary || summaryResult.summary;
-    const detectedAreas = visionResult.opportunities.length > 0
-      ? visionResult.opportunities
-      : summaryResult.areas;
+    const reportSummary = visionResult?.executiveSummary || "AI photo processing was declined. No AI findings or treatment suggestions were generated. Please arrange a clinic consultation to review your concerns.";
+    const detectedAreas = (visionResult?.opportunities.length ?? 0) > 0
+      ? visionResult!.opportunities
+      : [];
 
     // 6. Generate the high-resolution branded 2-page PDF
     const pdfBytes = await generatePdfReport({
@@ -186,8 +174,7 @@ export async function processOne(
       reportSummary,
       detectedAreas,
       intakeConcerns: concerns.length > 0 ? concerns : undefined,
-      harmonyScore: visionResult.harmonyScore,
-      symmetryIndex: visionResult.symmetryIndex,
+      pillars: visionResult?.pillars,
     });
 
     // 7. Deliver PDF Report via Resend Email
@@ -204,7 +191,7 @@ export async function processOne(
         await updateSubmission(id, {
           status: "done",
           afterImageBase64: afterBase64,
-          afterImageMime: afterMime ?? undefined,
+          afterImageMime: afterMime,
           reportSummary,
           detectedAreas,
           emailSentAt: new Date().toISOString(),
@@ -216,7 +203,7 @@ export async function processOne(
         await updateSubmission(id, {
           status: "failed",
           afterImageBase64: afterBase64,
-          afterImageMime: afterMime ?? undefined,
+          afterImageMime: afterMime,
           reportSummary,
           detectedAreas,
           emailError: `Email delivery failed: ${emailResult.error}`,
@@ -229,7 +216,7 @@ export async function processOne(
       await updateSubmission(id, {
         status: "done",
         afterImageBase64: afterBase64,
-        afterImageMime: afterMime ?? undefined,
+        afterImageMime: afterMime,
         reportSummary,
         detectedAreas,
         emailError: "No email address on lead record — PDF generated and ready for direct dispatch",

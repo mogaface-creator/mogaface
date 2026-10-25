@@ -1,37 +1,65 @@
 import Link from "next/link";
 
 const LINKS = [
-  { href: "/#why", label: "Why MogaFace" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#portal", label: "Instant Simulation" },
+  { href: "/#transformations", label: "Transformations" },
+  { href: "/#dossier", label: "2-Page Dossier" },
+  { href: "/#how-it-works", label: "How It Works" },
   { href: "/#faq", label: "FAQ" },
 ];
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-            <circle cx="12" cy="12" r="9.5" fill="none" stroke="var(--accent)" strokeWidth="1.3" />
-            <line x1="12" y1="4" x2="12" y2="20" stroke="var(--accent)" strokeWidth="1" opacity="0.5" />
-            <line x1="4" y1="12" x2="20" y2="12" stroke="var(--accent)" strokeWidth="1" opacity="0.5" />
-            <circle cx="12" cy="12" r="1.6" fill="var(--accent)" />
-          </svg>
-          <span className="font-serif text-lg tracking-tight">MogaFace</span>
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl transition-all">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        {/* Brand Logo & Medical Geometric Mark */}
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-xs group-hover:scale-105 transition-transform">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="9" opacity="0.4" />
+              <line x1="12" y1="3" x2="12" y2="21" strokeDasharray="2 2" />
+              <line x1="3" y1="12" x2="21" y2="12" strokeDasharray="2 2" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+            </svg>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-serif text-lg font-bold tracking-tight text-slate-900 leading-none">
+              MogaFace
+            </span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-violet-600 mt-0.5">
+              Clinic Next Face
+            </span>
+          </div>
         </Link>
-        <nav className="flex items-center gap-8 text-sm text-secondary-text">
+
+        {/* Navigation Links */}
+        <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
           {LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="hidden transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent md:inline">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="transition-colors hover:text-violet-700 py-1"
+            >
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/assessment?new=1"
-            className="rounded-full bg-[image:var(--gradient-regal)] px-4 py-2 text-sm font-medium text-accent-foreground shadow-[var(--shadow-subtle)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98]"
-          >
-            Start
-          </Link>
         </nav>
+
+        {/* Right Action & Live Pulse */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>AI Vision Active</span>
+          </div>
+
+          <Link
+            href="/#portal"
+            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 px-4 py-2 text-xs font-semibold text-white shadow-xs shadow-violet-500/20 hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-95"
+          >
+            <span>Try AI Simulation</span>
+            <span className="ml-1 text-[13px]">→</span>
+          </Link>
+        </div>
       </div>
     </header>
   );

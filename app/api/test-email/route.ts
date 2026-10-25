@@ -13,6 +13,7 @@ import sharp from "sharp";
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest): Promise<Response> {
+  if (process.env.NODE_ENV === "production") return Response.json({ error: "not_found" }, { status: 404 });
   const { searchParams } = new URL(request.url);
   const toEmail = searchParams.get("to")?.trim();
 

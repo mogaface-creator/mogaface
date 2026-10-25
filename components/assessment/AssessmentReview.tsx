@@ -140,6 +140,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   const lead = parseLeadContact(contact);
   const [creatingSession, setCreatingSession] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [photoConsent, setPhotoConsent] = useState<"granted" | "declined" | "pending">("pending");
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Tracks which File object each current record was produced from, so a
   // second "Start Analysis" click only reprocesses slots whose photo
   // actually changed (Step 14) while retrying any that previously errored
@@ -153,6 +155,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
   const missingOptionalFiles = missingSessionFiles.filter((s) => !REQUIRED_PHOTO_SLOTS.includes(s.slot));
 
   const analyzeMyFace = async () => {
+    if (photoConsent === "pending") return;
+    setSubmitError(null);
     setIsRunning(true);
     const slotsWithFiles = PHOTO_SLOTS.filter(({ slot }) => sessionFiles[slot]?.file);
 
@@ -233,12 +237,13 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     setSubmitting(true);
     const result = await submitAssessment({
       frontPhotoFile: frontFile,
-      photoVisualizationConsent: "granted",
+      photoVisualizationConsent: photoConsent === "granted" ? "granted" : "declined",
       ...(session ? { analysisId: session.analysisId, sessionToken: session.sessionToken } : {}),
     });
     setSubmitting(false);
     if (!result.ok) {
-      console.error("[submit] Failed to create submission:", result.reason);
+      setSubmitError("We could not submit your assessment. Your photos are still available; please retry.");
+      return;
     }
     clearAssessment();
     void clearAllMedia();
@@ -392,10 +397,17 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         {!lead && <p className="mt-4 text-sm text-muted">Add your name, phone, email, and city to continue.</p>}
       </div>
 
+      <fieldset className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <legend className="px-2 text-sm font-medium">Optional illustrative after photo</legend>
+        <p className="mb-3 text-sm text-muted">Your front photo is uploaded and stored to prepare your report. AI processing sends it to OpenAI. An after image is an illustration, not a prediction of treatment results.</p>
+        <label className="block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI photo processing and an illustrative after photo.</label>
+        <label className="mt-3 block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo to AI.</label>
+      </fieldset>
+      {submitError && <p role="alert" className="mt-4 text-sm">{submitError}</p>}
       <StepNav
         onBack={onBack}
         onNext={analyzeMyFace}
-        nextDisabled={!lead || !validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning || submitting}
+        nextDisabled={photoConsent === "pending" || creatingSession || !lead || !validation.isComplete || !canStartAnalysis(availableSlots, mediaHydrated) || isRunning || submitting}
         nextLabel={submitting ? "Submitting…" : isRunning ? "Analyzing…" : "Analyze My Face"}
       />
 

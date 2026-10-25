@@ -13,6 +13,7 @@
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
+import type { ClinicalTreatmentPillar } from "./clinicalVision";
 
 export interface GeneratePdfReportInput {
   clientName: string;
@@ -25,6 +26,7 @@ export interface GeneratePdfReportInput {
   afterImageBytes?: Buffer | Uint8Array | null;
   reportSummary: string;
   detectedAreas: { label: string; description: string; targetRefinement?: string }[];
+  pillars?: ClinicalTreatmentPillar[];
   intakeConcerns?: string[];
   harmonyScore?: number;
   symmetryIndex?: number;
@@ -49,7 +51,8 @@ const C = {
 
 function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] {
   if (!text) return [];
-  const words = text.replace(/[\r\n]+/g, " ").trim().split(/\s+/);
+  const safeText = text.replace(/[\u2010-\u2015]/g, "-").replace(/[\u2018\u2019]/g, "\'").replace(/[\u201c\u201d]/g, '"').replace(/[^\x20-\x7E\n\r]/g, " ");
+  const words = safeText.replace(/[\r\n]+/g, " ").trim().split(/\s+/);
   const lines: string[] = [];
   let currentLine = "";
 
@@ -266,16 +269,14 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
   });
 
   // Col 3: Clinical Harmony & Symmetry Metrics
-  page1.drawText("CLINICAL INDICES", {
+  page1.drawText("ASSESSMENT STATUS", {
     x: MARGIN_X + 364,
     y: infoBarY + 30,
     size: 6.5,
     font: fontBold,
     color: C.muted,
   });
-  const harmonyVal = input.harmonyScore ?? 88;
-  const symmetryVal = input.symmetryIndex ? input.symmetryIndex.toFixed(1) : "94.6";
-  page1.drawText(`Harmony: ${harmonyVal}/100 | Symmetry: ${symmetryVal}%`, {
+  page1.drawText("Consultation preview | Not diagnostic", {
     x: MARGIN_X + 364,
     y: infoBarY + 14,
     size: 8.5,
@@ -451,7 +452,7 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
     borderColor: C.mistyLilac,
     borderWidth: 0.5,
   });
-  page1.drawText("AI Aesthetic Harmony & Balance Projection", {
+  page1.drawText("Illustrative preview | Not a predicted result", {
     x: card2X + 38,
     y: cardY + 7,
     size: 7,
@@ -535,7 +536,7 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
     color: C.deepGold,
   });
   page1.drawText(
-    "Targeted refinement vectors illustrate epidermal clarity, perioral rejuvenation, and structural contour balance.",
+    "Only selected areas are discussed. The illustration is not a diagnosis or a prediction of treatment results.",
     {
       x: MARGIN_X + 90,
       y: summaryBoxY + 20,
@@ -607,7 +608,7 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
   });
 
   page2.drawText(
-    "Algorithmic structural observations mapped from photographic vectors and symmetry assessment.",
+    "Selected-area observations and consultation topics; treatment suitability requires clinical assessment.",
     {
       x: MARGIN_X,
       y: p2Y - 12,
@@ -619,36 +620,16 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
 
   p2Y -= 26;
 
-  // Render Per-Area Opportunity Cards (up to 4 items)
-  const areasToRender =
-    input.detectedAreas && input.detectedAreas.length > 0
-      ? input.detectedAreas.slice(0, 4)
-      : [
-          {
-            label: "Dermal Clarity & Acne Clearance",
-            description:
-              "Active epidermal blemishes and papules identified. Targeted clinical clarification protocol clears breakouts and restores smooth skin texture.",
-          },
-          {
-            label: "Perioral & Lip Tone Harmonization",
-            description:
-              "Lip hyperpigmentation and dehydration addressed with nourishing revitalization to restore a healthy, natural rosy-pink tone.",
-          },
-          {
-            label: "Tear Trough & Infraorbital Zone",
-            description:
-              "Infraorbital volume deficit creates fatigue shadowing beneath medial canthus, addressed with targeted under-eye smoothing.",
-          },
-          {
-            label: "Mandibular Border & Jawline Contour",
-            description:
-              "Soft-tissue contour along the mandibular angle firmed to establish a crisp, sculpted lower-face profile.",
-          },
-        ];
+  // Render Per-Area Opportunity Cards (up to 5 items)
+  const areasToRender = input.detectedAreas.slice(0, 3).map((area) => ({
+    label: area.label,
+    description: [area.description, area.targetRefinement].filter(Boolean).join(" "),
+  }));
 
   for (let i = 0; i < areasToRender.length; i++) {
     const area = areasToRender[i];
-    const cardH = 50;
+    const areaLines = wrapText(area.description, CONTENT_WIDTH - 32, fontRegular, 8);
+    const cardH = Math.max(62, 38 + areaLines.length * 10);
 
     page2.drawRectangle({
       x: MARGIN_X,
@@ -688,7 +669,7 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
       borderColor: C.mistyLilac,
       borderWidth: 0.5,
     });
-    page2.drawText("IDENTIFIED", {
+    page2.drawText("DISCUSS", {
       x: MARGIN_X + CONTENT_WIDTH - 73,
       y: p2Y - 14,
       size: 6,
@@ -697,9 +678,8 @@ export async function generatePdfReport(input: GeneratePdfReportInput): Promise<
     });
 
     // Description
-    const areaLines = wrapText(area.description, CONTENT_WIDTH - 32, fontRegular, 8);
     let lineY = p2Y - 28;
-    for (let l = 0; l < Math.min(areaLines.length, 2); l++) {
+    for (let l = 0; l < areaLines.length; l++) {
       page2.drawText(areaLines[l], {
         x: MARGIN_X + 16,
         y: lineY,
