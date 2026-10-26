@@ -103,7 +103,20 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
       console.error(`[imageJob] OpenAI API error (${response.status}):`, errText.slice(0, 300));
-      return { ok: false, reason: `openai_error_${response.status}` };
+      let detail = `openai_error_${response.status}`;
+      try {
+        const parsed = JSON.parse(errText);
+        if (parsed.error?.code === "credit_balance_exhausted" || parsed.error?.type === "insufficient_quota" || errText.includes("no credits remaining")) {
+          detail = "OpenAI account has zero credits remaining. Please add credits at platform.openai.com/billing";
+        } else if (response.status === 429) {
+          detail = "OpenAI rate limit reached. Please wait a few moments and try again.";
+        } else if (parsed.error?.message) {
+          detail = parsed.error.message;
+        }
+      } catch {
+        // fallback to code
+      }
+      return { ok: false, reason: detail };
     }
 
     const data = (await response.json()) as { data?: { b64_json?: unknown }[] };

@@ -110,6 +110,8 @@ export async function POST(req: NextRequest) {
           ok: false,
           error: imageResult.review?.status === "rejected"
             ? `Review notice: ${imageResult.review.reason || "The draft did not pass automated quality review."}`
+            : imageResult.reason.startsWith("OpenAI")
+            ? imageResult.reason
             : `Image generation failed: ${imageResult.reason}`,
           review: imageResult.review,
           ...(imageResult.debugPreview ? { rejectedPreview: `data:${imageResult.debugPreview.mime};base64,${imageResult.debugPreview.base64}` } : {}),
