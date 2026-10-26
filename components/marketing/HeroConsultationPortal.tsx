@@ -222,6 +222,7 @@ export function HeroConsultationPortal() {
       formData.append("clientName", clientName || "Guest");
       formData.append("generatePdf", "true");
       formData.append("simulateHair", selectedTargets.includes("hairline") ? "true" : "false");
+      formData.append("targets", JSON.stringify(selectedTargets));
 
       const res = await fetch("/api/test-simulate", {
         method: "POST",

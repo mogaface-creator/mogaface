@@ -8,22 +8,42 @@ export const runtime = "nodejs";
 export const maxDuration = 180; // scan + edit + automated quality review
 
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "not_found" }, { status: 404 });
   const origin = req.headers.get("origin");
-  if (!origin || new URL(origin).host !== req.headers.get("host")) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  if (origin && host) {
+    try {
+      const originHost = new URL(origin).host;
+      if (originHost !== host && !originHost.endsWith(".vercel.app") && !host.endsWith(".vercel.app")) {
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      }
+    } catch {
+      // continue
+    }
   }
 
   try {
     const formData = await req.formData();
     const photoFile = formData.get("photo") as File | null;
-    const clientName = (formData.get("clientName") as string | null)?.trim() || "Manoj";
+    const clientName = (formData.get("clientName") as string | null)?.trim() || "Guest";
     const customPrompt = (formData.get("customPrompt") as string | null)?.trim();
     const customDirective = (formData.get("customDirective") as string | null)?.trim();
     const wantPdf = formData.get("generatePdf") === "true";
     const simulateHair = formData.get("simulateHair") === "true";
     const rawFocus = (formData.get("focus") as string | null)?.trim() || "all";
     const intensity = ((formData.get("intensity") as string | null)?.trim() || "balanced") as "subtle" | "balanced" | "defined";
+
+    const targetsJson = formData.get("targets") as string | null;
+    let targets: string[] = [];
+    if (targetsJson) {
+      try {
+        const parsed = JSON.parse(targetsJson);
+        if (Array.isArray(parsed)) {
+          targets = parsed.map((t) => (t === "hairline" ? "hair" : String(t)));
+        }
+      } catch {
+        // continue
+      }
+    }
 
     if (!isUploadedPhoto(photoFile) || photoFile.size > 10_000_000) {
       return NextResponse.json(
@@ -40,7 +60,9 @@ export async function POST(req: NextRequest) {
 
     // 1. Run Clinical Vision Scan (GPT-4o Vision)
     const isAllPillars = rawFocus === "all" || rawFocus === "combined";
-    const concerns = isAllPillars
+    const concerns = targets.length > 0
+      ? targets
+      : isAllPillars
       ? (simulateHair ? ["skin", "jawline", "under_eye", "forehead", "hair"] : ["skin", "jawline", "under_eye", "forehead"])
       : [rawFocus];
 
