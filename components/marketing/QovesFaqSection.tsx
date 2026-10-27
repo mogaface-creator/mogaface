@@ -9,8 +9,8 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    q: "What is this service?",
-    a: "It is the world’s leading platform for understanding your unique facial morphology and achieving a real aesthetic transformation without surgery. From the comfort of your home, you receive an objective, science-based facial analysis and personalized non-surgical protocol tailored to your unique features.",
+    q: "What is MOGA?",
+    a: "MOGA is the world’s leading platform for understanding your unique facial morphology and achieving a real aesthetic transformation without surgery. From the comfort of your home, you receive an objective, science-based facial analysis and personalized non-surgical protocol tailored to your unique features.",
   },
   {
     q: "Can’t I just do this with ChatGPT or Claude?",

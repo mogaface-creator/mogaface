@@ -7,13 +7,13 @@ export function Footer() {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-10">
           <div>
             <div className="flex items-center gap-3">
-              <span className="font-sans text-xl font-bold tracking-tight text-[#162125]">QOVES</span>
+              <span className="font-sans text-xl font-bold tracking-tight text-[#162125]">MOGA</span>
               <span className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[10px] font-semibold text-[#50636a] border border-[#e0e6e8]">
                 Facial Aesthetics Studio
               </span>
             </div>
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[#6d8087]">
-              Science-based facial analysis, objective beauty advice, and non-surgical transformation protocols tailored to your unique features. We never use surgery or generic face-swaps.
+              Science-based facial analysis, objective aesthetic advice, and non-surgical transformation protocols tailored to your unique features. We never use surgery or generic face-swaps.
             </p>
           </div>
 
@@ -41,7 +41,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-[#f0f4f6] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#86999f]">
-          <p>&copy; {new Date().getFullYear()} QOVES Studio / MogaFace. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} MOGA Studio. All rights reserved.</p>
           <p>This is an illustrative aesthetic guidance service. Not a medical prescription or surgical outcome guarantee.</p>
         </div>
       </div>

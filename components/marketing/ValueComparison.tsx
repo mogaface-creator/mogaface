@@ -64,7 +64,7 @@ export function ValueComparison() {
             </div>
           </div>
 
-          {/* QOVES / MogaFace Clinical Plan */}
+          {/* MOGA Clinical Plan */}
           <div className="rounded-2xl border-2 border-[#182327] bg-[#ffffff] p-8 sm:p-10 shadow-lg flex flex-col justify-between relative">
             <span className="absolute -top-3.5 right-6 rounded-full bg-[#182327] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
               Instant Online Access
@@ -73,7 +73,7 @@ export function ValueComparison() {
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-[#e8eded]">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#73888f]">The QOVES Standard</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#73888f]">The MOGA Standard</span>
                   <h3 className="text-xl sm:text-2xl font-medium text-[#141e22] mt-1">Full Clinical Plan</h3>
                 </div>
                 <span className="rounded-full bg-[#edf2f4] px-3.5 py-1 text-xs font-bold text-[#182327]">

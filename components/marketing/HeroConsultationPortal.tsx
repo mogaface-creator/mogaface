@@ -262,7 +262,7 @@ export function HeroConsultationPortal() {
     if (!result?.pdfBase64) return;
     const link = document.createElement("a");
     link.href = `data:application/pdf;base64,${result.pdfBase64}`;
-    link.download = `MogaFace-Clinical-Dossier-${clientName || "Consultation"}.pdf`;
+    link.download = `MOGA-Clinical-Dossier-${clientName || "Consultation"}.pdf`;
     link.click();
   };
 

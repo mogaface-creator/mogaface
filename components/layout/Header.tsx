@@ -12,8 +12,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#e6ebed] bg-white/90 backdrop-blur-md transition-all">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-6">
-        {/* Brand Logo with Qoves Geometric Loop Mark */}
-        <Link href="/" className="flex items-center gap-3 group" aria-label="QOVES Home">
+        {/* Brand Logo with MOGA Geometric Mark */}
+        <Link href="/" className="flex items-center gap-3 group" aria-label="MOGA Home">
           <svg className="w-8 h-8 flex-shrink-0 transition-transform group-hover:scale-105" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <mask id="nav-icon-mask">
@@ -28,10 +28,10 @@ export function Header() {
           </svg>
           <div className="flex flex-col">
             <span className="font-sans text-xl font-bold tracking-tight text-[#162125] leading-none">
-              QOVES
+              MOGA
             </span>
             <span className="text-[10px] uppercase tracking-widest font-semibold text-[#788b91] mt-0.5">
-              Clinic Next Face
+              Facial Aesthetics Intelligence
             </span>
           </div>
         </Link>

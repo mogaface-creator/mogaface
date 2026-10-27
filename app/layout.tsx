@@ -46,9 +46,9 @@ const josefinSans = Josefin_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "MogaFace — See the change on your own face",
+  title: "MOGA — Improve Your Looks Without Surgery",
   description:
-    "Answer a few questions, share three photos, and see an illustrative after of the places you named. A clinician decides what comes next.",
+    "Get your personalized facial analysis based on your unique features. Objective aesthetic advice and a non-surgical transformation protocol tailored to your face.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
