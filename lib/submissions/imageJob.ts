@@ -3,13 +3,13 @@
  * Sends the portrait photograph to OpenAI's image edit API with strict identity lock directives.
  */
 
-import { DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS, OPENAI_IMAGE_EDITS_URL, chooseImageSize } from "../image-generation/openaiImages";
-import { validateGeneratedImage } from "../image-generation/output";
-import type { AnalysisRecord } from "../analysis-session/types";
-import type { ImageMime } from "../image-generation/output";
-import type { ClinicalVisionResult } from "./clinicalVision";
-import { buildFullAestheticPrompt } from "./clinicalVision";
-import { reviewAfterImage, type ImageReview } from "./imageReview";
+import { DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS, OPENAI_IMAGE_EDITS_URL, chooseImageSize } from "../image-generation/openaiImages.ts";
+import { validateGeneratedImage } from "../image-generation/output.ts";
+import type { AnalysisRecord } from "../analysis-session/types.ts";
+import type { ImageMime } from "../image-generation/output.ts";
+import type { ClinicalVisionResult } from "./clinicalVision.ts";
+import { buildFullAestheticPrompt } from "./clinicalVision.ts";
+import { reviewAfterImage, type ImageReview } from "./imageReview.ts";
 
 export type ImageJobResult =
   | { ok: true; base64: string; mime: string; review?: ImageReview }

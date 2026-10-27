@@ -278,20 +278,20 @@ export function HeroConsultationPortal() {
           <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
             Instant Clinical AI Consultation
           </span>
-          <span className="hidden sm:inline-block rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200/60">
+          <span className="hidden sm:inline-block rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[10px] font-semibold text-[#485b62] border border-[#dce4e7]">
             Zero Questions Required
           </span>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center rounded-full bg-slate-100 p-1 border border-slate-200/80">
+        <div className="flex items-center rounded-full bg-[#f0f4f6] p-1 border border-[#e2e8ea]">
           <button
             type="button"
             onClick={() => setActiveTab("upload")}
-            className={`cursor-pointer rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
+            className={`cursor-pointer rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
               activeTab === "upload"
-                ? "bg-white text-violet-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[#182327] text-white shadow-xs"
+                : "text-[#556970] hover:text-[#182327]"
             }`}
           >
             ⚡ Test Your Photo
@@ -299,10 +299,10 @@ export function HeroConsultationPortal() {
           <button
             type="button"
             onClick={() => setActiveTab("presets")}
-            className={`cursor-pointer rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
+            className={`cursor-pointer rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
               activeTab === "presets"
-                ? "bg-white text-violet-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[#182327] text-white shadow-xs"
+                : "text-[#556970] hover:text-[#182327]"
             }`}
           >
             🌟 Clinical Presets
@@ -447,10 +447,10 @@ export function HeroConsultationPortal() {
                           key={target.id}
                           type="button"
                           onClick={() => toggleTarget(target.id)}
-                          className={`cursor-pointer inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                          className={`cursor-pointer inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                             active
-                              ? "bg-violet-600 text-white shadow-2xs"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                              ? "bg-[#182327] text-white shadow-2xs"
+                              : "bg-[#f0f4f6] text-[#4d6067] hover:bg-[#e4ebed] hover:text-[#182327]"
                           }`}
                         >
                           <span>{target.icon}</span>
@@ -461,8 +461,8 @@ export function HeroConsultationPortal() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 text-[11px] text-slate-600 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                <div className="rounded-xl border border-[#e2e8ea] bg-[#fafcfc] p-3.5 text-[11px] text-[#556970] space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-[#182327]">
                     <span>🛡️</span>
                     <span>Medical Identity Lock Guarantee</span>
                   </div>
@@ -475,7 +475,7 @@ export function HeroConsultationPortal() {
                   type="button"
                   disabled={loading || !photoFile}
                   onClick={handleRunSimulation}
-                  className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 py-3.5 px-6 font-bold text-sm tracking-wide text-white shadow-lg shadow-violet-600/25 transition-all hover:from-violet-500 hover:to-indigo-500 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full cursor-pointer rounded-full bg-[#182327] hover:bg-[#28383f] py-3.5 px-6 font-semibold text-sm tracking-wide text-white shadow-sm transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -515,7 +515,7 @@ export function HeroConsultationPortal() {
                     <button
                       type="button"
                       onClick={downloadPdf}
-                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-violet-700 transition"
+                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-full bg-[#182327] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#28383f] transition"
                     >
                       <span>📄</span>
                       <span>Download 2-Page PDF</span>
@@ -528,7 +528,7 @@ export function HeroConsultationPortal() {
                       setPhotoFile(null);
                       setPhotoPreview(null);
                     }}
-                    className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    className="cursor-pointer rounded-full border border-[#d2dcdf] bg-white px-3.5 py-2 text-xs font-semibold text-[#182327] hover:bg-[#f6f9fa] transition"
                   >
                     Test Another
                   </button>
@@ -547,23 +547,23 @@ export function HeroConsultationPortal() {
               </div>
 
               {/* Executive Clinical Findings */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <div className="rounded-2xl border border-[#e2e7e9] bg-[#fafcfc] p-5 sm:p-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#141e22]">
                   Clinical Anatomical Interpretation
                 </h4>
-                <p className="mt-2 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                <p className="mt-2 text-xs sm:text-sm text-[#4d6067] leading-relaxed">
                   {result.executiveSummary}
                 </p>
 
                 {result.opportunities && result.opportunities.length > 0 && (
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {result.opportunities.map((opp, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs"
+                        className="rounded-xl border border-[#e2e7e9] bg-white p-3.5 shadow-2xs"
                       >
-                        <p className="text-xs font-bold text-violet-700">{opp.label}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-600">{opp.description}</p>
+                        <p className="text-xs font-semibold text-[#141e22]">{opp.label}</p>
+                        <p className="mt-0.5 text-[11px] text-[#556970]">{opp.description}</p>
                       </div>
                     ))}
                   </div>
@@ -588,15 +588,15 @@ export function HeroConsultationPortal() {
                   onClick={() => setSelectedPreset(preset)}
                   className={`cursor-pointer rounded-2xl border p-2.5 sm:p-3 text-left transition-all ${
                     active
-                      ? "border-violet-600 bg-violet-50/50 shadow-sm"
-                      : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/60 hover:border-slate-300"
+                      ? "border-[#182327] bg-[#f2f6f7] shadow-xs"
+                      : "border-[#e2e8ea] bg-[#fafcfc] hover:bg-[#f2f6f7] hover:border-[#ccd7db]"
                   }`}
                 >
-                  <p className="font-heading text-xs font-bold text-slate-900">{preset.name}</p>
-                  <p className="text-[10px] font-semibold text-violet-700 mt-0.5 truncate">
+                  <p className="font-heading text-xs font-bold text-[#141e22]">{preset.name}</p>
+                  <p className="text-[10px] font-semibold text-[#485b62] mt-0.5 truncate">
                     {preset.tag}
                   </p>
-                  <span className="mt-1.5 inline-block text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                  <span className="mt-1.5 inline-block text-[10px] font-semibold text-[#2b3d44] bg-[#e6edef] px-2 py-0.5 rounded-full border border-[#d2dde0]">
                     {preset.metric}
                   </span>
                 </button>
@@ -619,33 +619,33 @@ export function HeroConsultationPortal() {
             <div className="lg:col-span-6 space-y-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-serif text-xl font-bold text-slate-900">
+                  <span className="font-serif text-xl font-bold text-[#141e22]">
                     {selectedPreset.name} (Age {selectedPreset.age})
                   </span>
-                  <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold text-violet-700">
+                  <span className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[10px] font-semibold text-[#3d5057] border border-[#dce4e7]">
                     {selectedPreset.metric}
                   </span>
                 </div>
-                <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                <p className="mt-2 text-xs sm:text-sm text-[#556970] leading-relaxed">
                   {selectedPreset.finding}
                 </p>
               </div>
 
               {/* Pillars list */}
               <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#73888f]">
                   Achievable Non-Surgical Pillars:
                 </p>
                 {selectedPreset.pillars.map((pillar) => (
                   <div
                     key={pillar.key}
-                    className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/80 p-2.5 text-xs"
+                    className="flex items-center justify-between rounded-xl border border-[#e2e8ea] bg-[#fafcfc] p-2.5 text-xs"
                   >
                     <div>
-                      <span className="font-bold text-slate-900">{pillar.title}</span>
-                      <span className="text-[11px] text-slate-500 ml-2">{pillar.summary}</span>
+                      <span className="font-semibold text-[#141e22]">{pillar.title}</span>
+                      <span className="text-[11px] text-[#556970] ml-2">{pillar.summary}</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-md border border-violet-200/50">
+                    <span className="text-[10px] font-semibold text-[#3d5057] bg-[#f0f4f6] px-2 py-0.5 rounded-full border border-[#dce4e7]">
                       {pillar.modality}
                     </span>
                   </div>
@@ -656,7 +656,7 @@ export function HeroConsultationPortal() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("upload")}
-                  className="cursor-pointer flex-1 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs py-2.5 text-center shadow-xs transition"
+                  className="cursor-pointer flex-1 rounded-full bg-[#182327] hover:bg-[#28383f] text-white font-semibold text-xs py-3 text-center shadow-xs transition"
                 >
                   ⚡ Try on Your Face Now
                 </button>
@@ -664,7 +664,7 @@ export function HeroConsultationPortal() {
                   href="/api/test-pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cursor-pointer rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition"
+                  className="cursor-pointer rounded-full border border-[#d2dcdf] bg-white hover:bg-[#f6f9fa] px-4 py-3 text-xs font-semibold text-[#182327] transition"
                 >
                   View Sample PDF ↗
                 </a>
