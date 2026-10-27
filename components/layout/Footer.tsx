@@ -7,6 +7,10 @@ export function Footer() {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-10">
           <div>
             <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="16" fill="#182327" />
+                <path d="M8.5 21.5V10.5L16 17.5L23.5 10.5V21.5" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               <span className="font-sans text-xl font-bold tracking-tight text-[#162125]">MOGA</span>
               <span className="rounded-full bg-[#f0f4f6] px-2.5 py-0.5 text-[10px] font-semibold text-[#50636a] border border-[#e0e6e8]">
                 Facial Aesthetics Studio
