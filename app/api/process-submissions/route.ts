@@ -1,3 +1,4 @@
+import {protocolInput} from "@/lib/submissions/protocolInput";
 /**
  * Background job runner: POST /api/process-submissions
  *
@@ -19,14 +20,14 @@
  */
 
 import type { NextRequest } from "next/server";
-import { getPendingSubmissions, updateSubmission } from "@/lib/submissions/store";
+import { claimSubmission, getPendingSubmissions, updateSubmission } from "@/lib/submissions/store";
 import type { SubmissionRow } from "@/lib/submissions/store";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { getAnalysisRecord } from "@/lib/analysis-session/store";
 import { resolveLeadData } from "@/lib/submissions/lead";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
 import { sendReportEmail } from "@/lib/submissions/emailDelivery";
-import { runClinicalVisionScan } from "@/lib/submissions/clinicalVision";
+import { IMAGE_PLACE_OPTIONS } from "@/lib/assessment/intakeQuestions";
 
 // Requires a deployment plan supporting 180-second functions (scan + edit + review).
 export const maxDuration = 180;
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     return Response.json({ processed: 0, message: "No pending submissions" });
   }
 
-  const results: { id: string; outcome: "done" | "failed"; reason?: string }[] = [];
+  const results: { id: string; outcome: "done" | "failed" | "processing"; reason?: string }[] = [];
 
   for (const submission of toProcess) {
     const outcome = await processOne(submission, { regenerate });
@@ -78,11 +79,11 @@ export const GET = POST;
 export async function processOne(
   submission: SubmissionRow,
   options?: { regenerate?: boolean },
-): Promise<{ id: string; outcome: "done" | "failed"; reason?: string }> {
+): Promise<{ id: string; outcome: "done" | "failed" | "processing"; reason?: string }> {
   const { id } = submission;
 
   // Claim the row
-  await updateSubmission(id, { status: "processing" });
+  if(!await claimSubmission(id))return {id,outcome:"processing"};
 
   try {
     // 1. Resolve the analysis record (treatment opportunities + assessment)
@@ -111,33 +112,27 @@ export async function processOne(
     const beforeBytes = Buffer.from(submission.before_image_base64, "base64");
 
     // Restrict observations and edits to the user-selected areas.
-    const concerns = [...lead.places, ...lead.dislikes].filter(Boolean);
 
     const consented = submission.photo_visualization_consent === "granted";
-    const selectedPlaces = record?.assessment.clinicIntake?.places ?? [];
-    const visionResult = consented ? await runClinicalVisionScan({
-      beforeBytes,
-      beforeMime: submission.before_image_mime || "image/jpeg",
-      intakeConcerns: selectedPlaces,
-      simulateHair: selectedPlaces.includes("HAIR"),
-    }) : null;
-    if (consented && visionResult?.status !== "ready") {
-      throw new Error("assessment_unavailable");
-    }
+    if(!record)throw new Error("assessment_unavailable");
+    const selectedPlaces = record.assessment.clinicIntake.places;
+    const wantsPreview=record.assessment.clinicIntake.wantAfterPhoto !== "no";
+    const reportSummary="Your Next Face protocol brings together your answers, original photo views and any usable expression-video observations. The appearance preview, when included, is illustrative and not a treatment outcome.";
+    const detectedAreas=selectedPlaces.map(value=>({label:IMAGE_PLACE_OPTIONS.find(option=>option.value===value)?.label || value,description:"Selected by you for discussion; not a diagnosis."}));
 
-    // Cached previews predate the current plan and quality review; never deliver them.
-    void options;
+    // Reuse only a current, already quality-screened draft after an email retry.
 
     // Generate a fresh preview and reject it if quality review fails.
     let afterBase64: string | null = null;
     let afterMime: string | null = null;
 
-    if (consented && visionResult?.imagePrompt) {
+    if(consented && wantsPreview && !options?.regenerate && submission.report_summary?.startsWith("Your Next Face protocol") && submission.after_image_base64){afterBase64=submission.after_image_base64;afterMime=submission.after_image_mime;}
+
+    if (consented && wantsPreview && !afterBase64) {
       const imageResult = await generateAfterImage({
         beforeBytes,
         beforeMime: submission.before_image_mime as "image/png" | "image/jpeg" | "image/webp",
         record,
-        clinicalVision: visionResult,
       });
 
       if (imageResult.ok) {
@@ -148,8 +143,8 @@ export async function processOne(
           status: "failed",
           emailError: `Image generation failed: ${imageResult.reason}`,
           retryCount: (submission.retry_count ?? 0) + 1,
-          reportSummary: visionResult.executiveSummary,
-          detectedAreas: visionResult.opportunities,
+          reportSummary,
+          detectedAreas,
         });
         return { id, outcome: "failed", reason: imageResult.reason };
       }
@@ -157,25 +152,8 @@ export async function processOne(
 
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
-    const reportSummary = visionResult?.executiveSummary || "AI photo processing was declined. No AI findings or treatment suggestions were generated. Please arrange a clinic consultation to review your concerns.";
-    const detectedAreas = (visionResult?.opportunities.length ?? 0) > 0
-      ? visionResult!.opportunities
-      : [];
-
-    // 6. Generate the high-resolution branded 2-page PDF
-    const pdfBytes = await generatePdfReport({
-      clientName: lead.name,
-      clientEmail: lead.email,
-      clientPhone: lead.phone,
-      clientLocation: lead.location,
-      referenceId: id,
-      beforeImageBytes: beforeBytes,
-      afterImageBytes: afterBytes,
-      reportSummary,
-      detectedAreas,
-      intakeConcerns: concerns.length > 0 ? concerns : undefined,
-      pillars: visionResult?.pillars,
-    });
+    // 6. Generate the full questionnaire-driven Next Face protocol
+    const pdfBytes = await generatePdfReport(protocolInput(record,{name:lead.name,id,front:beforeBytes,after:afterBytes,summary:reportSummary}));
 
     // 7. Deliver PDF Report via Resend Email
     if (lead.email) {

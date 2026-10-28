@@ -1,0 +1,70 @@
+import { PDFDocument, StandardFonts, PDFString, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import sharp from "sharp";
+import type { GeneratePdfReportInput } from "./pdfReport.ts";
+import { buildProtocolPages, PROTOCOL_SOURCES, type ProtocolPage } from "./protocolContent.ts";
+const W=595.28,H=841.89,M=45,CW=W-2*M;
+const hex=(s:string)=>rgb(parseInt(s.slice(1,3),16)/255,parseInt(s.slice(3,5),16)/255,parseInt(s.slice(5,7),16)/255);
+const C={ink:hex("#29212f"),plum:hex("#39244f"),accent:hex("#987748"),muted:hex("#766e7a"),line:hex("#e3dce7"),pale:hex("#f4f0f5"),white:rgb(1,1,1)};
+const clean=(s:string)=>s.replace(/[\u2010-\u2015]/g,"-").replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[^\x20-\x7e\n]/g," ");
+function wrap(text:string,font:PDFFont,size:number,width:number):string[]{
+ return clean(text).split("\n").flatMap(part=>{const lines:string[]=[];let line="";for(const word of part.split(/\s+/).filter(Boolean)){if(font.widthOfTextAtSize((line?line+" ":"")+word,size)>width && line){lines.push(line);line="";} if(font.widthOfTextAtSize(word,size)>width){if(line){lines.push(line);line="";}let chunk="";for(const ch of word){if(font.widthOfTextAtSize(chunk+ch,size)>width){lines.push(chunk);chunk="";}chunk+=ch;}line=chunk;}else line+=(line?" ":"")+word;}if(line)lines.push(line);return lines.length?lines:[""];});
+}
+async function jpeg(bytes:Buffer|Uint8Array,region?:ProtocolPage["region"]){
+ const oriented=await sharp(Buffer.from(bytes)).rotate().toBuffer();const meta=await sharp(oriented).metadata();const w=meta.width!,h=meta.height!;
+ const boxes={hair:[0.02,0.04,0.96,0.36],eyes:[0.15,0.25,0.72,0.27],jaw:[0.16,0.48,0.74,0.43],skin:[0.2,0.36,0.62,0.32]} as const;
+ let image=sharp(oriented);
+ if(region && region!=="portrait"){const [x,y,bw,bh]=boxes[region];image=image.extract({left:Math.floor(w*x),top:Math.floor(h*y),width:Math.floor(w*bw),height:Math.floor(h*bh)});}
+ return image.resize({width:1300,height:1500,fit:"inside",withoutEnlargement:true}).jpeg({quality:88}).toBuffer();
+}
+export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<Uint8Array>{
+ const doc=await PDFDocument.create();const font=await doc.embedFont(StandardFonts.Helvetica),bold=await doc.embedFont(StandardFonts.HelveticaBold);
+ doc.setTitle(`Next Face - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("Next Face / MogaFace");
+ const approved=(input.previewApproved===true || input.previewStatus==="quality_checked") && !!input.afterImageBytes;
+ const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
+ const assets=new Map<string,Awaited<ReturnType<typeof doc.embedJpg>>>();
+ for(const region of ["portrait","hair","eyes","jaw","skin"] as const){assets.set(region,await doc.embedJpg(await jpeg(input.beforeImageBytes,region)));if(approved)assets.set(`${region}-after`,await doc.embedJpg(await jpeg(input.afterImageBytes!,region)));}
+ if(input.leftImageBytes)assets.set("left",await doc.embedJpg(await jpeg(input.leftImageBytes)));
+ if(input.rightImageBytes)assets.set("right",await doc.embedJpg(await jpeg(input.rightImageBytes)));
+ const drawImage=(p:PDFPage,key:string,x:number,y:number,width:number,height:number)=>{const im=assets.get(key)!;p.drawRectangle({x,y,width,height,color:C.pale});const s=Math.min(width/im.width,height/im.height);p.drawImage(im,{x:x+(width-im.width*s)/2,y:y+(height-im.height*s)/2,width:im.width*s,height:im.height*s});};
+ const date=input.dateStr || new Date().toLocaleDateString("en-GB",{timeZone:"Asia/Kolkata",day:"2-digit",month:"long",year:"numeric"});
+ for(const [index,data] of pages.entries()){
+  const p=doc.addPage([W,H]);const pageNo=index+1;
+  p.drawText("NEXT FACE",{x:M,y:801,font:bold,size:12,color:C.plum});p.drawText("PERSONAL APPEARANCE PROTOCOL",{x:W-M-182,y:803,font,size:7,color:C.muted});
+  p.drawLine({start:{x:M,y:784},end:{x:W-M,y:784},color:C.line,thickness:0.6});
+  p.drawText(clean(data.subtitle),{x:M,y:754,font:bold,size:7.5,color:C.accent});
+  const titleSize=Math.min(28,28*CW/Math.max(CW,bold.widthOfTextAtSize(clean(data.title),28)));
+  p.drawText(clean(data.title),{x:M,y:716,font:bold,size:titleSize,color:C.ink});
+  let top=687;
+  if(index===0){
+   drawImage(p,"portrait",W-M-225,252,225,408);
+   p.drawText("PREPARED FOR",{x:M,y:650,font:bold,size:8,color:C.accent});
+   const nameLines=wrap(input.clientName,bold,24,240);let y=615;for(const line of nameLines){p.drawText(line,{x:M,y,font:bold,size:24,color:C.plum});y-=30;}
+   const lines=wrap(data.blocks[1].text,font,11,225);y-=20;for(const line of lines){p.drawText(line,{x:M,y,font,size:11,color:C.ink});y-=17;}
+   y-=24;p.drawText("YOUR STATED PRIORITIES",{x:M,y,font:bold,size:8,color:C.accent});y-=20;for(const line of wrap(data.blocks[2].text,font,10,220).slice(0,11)){p.drawText(line,{x:M,y,font,size:10,color:C.ink});y-=15;}
+   p.drawRectangle({x:M,y:120,width:CW,height:95,color:C.plum});p.drawText("A COMPLETE GUIDE. PERSONALISED TO YOUR ANSWERS.",{x:M+17,y:190,font:bold,size:9,color:C.white});
+   let ty=170;for(const line of wrap(data.takeaway,font,10,CW-34)){p.drawText(line,{x:M+17,y:ty,font,size:10,color:C.white});ty-=15;}
+  }else{
+   if(data.region){
+    const height=154;const pair=approved;
+    if(data.id==="jaw" && assets.has("left") && assets.has("right")){const pw=(CW-16)/3;for(const [i,key]of ["left","portrait","right"].entries()){drawImage(p,key,M+i*(pw+8),top-height,pw,height);}p.drawText("LEFT 45-DEGREE / FRONT / RIGHT 45-DEGREE - ORIGINAL VIEWS",{x:M,y:top-height-13,font,size:7,color:C.muted});}
+    else if(pair){drawImage(p,data.region,M,top-height,(CW-14)/2,height);drawImage(p,`${data.region}-after`,M+(CW+14)/2,top-height,(CW-14)/2,height);p.drawText("ORIGINAL",{x:M,y:top-height-13,font,size:7,color:C.muted});p.drawText("ILLUSTRATIVE DRAFT / NOT A TREATMENT RESULT",{x:M+(CW+14)/2,y:top-height-13,font,size:7,color:C.muted});}
+    else{drawImage(p,data.region,M,top-height,CW,height);p.drawText("ORIGINAL PHOTO / UNRETOUCHED DETAIL",{x:M,y:top-height-13,font,size:7,color:C.muted});}
+    top-=height+34;
+   }
+   const bottom=154,available=top-bottom;let size=11.2;let lineHeight=17.2;
+   const needed=(sz:number,lh:number)=>data.blocks.reduce((sum,b)=>sum+22+wrap(b.text,font,sz,CW).length*lh+15,0);
+   while(needed(size,lineHeight)>available && size>9.6){size-=0.2;lineHeight-=0.3;}
+   if(needed(size,lineHeight)>available)throw new Error(`protocol_page_overflow:${data.id}`);
+   let y=top;
+   for(const block of data.blocks){p.drawRectangle({x:M,y:y-11,width:2,height:12,color:C.accent});p.drawText(clean(block.title),{x:M+10,y:y-10,font:bold,size:11.5,color:C.plum});y-=28;for(const line of wrap(block.text,font,size,CW)){p.drawText(line,{x:M,y,font,size,color:C.ink});
+      const sourceMatch=data.id==="sources" ? /^\[(\d+)\]/.exec(line) : null;
+      if(sourceMatch){const url=PROTOCOL_SOURCES[Number(sourceMatch[1])-1];if(url){const ann=doc.context.obj({Type:"Annot",Subtype:"Link",Rect:[M,y-2,M+font.widthOfTextAtSize(line,size),y+size],Border:[0,0,0],A:{S:"URI",URI:PDFString.of(url)}});const ref=doc.context.register(ann);p.node.addAnnot(ref);}}
+      y-=lineHeight;}y-=9;}
+   const takeawayLines=wrap(data.takeaway,font,9,CW-30);const th=takeawayLines.length*13+35;const by=78;
+   p.drawRectangle({x:M,y:by,width:CW,height:th,color:C.pale});p.drawText("YOUR TAKEAWAY",{x:M+15,y:by+th-18,font:bold,size:7.5,color:C.accent});let ty=by+th-35;for(const line of takeawayLines){p.drawText(line,{x:M+15,y:ty,font,size:9,color:C.ink});ty-=13;}
+  }
+  p.drawLine({start:{x:M,y:60},end:{x:W-M,y:60},color:C.line,thickness:0.6});p.drawText(`NEXT FACE / ${clean(input.referenceId).slice(0,24)} / CLINICAL REVIEW PENDING`,{x:M,y:44,font,size:6.5,color:C.muted});p.drawText(`${String(pageNo).padStart(2,"0")} / ${pages.length}`,{x:W-M-34,y:44,font,size:8,color:C.muted});
+  if(index===0)p.drawText(clean(date),{x:M,y:235,font,size:8,color:C.muted});
+ }
+ return doc.save();
+}

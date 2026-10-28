@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 import { getSubmission } from "@/lib/submissions/store";
 import { processOne } from "@/app/api/process-submissions/route";
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 export async function GET(request: NextRequest): Promise<Response> {
   const { searchParams } = new URL(request.url);
@@ -34,6 +34,9 @@ export async function GET(request: NextRequest): Promise<Response> {
         hasAfterImage: !!submission.after_image_base64,
       });
     }
+
+    if (submission.status === "failed" && submission.email_error?.startsWith("Email delivery failed:") && submission.report_summary) return Response.json({status:"done",emailSentAt:null,deliveryWarning:true});
+    if (submission.status === "failed") return Response.json({status:"failed",message:"We could not complete this report. Please contact the clinic."});
 
     if (submission.status === "processing") {
       return Response.json({

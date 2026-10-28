@@ -5,16 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { StepNav } from "./StepNav";
 import { GENDER_OPTIONS } from "./ProfileStep";
-import { GOAL_AREA_OPTIONS, GOAL_PRIORITY_OPTIONS } from "./GoalsStep";
 import { LENGTH_OPTIONS, TEXTURE_OPTIONS, DENSITY_OPTIONS, FREQUENCY_OPTIONS } from "./HairStep";
 import { STYLE_OPTIONS as FACIAL_HAIR_STYLE_OPTIONS } from "./FacialHairStep";
-import { SLEEP_OPTIONS, EXERCISE_OPTIONS, ACTIVITY_OPTIONS } from "./LifestyleStep";
+import { EXERCISE_OPTIONS, ACTIVITY_OPTIONS } from "./LifestyleStep";
 import { CURRENT_STYLE_OPTIONS } from "./StyleStep";
 import type { SessionFiles } from "./PhotoCollection";
 import { PHOTO_SLOTS, REQUIRED_PHOTO_SLOTS, type Assessment } from "@/lib/assessment/types.ts";
 import { validateAssessment } from "@/lib/assessment/schema.ts";
 import { canStartAnalysis, slotsMissingActualFile } from "@/lib/assessment/mediaAvailability.ts";
-import { APPEARANCE_CONCERN_CATALOG, normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns.ts";
+import { normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns.ts";
 import { MultiPhotoDevResults } from "@/components/facial-analysis/MultiPhotoDevResults";
 import { analyzeSinglePhoto, buildMultiPhotoAnalysis } from "@/lib/facial-analysis/multiPhoto/coordinator.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
@@ -35,11 +34,6 @@ import { clearAllMedia } from "@/lib/assessment/mediaStore.ts";
 function labelFor<T extends string>(options: { value: T; label: string }[], value: T | null): string {
   if (value === null) return "Not provided";
   return options.find((o) => o.value === value)?.label ?? value;
-}
-
-function labelsFor<T extends string>(options: { value: T; label: string }[], values: T[]): string {
-  if (values.length === 0) return "None selected";
-  return values.map((v) => options.find((o) => o.value === v)?.label ?? v).join(", ");
 }
 
 interface SummarySection {
@@ -158,6 +152,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     if (photoConsent === "pending") return;
     setSubmitError(null);
     setIsRunning(true);
+    try {
     const slotsWithFiles = PHOTO_SLOTS.filter(({ slot }) => sessionFiles[slot]?.file);
 
     const nextRecords: PhotoAnalysisRecord[] = [];
@@ -217,7 +212,10 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       ...(lead ? { contact: lead } : {}),
     });
     setCreatingSession(false);
+    if (!session) { setSubmitError("We could not save your assessment. Your answers and photos are still here; please retry."); return; }
     await submitAndRedirect(session);
+    } catch { setSubmitError("We could not finish processing your photos or video. Your files are still available; please retry."); }
+    finally { setIsRunning(false); setCreatingSession(false); setSubmitting(false); }
   };
 
   /**
@@ -228,15 +226,19 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
    */
   const submitAndRedirect = async (session: AnalysisSessionHandle | null) => {
     const frontFile = sessionFiles.front?.file;
-    if (!frontFile) {
+    const leftFile=sessionFiles.leftFortyFive?.file;
+    const rightFile=sessionFiles.rightFortyFive?.file;
+    if (!frontFile || !leftFile || !rightFile) {
       // No front photo available (shouldn't happen, but fail gracefully)
-      router.push("/submitted");
+      setSubmitError("Please add all three required photos before submitting.");
       return;
     }
 
     setSubmitting(true);
     const result = await submitAssessment({
       frontPhotoFile: frontFile,
+      leftPhotoFile:leftFile,
+      rightPhotoFile:rightFile,
       photoVisualizationConsent: photoConsent === "granted" ? "granted" : "declined",
       ...(session ? { analysisId: session.analysisId, sessionToken: session.sessionToken } : {}),
     });
@@ -343,7 +345,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <h3 className="text-sm font-medium uppercase tracking-wide text-muted">Expression video (optional)</h3>
         <p className="mt-2 text-sm text-muted">
-          A short video (under 60 seconds) that starts with a still, relaxed face, then raises the eyebrows, frowns, smiles and squints. It stays on this device.
+          A short video (under 60 seconds) that starts with a still, relaxed face, then raises the eyebrows, frowns, smiles and squints. The video file stays on this device; its expression observations are saved with your assessment and used in the report.
         </p>
         <input
           type="file"
@@ -399,7 +401,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
       <fieldset className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <legend className="px-2 text-sm font-medium">Optional illustrative after photo</legend>
-        <p className="mb-3 text-sm text-muted">Your front photo is uploaded and stored to prepare your report. AI processing sends it to OpenAI. An after image is an illustration, not a prediction of treatment results.</p>
+        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo is sent to OpenAI. An after image is an illustration, not a prediction of treatment results.</p>
         <label className="block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI photo processing and an illustrative after photo.</label>
         <label className="mt-3 block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo to AI.</label>
       </fieldset>

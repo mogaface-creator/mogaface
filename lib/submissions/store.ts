@@ -253,3 +253,11 @@ export async function updateSubmission(
 
   return !!res?.ok;
 }
+
+/** Compare-and-set prevents simultaneous polling and cron requests from duplicating a paid generation or email. */
+export async function claimSubmission(id:string,deps:SubmissionStoreDeps={}):Promise<boolean>{
+ const {env,fetchImpl}=resolveDeps(deps);
+ if(!isSupabaseConfigured(env)){if(env.NODE_ENV==="production")return false;const row=fallback.get(id);if(!row || !["pending","failed"].includes(row.status) || row.retry_count>=3)return false;row.status="processing";return true;}
+ const r=await supabaseRequest(env,`/submissions?id=eq.${encodeURIComponent(id)}&status=in.(pending,failed)&retry_count=lt.3`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({status:"processing"})},fetchImpl).catch(()=>null);
+ if(!r?.ok)return false;const rows=await r.json().catch(()=>null);return Array.isArray(rows)&&rows.length===1;
+}

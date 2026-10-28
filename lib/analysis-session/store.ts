@@ -389,3 +389,16 @@ export function __clearAnalysisRecordsForTests(): void {
 export function __setAnalysisRecordForTests(record: AnalysisRecord, sessionToken: string): void {
   fallbackRecords.set(record.id, { record, tokenHash: hashToken(sessionToken) });
 }
+
+/** Called only after the submit route authenticates the session and validates both uploads. */
+export async function attachReportPhotos(record: AnalysisRecord, photos: NonNullable<AnalysisRecord["reportPhotos"]>, deps: AnalysisSessionStoreDeps = {}): Promise<boolean> {
+  const {env,fetchImpl}=resolveDeps(deps);
+  const next={...record,reportPhotos:photos};
+  if(!isSupabaseConfigured(env)){
+    if(isProductionEnv(env))return false;
+    const entry=fallbackRecords.get(record.id);if(!entry)return false;entry.record=next;return true;
+  }
+  const response=await supabaseRequest(env,`/analysis_sessions?analysis_id=eq.${encodeURIComponent(record.id)}`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({record:next})},fetchImpl).catch(()=>null);
+  if(!response?.ok)return false;
+  const rows=await response.json().catch(()=>null);return Array.isArray(rows)&&rows.length===1;
+}

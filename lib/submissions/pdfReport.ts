@@ -1,3 +1,5 @@
+import type { Assessment } from "../assessment/types.ts";
+import { generateProtocolPdf } from "./protocolPdf.ts";
 /**
  * MogaFace Branded PDF Report Generator
  *
@@ -16,6 +18,13 @@ import sharp from "sharp";
 import type { ClinicalTreatmentPillar } from "./clinicalVision";
 
 export interface GeneratePdfReportInput {
+  assessment?: Assessment | null;
+  analysis?: import("../observation/types.ts").MogaFaceAnalysis | null;
+  leftImageBytes?: Buffer | Uint8Array | null;
+  rightImageBytes?: Buffer | Uint8Array | null;
+  previewStatus?: "quality_checked";
+  /** Explicit approval to include an illustrative comparison; never inferred from automated review. */
+  previewApproved?: boolean;
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -107,6 +116,11 @@ async function prepareImageForPdf(
 }
 
 export async function generatePdfReport(input: GeneratePdfReportInput): Promise<Uint8Array> {
+  return generateProtocolPdf(input);
+}
+
+/** Previous compact format retained for compatibility and comparison. */
+export async function generateLegacyPdfReport(input: GeneratePdfReportInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
 
   const fontRegular = await doc.embedFont(StandardFonts.Helvetica);

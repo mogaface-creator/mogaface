@@ -9,32 +9,14 @@ export function SubmittedView() {
   const searchParams = useSearchParams();
   const submissionId = searchParams.get("id");
 
-  const [secondsLeft, setSecondsLeft] = useState<number>(60);
-  const [status, setStatus] = useState<"countdown" | "processing" | "done" | "error">("countdown");
-  const [statusMessage, setStatusMessage] = useState<string>("Analyzing facial architecture & generating simulation...");
-
-  useEffect(() => {
-    if (!submissionId) return;
-
-    // Countdown timer
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setStatus("processing");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [submissionId]);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  const [status, setStatus] = useState<"countdown" | "processing" | "done" | "error">("processing");
+  const [statusMessage, setStatusMessage] = useState<string>("Preparing your personalised report...");
 
   // When timer hits 0 (or every 10s if processing), poll check-submission-status
   useEffect(() => {
     if (!submissionId) return;
-    if (status === "done") return;
+    if (status === "done" || status === "error") return;
 
     const checkStatus = async () => {
       try {
@@ -44,10 +26,12 @@ export function SubmittedView() {
 
         if (data.status === "done") {
           setStatus("done");
-          setStatusMessage("Your personalized before & after report has been emailed to you!");
+          setStatusMessage(data.deliveryWarning ? "Your report is ready to download, but email delivery was unsuccessful. Please use the download button." : "Your report is ready. Check your email if you supplied an address.");
+        } else if (data.status === "failed") {
+          setStatus("error");setStatusMessage("We could not complete your report. Please contact the clinic with your submission reference.");
         } else if (data.status === "processing") {
           setStatus("processing");
-          setStatusMessage("AI simulation generated. Compiling your 2-page clinical PDF report...");
+          setStatusMessage("Building your full personalised report...");
         } else if (data.secondsRemaining !== undefined && data.secondsRemaining > 0) {
           setSecondsLeft(data.secondsRemaining);
         }
@@ -76,6 +60,13 @@ export function SubmittedView() {
     } catch {
       // Continue normal polling
     }
+  };
+
+  const downloadReport = async () => {
+    if(!submissionId)return;
+    const token=sessionStorage.getItem(`mogaface:report:${submissionId}`);
+    if(!token){setStatusMessage("Open the emailed PDF, or download from the same browser session used to submit.");return;}
+    try{const response=await fetch(`/api/submission-report?id=${encodeURIComponent(submissionId)}`,{headers:{Authorization:`Bearer ${token}`}});if(!response.ok)throw new Error();const url=URL.createObjectURL(await response.blob());const a=document.createElement("a");a.href=url;a.download="Next-Face-Protocol.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{setStatusMessage("The report could not be downloaded. Please use the emailed attachment or contact the clinic.");}
   };
 
   return (
@@ -112,20 +103,20 @@ export function SubmittedView() {
       {/* Heading */}
       <div className="mt-8 text-center">
         <p className="eyebrow text-[11px]">
-          {status === "done" ? "Dossier Dispatched" : "Assessment Received"}
+          {status === "done" ? "Report Ready" : "Assessment Received"}
         </p>
         <h1 className="mt-4 font-serif text-3xl leading-[1.1] tracking-tight text-balance sm:text-5xl">
-          {status === "done" ? "Your results have been sent!" : "Your results are being prepared."}
+          {status === "done" ? "Your report is ready." : "Your results are being prepared."}
         </h1>
         <div aria-hidden className="mx-auto mt-6 h-px w-16 bg-accent" />
 
         {status === "done" ? (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            Your personalized <strong>2-page Clinical Aesthetic Dossier</strong> with your side-by-side simulation has been emailed to you.
+            Your personalized <strong>Next Face appearance protocol</strong> is ready. An illustrative comparison is included only when requested, consented to and successfully quality-screened. Check your email if an address was supplied.
           </p>
         ) : (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            We&apos;re analyzing your photos and building your personalized before &amp; after report. You&apos;ll receive it by email in around <strong>60 seconds</strong>.
+            We&apos;re reviewing your photos and building your personalised report. You&apos;ll receive it by email when processing finishes.
           </p>
         )}
       </div>
@@ -137,13 +128,13 @@ export function SubmittedView() {
             <div>
               <div className="flex items-center justify-center gap-2">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent animate-ping" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-accent">Clinical AI Processing</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-accent">Preparing your report</span>
               </div>
               <div className="mt-3 font-serif text-4xl font-bold text-foreground">
                 {secondsLeft}s
               </div>
               <p className="mt-2 text-xs text-muted">
-                Estimated delivery in ~{secondsLeft} seconds
+                Processing starts after this countdown
               </p>
               <div className="mt-4 flex justify-center">
                 <button
@@ -172,36 +163,37 @@ export function SubmittedView() {
           {status === "done" && (
             <div>
               <p className="text-sm font-medium text-emerald-800">
-                ✓ Delivered via email with attached PDF dossier.
+                Your report has been prepared.
               </p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href={`/api/test-pdf?id=${encodeURIComponent(submissionId)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={downloadReport}
                   className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-accent/90"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
                   View / Download PDF Report
-                </a>
+                </button>
               </div>
             </div>
           )}
         </div>
       )}
 
+      {status === "error" && <p role="alert" className="mt-6 text-center text-sm">{statusMessage}</p>}
+      {status === "done" && <p className="mt-4 text-center text-sm">{statusMessage}</p>}
       {/* What's in your report */}
       <div className="mt-12 rounded-2xl border border-border bg-surface p-8">
         <p className="eyebrow text-[11px]">What&apos;s in your email report</p>
         <ul className="mt-6 space-y-4">
           {[
-            "High-resolution photographic baseline paired with AI aesthetic simulation",
-            "Quantitative Facial Harmony Index & Bilateral Symmetry score",
-            "Board-certified executive clinical interpretation of your facial vectors",
-            "Prioritized anatomical opportunities (tear troughs, jawline contour, cheek apex)",
-            "Direct in-clinic consultation pathway and specialist WhatsApp booking",
+            "An illustrative comparison when requested and quality-screened",
+            "Your selected goals, preferences and original photo views",
+            "Available expression-video observations, labelled with their limitations",
+            "Detailed hair, skin, grooming, lifestyle and style sections",
+            "Treatment discussion options requiring clinician review",
           ].map((item) => (
             <li key={item} className="flex items-start gap-3 border-t border-border pt-4 text-sm leading-6 text-body-text">
               <span className="mt-0.5 flex-shrink-0 text-accent font-bold" aria-hidden>✓</span>

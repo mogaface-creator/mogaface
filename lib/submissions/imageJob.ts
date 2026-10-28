@@ -1,9 +1,10 @@
+import { appearancePlanFromAssessment } from "../image-generation/appearanceFromAssessment.ts";
 /**
  * Photorealistic, Identity-Locked Clinical Aesthetic Simulation Engine.
  * Sends the portrait photograph to OpenAI's image edit API with strict identity lock directives.
  */
 
-import { DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_TIMEOUT_MS, OPENAI_IMAGE_EDITS_URL, chooseImageSize } from "../image-generation/openaiImages.ts";
+import { DEFAULT_IMAGE_MODEL, OPENAI_IMAGE_EDITS_URL, chooseImageSize } from "../image-generation/openaiImages.ts";
 import { validateGeneratedImage } from "../image-generation/output.ts";
 import type { AnalysisRecord } from "../analysis-session/types.ts";
 import type { ImageMime } from "../image-generation/output.ts";
@@ -12,7 +13,7 @@ import { buildFullAestheticPrompt } from "./clinicalVision.ts";
 import { reviewAfterImage, type ImageReview } from "./imageReview.ts";
 
 export type ImageJobResult =
-  | { ok: true; base64: string; mime: string; review?: ImageReview }
+  | { ok: true; base64: string; mime: string; model?: string; review?: ImageReview }
   | { ok: false; reason: string; review?: ImageReview; debugPreview?: { base64: string; mime: string } };
 
 export interface ImageJobInput {
@@ -49,8 +50,8 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     : rawModel;
 
   const timeoutMs = Number(env.IMAGE_GENERATION_TIMEOUT_MS) > 0
-    ? Math.min(58_000, Math.max(10_000, Number(env.IMAGE_GENERATION_TIMEOUT_MS)))
-    : DEFAULT_IMAGE_TIMEOUT_MS;
+    ? Math.min(120_000, Math.max(10_000, Number(env.IMAGE_GENERATION_TIMEOUT_MS)))
+    : 120_000;
 
   const bytes = new Uint8Array(input.beforeBytes);
   const mimeType = input.beforeMime;
@@ -59,7 +60,9 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   // Build or resolve the targeted aesthetic simulation prompt
   let prompt = input.customPrompt?.trim();
   if (!prompt) {
-    if (input.clinicalVision?.imagePrompt?.trim()) {
+    if (input.record?.assessment) {
+      prompt = appearancePlanFromAssessment(input.record.assessment).prompt;
+    } else if (input.clinicalVision?.imagePrompt?.trim()) {
       prompt = input.clinicalVision.imagePrompt.trim();
     } else {
       prompt = buildFullAestheticPrompt({
@@ -92,11 +95,13 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
       });
     };
 
+    let usedModel = model;
     let response = await postEdit(model, env.IMAGE_GENERATION_SIZE?.trim(), env.IMAGE_GENERATION_QUALITY?.trim());
 
     // If an optional size or custom model fails with 400, retry once with standard model
     if (!response.ok && response.status === 400 && model !== DEFAULT_IMAGE_MODEL) {
       console.warn(`[imageJob] Retrying with default model ${DEFAULT_IMAGE_MODEL}...`);
+      usedModel = DEFAULT_IMAGE_MODEL;
       response = await postEdit(DEFAULT_IMAGE_MODEL);
     }
 
@@ -139,26 +144,11 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
 
     console.log("[imageJob] Image review outcome:", review.status);
 
-    // In development or when explicitly testing, allow viewing candidate even if review flags a minor advisory
-    if (review.status === "rejected") {
-      console.warn("[imageJob] Review advisory:", review.reason);
-      if (process.env.NODE_ENV === "development" || input.debugPreview) {
-        return {
-          ok: true,
-          base64: finalBase64,
-          mime: finalMime,
-          review,
-        };
-      }
-      return {
-        ok: false,
-        reason: "image_quality_review_failed",
-        review,
-        debugPreview: { base64: finalBase64, mime: finalMime },
-      };
+    if (review.status !== "approved") {
+      return {ok:false,reason:review.status === "rejected" ? "image_quality_review_failed" : "image_review_unavailable",review,...(input.debugPreview ? {debugPreview:{base64:finalBase64,mime:finalMime}} : {})};
     }
 
-    return { ok: true, base64: finalBase64, mime: finalMime, review };
+    return { ok: true, base64: finalBase64, mime: finalMime, model: usedModel, review };
   } catch (err) {
     console.error("[imageJob] Simulation generation error:", err);
     return {

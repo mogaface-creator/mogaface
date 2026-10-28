@@ -18,6 +18,8 @@ export const ANALYSIS_RECORD_VERSION = "0.1.0";
 export type AnalysisRecordStatus = "active" | "expired";
 
 export interface AnalysisRecord {
+  /** Validated, compressed side photographs stored with this private record for report generation. */
+  reportPhotos?: {leftFortyFive:{base64:string;mime:string};rightFortyFive:{base64:string;mime:string}};
   /** Opaque, server-minted, unguessable (crypto.randomUUID). Never derived from user input. */
   id: string;
   version: typeof ANALYSIS_RECORD_VERSION;

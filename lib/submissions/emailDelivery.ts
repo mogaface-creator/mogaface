@@ -34,8 +34,9 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
   const firstName = input.clientName.trim().split(/\s+/)[0] || "there";
 
   if (!apiKey) {
+    if(env.NODE_ENV === "production")return {ok:false,error:"email_not_configured"};
     console.warn(
-      `[emailDelivery] RESEND_API_KEY is not configured. Email to "${input.toEmail}" was simulated (PDF attachment size: ${input.pdfBytes.length} bytes).`,
+      `[emailDelivery] RESEND_API_KEY is not configured. Email delivery was simulated (PDF attachment size: ${input.pdfBytes.length} bytes).`,
     );
     return { ok: true, simulated: true };
   }
@@ -81,15 +82,15 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
       <div class="greeting">Hello ${firstName},</div>
       <div class="badge">Dossier: ${dossierId}</div>
       <p>
-        Thank you for submitting your facial aesthetic assessment. Over the past 30 minutes, our clinical modeling system has processed your diagnostic photographs and assessment responses.
+        Thank you for submitting your facial aesthetic assessment. Your Next Face report brings together your questionnaire answers, submitted photo views and any usable video-expression observations.
       </p>
       <p>
-        Your full <strong>2-page Clinical Aesthetic Consultation Dossier</strong> has been generated and is attached to this email as a PDF.
+        Your full <strong>Next Face Personal Appearance Protocol</strong> has been generated and is attached to this email as a PDF.
       </p>
 
       <div class="attachment-notice">
         📎 <strong>Attachment: MogaFace-Aesthetic-Dossier-${refCode}.pdf</strong><br>
-        <span style="font-size: 12px; color: #6b5a7e;">Includes your side-by-side photographic baseline, targeted algorithmic simulation, and identified anatomical opportunities.</span>
+        <span style="font-size: 12px; color: #6b5a7e;">Includes detailed appearance guidance and an illustrative comparison when requested and quality-screened. Treatment options require clinician review.</span>
       </div>
 
       ${
