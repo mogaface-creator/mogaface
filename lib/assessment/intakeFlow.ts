@@ -1,10 +1,10 @@
 /**
  * One screen per question. A follow-up appears only after the answer that needs it.
- * Eighteen questions in all, including those follow-ups.
+ * Core intake followed by grouped, optional report-personalisation screens.
  */
 
 import { detailsOfConcern, isAppearanceConcernId } from "./appearanceConcerns.ts";
-import { askVisible, replyOf } from "./clinicIntake.ts";
+import { askVisible } from "./clinicIntake.ts";
 import type { ClinicIntake } from "./clinicIntake.ts";
 import { allAsks, type Ask } from "./intakeQuestions.ts";
 
@@ -17,24 +17,95 @@ export interface PreviewScreen {
 }
 
 export const PREVIEW_SCREENS: PreviewScreen[] = [
-  { id: "age", askIds: ["ageConfirmed"], auto: true },
-  { id: "words", askIds: ["directWordsOk"], auto: true },
-  { id: "want", askIds: ["reportWant"], auto: true },
-  { id: "bother", askIds: ["dislikes"] },
-  { id: "howLong", askIds: ["dislikeDuration"], auto: true },
-  { id: "places", askIds: ["places"] },
-  { id: "where", askIds: ["placeDetails"] },
-  { id: "look", askIds: ["lookDirections"] },
-  { id: "limit", askIds: ["maxWilling"], auto: true },
-  { id: "down", askIds: ["downtime"], auto: true },
-  { id: "prior", askIds: ["hadPriorWork"], auto: true },
-  { id: "priorWhat", askIds: ["priorTreatments"] },
-  { id: "size", title: "Height and weight", askIds: ["heightCm", "weightKg"] },
-  { id: "sleep", askIds: ["sleepHours"], auto: true },
-  { id: "flags", askIds: ["clinicFlags"] },
-  { id: "event", askIds: ["hasEvent"], auto: true },
-  { id: "eventWhat", askIds: ["event"] },
-  { id: "after", askIds: ["wantAfterPhoto"], auto: true },
+  {
+    "id": "age",
+    "askIds": [
+      "ageConfirmed"
+    ],
+    "auto": true
+  },
+  {
+    "id": "goals",
+    "title": "Your goals",
+    "askIds": [
+      "dislikes",
+      "places"
+    ]
+  },
+  {
+    "id": "where",
+    "askIds": [
+      "placeDetails"
+    ]
+  },
+  {
+    "id": "protocolHair",
+    "title": "Your hair and preferred style",
+    "askIds": [
+      "protocolHairTexture",
+      "protocolHairGoal",
+      "protocolHairRoutine",
+      "protocolHairReference",
+      "protocolStylingTime"
+    ]
+  },
+  {
+    "id": "protocolSkin",
+    "title": "Your skin and current routine",
+    "askIds": [
+      "protocolSkinType",
+      "protocolSensitivity",
+      "protocolSkinRoutine",
+      "protocolSkinConcerns"
+    ]
+  },
+  {
+    "id": "protocolGrooming",
+    "title": "Grooming and eyewear",
+    "askIds": [
+      "protocolBeardGoal",
+      "protocolGlasses"
+    ]
+  },
+  {
+    "id": "protocolLifestyle",
+    "title": "Your lifestyle",
+    "askIds": [
+      "heightCm",
+      "weightKg",
+      "sleepHours",
+      "protocolDiet",
+      "protocolActivity",
+      "protocolEquipment"
+    ]
+  },
+  {
+    "id": "protocolPreferences",
+    "title": "Style and budget",
+    "askIds": [
+      "protocolStyle",
+      "protocolBudget",
+      "protocolClinicBudget"
+    ]
+  },
+  {
+    "id": "clinicalPreferences",
+    "title": "Clinic preferences and history",
+    "askIds": [
+      "maxWilling",
+      "downtime",
+      "priorTreatments",
+      "clinicFlags"
+    ]
+  },
+  {
+    "id": "visualPreferences",
+    "title": "Your appearance preview",
+    "askIds": [
+      "protocolPreserve",
+      "wantAfterPhoto"
+    ]
+  }
 ];
 
 export function asksByIds(ids: string[]): Ask[] {
@@ -59,7 +130,6 @@ export function whereGroups(intake: ClinicIntake) {
 }
 
 export function screenApplies(screen: PreviewScreen, intake: ClinicIntake): boolean {
-  if (screen.id === "howLong") return intake.dislikes.some((dislike) => dislike.words.trim().length > 0);
   if (screen.id === "where") return whereGroups(intake).length > 0;
   return asksOn(screen).some((ask) => askVisible(intake, ask));
 }
@@ -70,21 +140,7 @@ export function visibleScreens(intake: ClinicIntake): PreviewScreen[] {
 
 export function previewCanContinue(screenId: string, intake: ClinicIntake): boolean {
   if (screenId === "age") return intake.ageConfirmed === "yes";
-  if (screenId === "bother") return intake.dislikes.some((dislike) => dislike.words.trim().length > 0);
-  if (screenId === "howLong") return replyOf(intake, "dislikeDuration") !== "";
-  if (screenId === "places") return intake.places.length > 0;
-  if (screenId === "size") {
-    return (
-      intake.heightCm !== null &&
-      intake.heightCm >= 100 &&
-      intake.heightCm <= 250 &&
-      intake.weightKg !== null &&
-      intake.weightKg >= 30 &&
-      intake.weightKg <= 300
-    );
-  }
-  if (screenId === "flags") return (intake.picked.clinicFlags ?? []).length > 0;
-  if (screenId === "priorWhat") return replyOf(intake, "priorTreatments").trim().length > 0;
-  if (screenId === "eventWhat") return replyOf(intake, "event").trim().length > 0;
+  if (screenId === "goals") return intake.places.length > 0;
+  if (screenId === "protocolLifestyle") return intake.heightCm !== null && intake.heightCm >= 100 && intake.heightCm <= 250 && intake.weightKg !== null && intake.weightKg >= 30 && intake.weightKg <= 300;
   return true;
 }

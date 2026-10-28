@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import { projectBody, projectPlaces, sanitizeClinicIntake, setAnswer, withIntake } from "../../lib/assessment/clinicIntake.ts";
+import { projectBody, projectPlaces, sanitizeClinicIntake } from "../../lib/assessment/clinicIntake.ts";
 import { allAsks, IMAGE_PLACE_OPTIONS } from "../../lib/assessment/intakeQuestions.ts";
 import { PREVIEW_SCREENS, visibleScreens } from "../../lib/assessment/intakeFlow.ts";
 import { sanitizeAssessment } from "../../lib/assessment/schema.ts";
@@ -35,24 +35,21 @@ test("height and weight copy onto the profile only inside a usable range", () =>
   assert.equal(rejected.profile.heightCm, null);
 });
 
-test("the intake is 15 to 20 questions, and each one can be answered in a tap or one line", () => {
+test("the core intake and grouped protocol questions are all reachable", () => {
   const asks = allAsks();
-  assert.equal(PREVIEW_SCREENS.length >= 15 && PREVIEW_SCREENS.length <= 20, true);
+  assert.equal(PREVIEW_SCREENS.length === 10, true);
   const asked = new Set(PREVIEW_SCREENS.flatMap((screen) => screen.askIds));
   assert.deepEqual(asks.map((ask) => ask.id).filter((id) => !asked.has(id)), []);
   const prompts = asks.flatMap((ask) => [ask.prompt, ask.hint ?? "", ask.placeholder ?? "", ...(ask.options ?? []).map((option) => option.label)]).join("\n");
-  for (const phrase of [
-    "based on measurements",
-    "Get a step-by-step plan",
-    "Injections like Botox, fillers, skin boosters",
-    "isotretinoin (acne tablets)",
-    "not a promise of the result",
-  ]) {
+  for (const phrase of ["How would you describe your natural hair?", "How does your skin usually feel?", "Monthly skincare and grooming budget?", "isotretinoin (acne tablets)"]) {
     assert.equal(prompts.includes(phrase), true, phrase);
   }
+  for (const id of ["directWordsOk","reportWant","dislikeDuration","lookDirections","hadPriorWork","hasEvent","event"]) assert.equal(asks.some(ask=>ask.id===id),false,id);
+  assert.equal(asks.find(ask=>ask.id==="maxWilling")?.options?.some(option=>option.value==="surgery"),false);
+  assert.equal(new Set(asks.map(ask=>ask.id)).size,asks.length);
   assert.equal(asks.some((ask) => ask.kind === "text" && ask.input === "area"), false);
   const look = asks.find((ask) => ask.id === "lookDirections");
-  assert.equal(look?.options?.some((option) => option.value === "younger"), false);
+  assert.equal(look, undefined);
   const blocked = ["FACIAL_VOLUME", "FACIAL_LIFTING", "FACIAL_BALANCE", "OVERALL_APPEARANCE", "NOT_SURE"];
   assert.equal(blocked.some((id) => IMAGE_PLACE_OPTIONS.some((option) => option.value === id)), false);
 });
@@ -65,24 +62,12 @@ test("follow-up screens appear only after the answer that needs them", () => {
   assert.equal(hidden.includes("priorWhat"), false);
   assert.equal(hidden.includes("eventWhat"), false);
 
-  const bothered = withIntake(createEmptyAssessment(), {
-    dislikes: [
-      { words: "Forehead lines", duration: "" },
-      { words: "", duration: "" },
-      { words: "", duration: "" },
-    ],
-  }).clinicIntake;
-  assert.equal(visibleScreens(bothered).some((screen) => screen.id === "howLong"), true);
-
   const hairOnly = projectPlaces(createEmptyAssessment(), ["HAIR"]).clinicIntake;
   assert.equal(visibleScreens(hairOnly).some((screen) => screen.id === "where"), false);
   const lines = projectPlaces(createEmptyAssessment(), ["FACIAL_LINES"]).clinicIntake;
   assert.equal(visibleScreens(lines).some((screen) => screen.id === "where"), true);
 
-  const prior = setAnswer(createEmptyAssessment(), "hadPriorWork", "yes").clinicIntake;
-  assert.equal(visibleScreens(prior).some((screen) => screen.id === "priorWhat"), true);
-  const event = setAnswer(createEmptyAssessment(), "hasEvent", "yes").clinicIntake;
-  assert.equal(visibleScreens(event).some((screen) => screen.id === "eventWhat"), true);
+
 });
 
 test("treatment words and look directions stay out of the image prompt", () => {

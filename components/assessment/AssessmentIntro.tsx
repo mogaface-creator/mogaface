@@ -12,9 +12,9 @@ export function AssessmentIntro({
   return (
     <div className="text-center">
       <p className="text-sm font-medium tracking-wide text-muted uppercase">A few minutes</p>
-      <h1 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">Tell the clinic what you want them to know.</h1>
+      <h1 className="mt-4 font-serif text-4xl tracking-tight sm:text-5xl">Build a plan around you.</h1>
       <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted">
-        Eighteen short questions, then three photos. The after photo changes only the places you pick. A clinician decides what comes next.
+        Tell us about your goals, hair, skin, grooming and lifestyle, then add your photos. Your answers personalise the report. An optional preview changes only the areas you select.
       </p>
       <div className="mt-10 flex flex-col items-center justify-center gap-3">
         <Button onClick={onBegin}>

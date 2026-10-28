@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { StepNav } from "./StepNav";
 import { MultiChoiceGroup, SingleChoiceGroup } from "./ChoiceGroup";
 import { concernLabel, toggleDetail, type AppearanceConcernDetailId } from "@/lib/assessment/appearanceConcerns.ts";
@@ -124,7 +124,7 @@ export function ClinicIntakeSection({
             );
           }
           const ask = chunk.type === "yesno" ? chunk.asks[0] : chunk.ask;
-          return <AskField key={ask.id} ask={ask} assessment={assessment} intake={intake} onCommit={commit} hidePrompt />;
+          return <AskField key={ask.id} ask={ask} assessment={assessment} intake={intake} onCommit={commit} hidePrompt={visible.length === 1 && !title} />;
         })}
       </div>
       {under18 && <p className="mt-6 text-sm text-body-text">This is only for people who are 18 or older.</p>}
@@ -213,17 +213,10 @@ function BodyMeasureField({
   intake: ClinicIntake;
   onCommit: (next: Assessment, ask: Ask) => void;
 }) {
-  const [text, setText] = useState<string>(value !== null ? String(value) : "");
-
-  useEffect(() => {
-    if (value !== null && Number(text) !== value) {
-      setText(String(value));
-    }
-  }, [value, text]);
+  const text = value === null ? "" : String(value);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value.replace(/\D/g, "");
-    setText(raw);
     const next = raw === "" ? null : Number(raw);
     onCommit(
       projectBody(assessment, isHeight ? next : intake.heightCm, isHeight ? intake.weightKg : next),

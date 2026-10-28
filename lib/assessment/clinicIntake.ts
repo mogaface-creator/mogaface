@@ -386,8 +386,8 @@ export function setPicked(assessment: Assessment, id: string, values: string[]):
   const ask = allAsks().find((item) => item.id === id);
   const allowed = (ask?.options ?? []).map((option) => option.value);
   let nextValues = listOf(values, allowed, ask?.max ?? allowed.length);
-  if (id === "clinicFlags") {
-    const hadNone = (assessment.clinicIntake.picked.clinicFlags ?? []).includes("none");
+  if (id === "clinicFlags" || id === "protocolSkinConcerns") {
+    const hadNone = (assessment.clinicIntake.picked[id] ?? []).includes("none");
     nextValues = nextValues.includes("none") && !hadNone ? ["none"] : nextValues.filter((value) => value !== "none");
   }
   const picked = { ...assessment.clinicIntake.picked, [id]: nextValues };
