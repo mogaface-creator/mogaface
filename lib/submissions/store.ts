@@ -139,7 +139,18 @@ export async function createSubmission(
       fetchImpl,
     ).catch(() => null);
     if (!res?.ok) {
-      console.error("[submissions] Failed to create submission row", { status: res?.status });
+      const diagnostic: Record<string, unknown> = { status: res?.status ?? null };
+      if (res) {
+        try {
+          const error = JSON.parse(await res.text()) as Record<string, unknown>;
+          diagnostic.code = error.code;
+          diagnostic.message = error.message;
+          diagnostic.hint = error.hint;
+        } catch {
+          diagnostic.note = "Supabase error body unreadable";
+        }
+      }
+      console.error("[submissions] Failed to create submission row", diagnostic);
       return null;
     }
   } else {

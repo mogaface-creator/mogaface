@@ -398,7 +398,8 @@ export async function attachReportPhotos(record: AnalysisRecord, photos: NonNull
     if(isProductionEnv(env))return false;
     const entry=fallbackRecords.get(record.id);if(!entry)return false;entry.record=next;return true;
   }
-  const response=await supabaseRequest(env,`/analysis_sessions?analysis_id=eq.${encodeURIComponent(record.id)}`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({record:next})},fetchImpl).catch(()=>null);
-  if(!response?.ok)return false;
+  let networkError: unknown;
+  const response=await supabaseRequest(env,`/analysis_sessions?analysis_id=eq.${encodeURIComponent(record.id)}`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({record:next})},fetchImpl).catch((error)=>{networkError=error;return null;});
+  if(!response?.ok){await logSupabaseFailure("attachReportPhotos",response,networkError);return false;}
   const rows=await response.json().catch(()=>null);return Array.isArray(rows)&&rows.length===1;
 }

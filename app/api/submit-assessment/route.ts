@@ -5,9 +5,15 @@ import {processOne} from "@/app/api/process-submissions/route";
 export const runtime="nodejs";
 export const maxDuration=180;
 export async function POST(request:Request){
- const response=await handleSubmitAssessment(request);
- if(response.ok){const body=await response.clone().json();if(typeof body.submissionId==="string")after(async()=>{
-   try{const submission=await getSubmission(body.submissionId);if(submission?.status==="pending")await processOne(submission);}catch{console.error("[submit-assessment] Background processing unavailable; queued submission retained.");}
- });}
- return response;
+ const reference=crypto.randomUUID();
+ try {
+  const response=await handleSubmitAssessment(request);
+  if(response.ok){const body=await response.clone().json();if(typeof body.submissionId==="string")after(async()=>{
+    try{const submission=await getSubmission(body.submissionId);if(submission?.status==="pending")await processOne(submission);}catch{console.error("[submit-assessment] Background processing unavailable; queued submission retained.");}
+  });}
+  return response;
+ } catch (error) {
+  console.error("[submit-assessment] Unhandled request failure", { reference, name: error instanceof Error ? error.name : "unknown" });
+  return Response.json({ error: "server_error", reference }, { status: 500 });
+ }
 }

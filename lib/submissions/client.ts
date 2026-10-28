@@ -20,7 +20,7 @@ export interface SubmitAssessmentInput {
 
 export type SubmitAssessmentResult =
   | { ok: true; submissionId: string }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; reference?: string };
 
 export async function submitAssessment(input: SubmitAssessmentInput): Promise<SubmitAssessmentResult> {
   const form = new FormData();
@@ -47,7 +47,11 @@ export async function submitAssessment(input: SubmitAssessmentInput): Promise<Su
     const res = await fetch("/api/submit-assessment", { method: "POST", body: form });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      return { ok: false, reason: typeof body.error === "string" ? body.error : "server_error" };
+      return {
+        ok: false,
+        reason: typeof body.error === "string" ? body.error : "server_error",
+        ...(typeof body.reference === "string" ? { reference: body.reference } : {}),
+      };
     }
     const body = (await res.json()) as { submissionId?: string };
     if (!body.submissionId) return { ok: false, reason: "missing_submission_id" };

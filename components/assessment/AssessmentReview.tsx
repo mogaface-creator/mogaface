@@ -244,7 +244,17 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     });
     setSubmitting(false);
     if (!result.ok) {
-      setSubmitError("We could not submit your assessment. Your photos are still available; please retry.");
+      const messages: Record<string, string> = {
+        photo_preparation_failed: "We could not prepare one of your photos. Try a JPG or PNG image, then submit again.",
+        invalid_photo: "One of the photos could not be read. Please replace it with a clear JPG or PNG photo.",
+        too_large: "The photos are too large to upload. Please use smaller image files and try again.",
+        analysis_session_required: "This assessment session has expired. Please start the assessment again.",
+        storage_error: "The clinic could not save this assessment right now. Your photos are still here; please retry in a moment.",
+        network_error: "The upload was interrupted. Check your connection and retry; your photos are still here.",
+        server_error: "The server could not complete the submission. Your photos are still here; please retry.",
+      };
+      const message = messages[result.reason] ?? "We could not submit your assessment. Your photos are still available; please retry.";
+      setSubmitError(result.reference ? `${message} Reference: ${result.reference}` : message);
       return;
     }
     clearAssessment();
