@@ -168,24 +168,28 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
     "asks": [
       {
         "id": "protocolHairGoal",
-        "prompt": "What is your main hair goal?",
+        "prompt": "What hairstyle do you prefer?",
         "kind": "choice",
         "options": [
           {
-            "value": "styling",
-            "label": "Haircut and styling"
+            "value": "short",
+            "label": "Short and neat"
           },
           {
-            "value": "frizz",
-            "label": "Frizz and manageability"
+            "value": "texture",
+            "label": "Natural and textured"
           },
           {
-            "value": "density",
-            "label": "Thinning or density"
+            "value": "volume",
+            "label": "More volume"
           },
           {
             "value": "maintain",
-            "label": "Keep it as it is"
+            "label": "Keep my current style"
+          },
+          {
+            "value": "notSure",
+            "label": "Not sure yet"
           }
         ]
       }
@@ -194,39 +198,6 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   {
     "section": "report",
     "n": 5,
-    "asks": [
-      {
-        "id": "protocolSkinType",
-        "prompt": "How does your skin usually feel?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "oily",
-            "label": "Oily"
-          },
-          {
-            "value": "dry",
-            "label": "Dry or tight"
-          },
-          {
-            "value": "combination",
-            "label": "Oily in some areas, dry in others"
-          },
-          {
-            "value": "balanced",
-            "label": "Comfortable"
-          },
-          {
-            "value": "notSure",
-            "label": "Not sure"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "section": "report",
-    "n": 6,
     "asks": [
       {
         "id": "protocolSkinConcerns",
@@ -263,7 +234,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 7,
+    "n": 6,
     "asks": [
       {
         "id": "protocolSensitivity",
@@ -288,7 +259,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 8,
+    "n": 7,
     "asks": [
       {
         "id": "protocolBeardGoal",
@@ -321,94 +292,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 9,
-    "asks": [
-      {
-        "id": "sleepHours",
-        "prompt": "How much do you usually sleep?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "5orLess",
-            "label": "5 or less"
-          },
-          {
-            "value": "6",
-            "label": "6"
-          },
-          {
-            "value": "7",
-            "label": "7"
-          },
-          {
-            "value": "8",
-            "label": "8"
-          },
-          {
-            "value": "9orMore",
-            "label": "9 or more"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "section": "report",
-    "n": 10,
-    "asks": [
-      {
-        "id": "protocolDiet",
-        "prompt": "What is your diet?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "mixed",
-            "label": "Mixed diet"
-          },
-          {
-            "value": "vegetarian",
-            "label": "Vegetarian"
-          },
-          {
-            "value": "vegan",
-            "label": "Vegan"
-          },
-          {
-            "value": "other",
-            "label": "Other or prefer not to say"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "section": "report",
-    "n": 11,
-    "asks": [
-      {
-        "id": "protocolActivity",
-        "prompt": "How often do you exercise?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "none",
-            "label": "Not regularly"
-          },
-          {
-            "value": "light",
-            "label": "1-2 days a week"
-          },
-          {
-            "value": "regular",
-            "label": "3 or more days a week"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "section": "report",
-    "n": 12,
+    "n": 8,
     "asks": [
       {
         "id": "protocolBudget",
@@ -437,7 +321,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 13,
+    "n": 9,
     "asks": [
       {
         "id": "maxWilling",
@@ -462,7 +346,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 14,
+    "n": 10,
     "asks": [
       {
         "id": "wantAfterPhoto",

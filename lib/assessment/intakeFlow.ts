@@ -1,6 +1,6 @@
 /**
  * One screen per question. A follow-up appears only after the answer that needs it.
- * Core intake followed by grouped, optional report-personalisation screens.
+ * Ten short choice questions, followed by photos and separate processing consent.
  */
 
 import { detailsOfConcern, isAppearanceConcernId } from "./appearanceConcerns.ts";
@@ -45,13 +45,6 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
     "auto": true
   },
   {
-    "id": "protocolSkinType",
-    "askIds": [
-      "protocolSkinType"
-    ],
-    "auto": true
-  },
-  {
     "id": "protocolSkinConcerns",
     "askIds": [
       "protocolSkinConcerns"
@@ -68,27 +61,6 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
     "id": "protocolBeardGoal",
     "askIds": [
       "protocolBeardGoal"
-    ],
-    "auto": true
-  },
-  {
-    "id": "sleepHours",
-    "askIds": [
-      "sleepHours"
-    ],
-    "auto": true
-  },
-  {
-    "id": "protocolDiet",
-    "askIds": [
-      "protocolDiet"
-    ],
-    "auto": true
-  },
-  {
-    "id": "protocolActivity",
-    "askIds": [
-      "protocolActivity"
     ],
     "auto": true
   },
