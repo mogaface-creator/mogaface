@@ -26,85 +26,92 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
   },
   {
     "id": "goals",
-    "title": "Your goals",
     "askIds": [
-      "dislikes",
       "places"
     ]
   },
   {
-    "id": "where",
+    "id": "protocolHairTexture",
     "askIds": [
-      "placeDetails"
-    ]
+      "protocolHairTexture"
+    ],
+    "auto": true
   },
   {
-    "id": "protocolHair",
-    "title": "Your hair and preferred style",
+    "id": "protocolHairGoal",
     "askIds": [
-      "protocolHairTexture",
-      "protocolHairGoal",
-      "protocolHairRoutine",
-      "protocolHairReference",
-      "protocolStylingTime"
-    ]
+      "protocolHairGoal"
+    ],
+    "auto": true
   },
   {
-    "id": "protocolSkin",
-    "title": "Your skin and current routine",
+    "id": "protocolSkinType",
     "askIds": [
-      "protocolSkinType",
-      "protocolSensitivity",
-      "protocolSkinRoutine",
+      "protocolSkinType"
+    ],
+    "auto": true
+  },
+  {
+    "id": "protocolSkinConcerns",
+    "askIds": [
       "protocolSkinConcerns"
     ]
   },
   {
-    "id": "protocolGrooming",
-    "title": "Grooming and eyewear",
+    "id": "protocolSensitivity",
     "askIds": [
-      "protocolBeardGoal",
-      "protocolGlasses"
-    ]
+      "protocolSensitivity"
+    ],
+    "auto": true
   },
   {
-    "id": "protocolLifestyle",
-    "title": "Your lifestyle",
+    "id": "protocolBeardGoal",
     "askIds": [
-      "heightCm",
-      "weightKg",
-      "sleepHours",
-      "protocolDiet",
-      "protocolActivity",
-      "protocolEquipment"
-    ]
+      "protocolBeardGoal"
+    ],
+    "auto": true
   },
   {
-    "id": "protocolPreferences",
-    "title": "Style and budget",
+    "id": "sleepHours",
     "askIds": [
-      "protocolStyle",
-      "protocolBudget",
-      "protocolClinicBudget"
-    ]
+      "sleepHours"
+    ],
+    "auto": true
   },
   {
-    "id": "clinicalPreferences",
-    "title": "Clinic preferences and history",
+    "id": "protocolDiet",
     "askIds": [
-      "maxWilling",
-      "downtime",
-      "priorTreatments",
-      "clinicFlags"
-    ]
+      "protocolDiet"
+    ],
+    "auto": true
   },
   {
-    "id": "visualPreferences",
-    "title": "Your appearance preview",
+    "id": "protocolActivity",
     "askIds": [
-      "protocolPreserve",
+      "protocolActivity"
+    ],
+    "auto": true
+  },
+  {
+    "id": "protocolBudget",
+    "askIds": [
+      "protocolBudget"
+    ],
+    "auto": true
+  },
+  {
+    "id": "maxWilling",
+    "askIds": [
+      "maxWilling"
+    ],
+    "auto": true
+  },
+  {
+    "id": "wantAfterPhoto",
+    "askIds": [
       "wantAfterPhoto"
-    ]
+    ],
+    "auto": true
   }
 ];
 
@@ -141,6 +148,5 @@ export function visibleScreens(intake: ClinicIntake): PreviewScreen[] {
 export function previewCanContinue(screenId: string, intake: ClinicIntake): boolean {
   if (screenId === "age") return intake.ageConfirmed === "yes";
   if (screenId === "goals") return intake.places.length > 0;
-  if (screenId === "protocolLifestyle") return intake.heightCm !== null && intake.heightCm >= 100 && intake.heightCm <= 250 && intake.weightKg !== null && intake.weightKg >= 30 && intake.weightKg <= 300;
   return true;
 }

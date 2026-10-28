@@ -73,25 +73,18 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
     "asks": [
       {
         "id": "ageConfirmed",
-        "prompt": "Confirm you are 18 or older.",
+        "prompt": "Are you 18 or older?",
         "kind": "yesno"
       }
     ]
   },
   {
-    "section": "about",
+    "section": "report",
     "n": 2,
     "asks": [
       {
-        "id": "dislikes",
-        "prompt": "What would you most like to improve?",
-        "hint": "Tell us your main goal in your own words.",
-        "kind": "dislikes"
-      },
-      {
         "id": "places",
-        "prompt": "Choose the areas you want to focus on.",
-        "hint": "Choose up to three. These selections also control which areas an optional preview may edit.",
+        "prompt": "What would you like to improve?",
         "kind": "places",
         "max": 3,
         "options": [
@@ -127,29 +120,18 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "value": "HAIR",
             "label": "Hair"
           }
-        ]
+        ],
+        "hint": "Choose up to 3 areas."
       }
     ]
   },
   {
-    "section": "comfort",
+    "section": "report",
     "n": 3,
     "asks": [
       {
-        "id": "placeDetails",
-        "prompt": "Which specific spots would you like us to focus on?",
-        "hint": "Select the locations that match your concern.",
-        "kind": "details"
-      }
-    ]
-  },
-  {
-    "section": "about",
-    "n": 4,
-    "asks": [
-      {
         "id": "protocolHairTexture",
-        "prompt": "How would you describe your natural hair?",
+        "prompt": "What is your natural hair type?",
         "kind": "choice",
         "options": [
           {
@@ -177,10 +159,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Not sure"
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 4,
+    "asks": [
       {
         "id": "protocolHairGoal",
-        "prompt": "What would you most like to change about your hair?",
+        "prompt": "What is your main hair goal?",
         "kind": "choice",
         "options": [
           {
@@ -200,44 +188,11 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Keep it as it is"
           }
         ]
-      },
-      {
-        "id": "protocolHairRoutine",
-        "prompt": "What do you currently use on your hair?",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "Shampoo, conditioner, styling products - or none"
-      },
-      {
-        "id": "protocolHairReference",
-        "prompt": "Describe your preferred haircut or paste a reference link",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "Keep curls, less width at the sides, natural top"
-      },
-      {
-        "id": "protocolStylingTime",
-        "prompt": "How much time would you spend styling each day?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "minimal",
-            "label": "Under 5 minutes"
-          },
-          {
-            "value": "moderate",
-            "label": "5-10 minutes"
-          },
-          {
-            "value": "flexible",
-            "label": "More than 10 minutes"
-          }
-        ]
       }
     ]
   },
   {
-    "section": "skin",
+    "section": "report",
     "n": 5,
     "asks": [
       {
@@ -266,36 +221,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Not sure"
           }
         ]
-      },
-      {
-        "id": "protocolSensitivity",
-        "prompt": "Does skincare often sting or irritate your skin?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "yes",
-            "label": "Yes"
-          },
-          {
-            "value": "no",
-            "label": "No"
-          },
-          {
-            "value": "notSure",
-            "label": "Not sure"
-          }
-        ]
-      },
-      {
-        "id": "protocolSkinRoutine",
-        "prompt": "What skincare and prescribed treatments do you use?",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "Product names, frequency, or none"
-      },
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 6,
+    "asks": [
       {
         "id": "protocolSkinConcerns",
-        "prompt": "Which skin concerns should the report address?",
+        "prompt": "What are your main skin concerns?",
         "kind": "multi",
         "options": [
           {
@@ -327,12 +262,37 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
     ]
   },
   {
-    "section": "comfort",
-    "n": 6,
+    "section": "report",
+    "n": 7,
+    "asks": [
+      {
+        "id": "protocolSensitivity",
+        "prompt": "Is your skin sensitive?",
+        "kind": "choice",
+        "options": [
+          {
+            "value": "yes",
+            "label": "Yes"
+          },
+          {
+            "value": "no",
+            "label": "No"
+          },
+          {
+            "value": "notSure",
+            "label": "Not sure"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 8,
     "asks": [
       {
         "id": "protocolBeardGoal",
-        "prompt": "How would you like to wear your facial hair?",
+        "prompt": "Which facial-hair style do you prefer?",
         "kind": "choice",
         "options": [
           {
@@ -356,41 +316,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Not applicable"
           }
         ]
-      },
-      {
-        "id": "protocolGlasses",
-        "prompt": "Would you like eyewear suggestions?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "yes",
-            "label": "Yes"
-          },
-          {
-            "value": "no",
-            "label": "No"
-          }
-        ]
       }
     ]
   },
   {
-    "section": "body",
-    "n": 7,
+    "section": "report",
+    "n": 9,
     "asks": [
       {
-        "id": "heightCm",
-        "prompt": "Height (cm)",
-        "kind": "height"
-      },
-      {
-        "id": "weightKg",
-        "prompt": "Weight (kg)",
-        "kind": "weight"
-      },
-      {
         "id": "sleepHours",
-        "prompt": "On a usual night, how much sleep do you get?",
+        "prompt": "How much do you usually sleep?",
         "kind": "choice",
         "options": [
           {
@@ -414,10 +349,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "9 or more"
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 10,
+    "asks": [
       {
         "id": "protocolDiet",
-        "prompt": "Which eating pattern fits you?",
+        "prompt": "What is your diet?",
         "kind": "choice",
         "options": [
           {
@@ -437,10 +378,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Other or prefer not to say"
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 11,
+    "asks": [
       {
         "id": "protocolActivity",
-        "prompt": "How often do you exercise now?",
+        "prompt": "How often do you exercise?",
         "kind": "choice",
         "options": [
           {
@@ -456,58 +403,16 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "3 or more days a week"
           }
         ]
-      },
-      {
-        "id": "protocolEquipment",
-        "prompt": "Where would you prefer to exercise?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "home",
-            "label": "Home or outdoors"
-          },
-          {
-            "value": "gym",
-            "label": "Gym"
-          },
-          {
-            "value": "none",
-            "label": "No exercise plan wanted"
-          }
-        ]
       }
     ]
   },
   {
     "section": "report",
-    "n": 8,
+    "n": 12,
     "asks": [
       {
-        "id": "protocolStyle",
-        "prompt": "Which wardrobe direction suits your life?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "casual",
-            "label": "Casual"
-          },
-          {
-            "value": "smart",
-            "label": "Smart casual"
-          },
-          {
-            "value": "professional",
-            "label": "Professional"
-          },
-          {
-            "value": "maintain",
-            "label": "Keep my current style"
-          }
-        ]
-      },
-      {
         "id": "protocolBudget",
-        "prompt": "Monthly skincare and grooming budget?",
+        "prompt": "What is your monthly care budget?",
         "kind": "choice",
         "options": [
           {
@@ -527,19 +432,12 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
             "label": "Not decided"
           }
         ]
-      },
-      {
-        "id": "protocolClinicBudget",
-        "prompt": "Separate budget for a clinic consultation or treatment?",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "Optional - this does not change your monthly budget"
       }
     ]
   },
   {
-    "section": "comfort",
-    "n": 9,
+    "section": "report",
+    "n": 13,
     "asks": [
       {
         "id": "maxWilling",
@@ -548,74 +446,15 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
         "options": [
           {
             "value": "skincare",
-            "label": "Grooming, skincare and lifestyle only"
+            "label": "Grooming and skincare"
           },
           {
             "value": "laser",
-            "label": "Also open to non-surgical clinic treatments"
+            "label": "Non-surgical clinic treatments"
           },
           {
             "value": "injections",
-            "label": "Also open to injectable treatments"
-          },
-          {
-            "value": "threads",
-            "label": "Open to discussing other non-surgical options with a clinician"
-          }
-        ]
-      },
-      {
-        "id": "downtime",
-        "prompt": "What recovery time would fit your schedule?",
-        "kind": "choice",
-        "options": [
-          {
-            "value": "none",
-            "label": "None"
-          },
-          {
-            "value": "days2to3",
-            "label": "2\u20133 days"
-          },
-          {
-            "value": "oneWeek",
-            "label": "1 week"
-          },
-          {
-            "value": "twoWeeksOrMore",
-            "label": "2 weeks or more"
-          }
-        ]
-      },
-      {
-        "id": "priorTreatments",
-        "prompt": "Any previous treatments the clinician should know about?",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "Optional - treatment and approximate date",
-        "when": undefined
-      },
-      {
-        "id": "clinicFlags",
-        "prompt": "Do any of these apply to you?",
-        "hint": "For clinician review only. This does not determine treatment suitability.",
-        "kind": "multi",
-        "options": [
-          {
-            "value": "pregnant",
-            "label": "Pregnant or breastfeeding"
-          },
-          {
-            "value": "isotretinoin",
-            "label": "I have taken isotretinoin (acne tablets)"
-          },
-          {
-            "value": "keloid",
-            "label": "I get keloid scars"
-          },
-          {
-            "value": "none",
-            "label": "None of these"
+            "label": "Also open to injectables"
           }
         ]
       }
@@ -623,20 +462,13 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 10,
+    "n": 14,
     "asks": [
       {
-        "id": "protocolPreserve",
-        "prompt": "What must stay unchanged in your after image?",
-        "kind": "text",
-        "input": "line",
-        "placeholder": "My face shape, curls, complexion, beard, or other features"
-      },
-      {
         "id": "wantAfterPhoto",
-        "prompt": "Would you like an illustrative appearance preview?",
-        "hint": "Optional. It shows a possible direction, not a promised treatment result.",
-        "kind": "yesno"
+        "prompt": "Would you like an after preview?",
+        "kind": "yesno",
+        "hint": "An illustration, not a promised treatment result."
       }
     ]
   }

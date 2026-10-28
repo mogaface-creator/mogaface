@@ -37,17 +37,18 @@ test("height and weight copy onto the profile only inside a usable range", () =>
 
 test("the core intake and grouped protocol questions are all reachable", () => {
   const asks = allAsks();
-  assert.equal(PREVIEW_SCREENS.length === 10, true);
+  assert.equal(PREVIEW_SCREENS.length === 14, true);
   const asked = new Set(PREVIEW_SCREENS.flatMap((screen) => screen.askIds));
   assert.deepEqual(asks.map((ask) => ask.id).filter((id) => !asked.has(id)), []);
   const prompts = asks.flatMap((ask) => [ask.prompt, ask.hint ?? "", ask.placeholder ?? "", ...(ask.options ?? []).map((option) => option.label)]).join("\n");
-  for (const phrase of ["How would you describe your natural hair?", "How does your skin usually feel?", "Monthly skincare and grooming budget?", "isotretinoin (acne tablets)"]) {
+  for (const phrase of ["What is your natural hair type?", "How does your skin usually feel?", "What is your monthly care budget?"]) {
     assert.equal(prompts.includes(phrase), true, phrase);
   }
   for (const id of ["directWordsOk","reportWant","dislikeDuration","lookDirections","hadPriorWork","hasEvent","event"]) assert.equal(asks.some(ask=>ask.id===id),false,id);
   assert.equal(asks.find(ask=>ask.id==="maxWilling")?.options?.some(option=>option.value==="surgery"),false);
   assert.equal(new Set(asks.map(ask=>ask.id)).size,asks.length);
-  assert.equal(asks.some((ask) => ask.kind === "text" && ask.input === "area"), false);
+  assert.equal(asks.length, 14);
+  assert.equal(asks.some(ask => ["text","height","weight","dislikes","details"].includes(ask.kind)),false);
   const look = asks.find((ask) => ask.id === "lookDirections");
   assert.equal(look, undefined);
   const blocked = ["FACIAL_VOLUME", "FACIAL_LIFTING", "FACIAL_BALANCE", "OVERALL_APPEARANCE", "NOT_SURE"];
@@ -65,7 +66,7 @@ test("follow-up screens appear only after the answer that needs them", () => {
   const hairOnly = projectPlaces(createEmptyAssessment(), ["HAIR"]).clinicIntake;
   assert.equal(visibleScreens(hairOnly).some((screen) => screen.id === "where"), false);
   const lines = projectPlaces(createEmptyAssessment(), ["FACIAL_LINES"]).clinicIntake;
-  assert.equal(visibleScreens(lines).some((screen) => screen.id === "where"), true);
+  assert.equal(visibleScreens(lines).some((screen) => screen.id === "where"), false);
 
 
 });

@@ -261,8 +261,6 @@ export function validateAssessment(assessment: Assessment): AssessmentValidation
 
   if (assessment.profile.ageYears === null && assessment.clinicIntake.ageConfirmed !== "yes") missing.push("Age");
   if (assessment.clinicIntake.ageConfirmed === "no") missing.push("Must be 18 or older");
-  if (assessment.profile.heightCm === null) missing.push("Height");
-  if (assessment.profile.weightKg === null) missing.push("Weight");
   if (assessment.goals.areas.length === 0) missing.push("At least one goal");
 
   const uploadedSlots = new Set(assessment.photos.map((p) => p.slot));

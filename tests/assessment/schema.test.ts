@@ -54,13 +54,13 @@ test("sanitizeAssessment caps priorities defensively even if stored data has mor
   assert.equal(sanitized?.goals.priorities.length, 3);
 });
 
-test("validateAssessment requires age, height, weight, at least one goal, and the front and both 45° photos", () => {
+test("validateAssessment requires age, at least one goal, and the front and both 45° photos", () => {
   const empty = createEmptyAssessment();
   const result = validateAssessment(empty);
   assert.equal(result.isComplete, false);
   assert.ok(result.missing.includes("Age"));
-  assert.ok(result.missing.includes("Height"));
-  assert.ok(result.missing.includes("Weight"));
+  assert.equal(result.missing.includes("Height"), false);
+  assert.equal(result.missing.includes("Weight"), false);
   assert.ok(result.missing.includes("At least one goal"));
   for (const { slot, label } of PHOTO_SLOTS) {
     // Profile photos are optional; the front and both 45° views are required.
@@ -70,7 +70,7 @@ test("validateAssessment requires age, height, weight, at least one goal, and th
 
 test("validateAssessment passes once every required field and photo is present", () => {
   const complete = createEmptyAssessment();
-  complete.profile = { ageYears: 25, heightCm: 175, weightKg: 70, genderPresentation: null };
+  complete.profile = { ageYears: 25, heightCm: null, weightKg: null, genderPresentation: null };
   complete.goals = { areas: ["face"], priorities: [] };
   complete.photos = PHOTO_SLOTS.map(({ slot }) => ({
     slot,
