@@ -28,6 +28,7 @@ import { parseLeadContact } from "@/lib/leads/contact.ts";
 import { intakeReviewSections } from "@/lib/assessment/clinicIntake.ts";
 import type { AnalysisSessionHandle } from "@/lib/analysis-session/types.ts";
 import { submitAssessment } from "@/lib/submissions/client.ts";
+import { portraitGeometry as buildPortraitGeometry } from "@/lib/image-generation/portraitGeometry.ts";
 import { clearAssessment } from "@/lib/assessment/storage.ts";
 import { clearAllMedia } from "@/lib/assessment/mediaStore.ts";
 
@@ -202,11 +203,13 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     // an async submission row (send_after = now + 30 min) and navigates to
     // /submitted — the background job handles image generation + PDF + email.
     const frontRecord = nextRecords.find((r) => r.slot === "front");
+    const safePortraitGeometry=frontRecord?.landmarks ? buildPortraitGeometry(frontRecord.landmarks) : null;
     setCreatingSession(true);
     const session = await createAnalysisSession({
       assessment,
       analysis: nextMogaFaceAnalysis,
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
+      portraitGeometry:safePortraitGeometry,
       hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
       hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
       ...(lead ? { contact: lead } : {}),

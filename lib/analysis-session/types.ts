@@ -12,12 +12,15 @@ import type { MogaFaceAnalysis } from "../observation/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import type { AngleSlot } from "../image-generation/angles.ts";
 import type { PredictionPlan } from "../visualization/predict.ts";
+import type { PortraitGeometry } from "../image-generation/portraitGeometry.ts";
 
 export const ANALYSIS_RECORD_VERSION = "0.1.0";
 
 export type AnalysisRecordStatus = "active" | "expired";
 
 export interface AnalysisRecord {
+  /** Client-side MediaPipe geometry for tightly masked preview edits; optional on older records. */
+  portraitGeometry?: PortraitGeometry;
   /** Validated, compressed side photographs stored with this private record for report generation. */
   reportPhotos?: {leftFortyFive:{base64:string;mime:string};rightFortyFive:{base64:string;mime:string}};
   /** Opaque, server-minted, unguessable (crypto.randomUUID). Never derived from user input. */

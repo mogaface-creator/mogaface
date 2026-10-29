@@ -1,31 +1,33 @@
+import { buildAppearancePlan, parseAppearanceControls } from "@/lib/image-generation/appearancePlan";
 import { NextRequest, NextResponse } from "next/server";
-import { runClinicalVisionScan, combinedAppearancePreview, buildFullAestheticPrompt, type TreatmentKey } from "@/lib/submissions/clinicalVision";
+import { combinedAppearancePreview, buildFullAestheticPrompt, type TreatmentKey } from "@/lib/submissions/clinicalVision";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
+import { DEFAULT_IMAGE_MODEL } from "@/lib/image-generation/openaiImages";
 import { isUploadedPhoto, validateSourcePhoto } from "@/lib/image-generation/output";
+import { validPortraitGeometry } from "@/lib/image-generation/portraitGeometry";
 
 export const runtime = "nodejs";
 export const maxDuration = 180; // scan + edit + automated quality review
 
+export async function GET() {
+  if (process.env.NODE_ENV !== "development") return NextResponse.json({error:"not_found"},{status:404});
+  const configured = !!process.env.OPENAI_API_KEY?.trim() && process.env.IMAGE_GENERATION_PROVIDER?.trim().toLowerCase() === "openai";
+  const raw = process.env.IMAGE_GENERATION_MODEL?.trim();
+  return NextResponse.json({configured,model: !raw || raw === "gpt-image-2.5-sunburst" ? DEFAULT_IMAGE_MODEL : raw},{headers:{"Cache-Control":"no-store"}});
+}
+
 export async function POST(req: NextRequest) {
-  const origin = req.headers.get("origin");
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  if (origin && host) {
-    try {
-      const originHost = new URL(origin).host;
-      if (originHost !== host && !originHost.endsWith(".vercel.app") && !host.endsWith(".vercel.app")) {
-        return NextResponse.json({ error: "forbidden" }, { status: 403 });
-      }
-    } catch {
-      // continue
-    }
-  }
+  if (process.env.NODE_ENV !== "development") return NextResponse.json({error:"not_found"},{status:404});
+  try {
+    if (new URL(req.headers.get("origin") || "").host !== (req.headers.get("host") || new URL(req.url).host)) return NextResponse.json({error:"forbidden"},{status:403});
+  } catch { return NextResponse.json({error:"forbidden"},{status:403}); }
 
   try {
     const formData = await req.formData();
+    if (formData.get("openaiConsent") !== "granted") return NextResponse.json({error:"Agree to sending the portrait to OpenAI first."},{status:400});
     const photoFile = formData.get("photo") as File | null;
     const clientName = (formData.get("clientName") as string | null)?.trim() || "Guest";
-    const customPrompt = (formData.get("customPrompt") as string | null)?.trim();
     const customDirective = (formData.get("customDirective") as string | null)?.trim();
     const wantPdf = formData.get("generatePdf") === "true";
     const simulateHair = formData.get("simulateHair") === "true";
@@ -58,6 +60,16 @@ export async function POST(req: NextRequest) {
     if (!source.ok) return NextResponse.json({ error: "invalid_photo" }, { status: 400 });
     const beforeMime = source.mimeType;
 
+    let portraitGeometry: unknown;
+    try {
+      portraitGeometry = JSON.parse(String(formData.get("portraitGeometry") || "null"));
+    } catch {
+      return NextResponse.json({ error: "Could not locate the face safely. Please choose a clear, front-facing photo." }, { status: 400 });
+    }
+    if (!validPortraitGeometry(portraitGeometry)) {
+      return NextResponse.json({ error: "Could not locate the face safely. Please choose a clear, front-facing photo." }, { status: 400 });
+    }
+
     // 1. Run Clinical Vision Scan (GPT-4o Vision)
     const isAllPillars = rawFocus === "all" || rawFocus === "combined";
     const concerns = targets.length > 0
@@ -66,53 +78,51 @@ export async function POST(req: NextRequest) {
       ? (simulateHair ? ["skin", "jawline", "under_eye", "forehead", "hair"] : ["skin", "jawline", "under_eye", "forehead"])
       : [rawFocus];
 
-    const visionResult = isAllPillars
-      ? combinedAppearancePreview({
-          intensity,
-          simulateHair,
-          customDirective: customDirective || customPrompt,
-          clientName,
-        })
-      : await runClinicalVisionScan({
-          beforeBytes,
-          beforeMime,
-          clientName,
-          simulateHair,
-          intakeConcerns: concerns,
-          intensity,
-          customDirective: customDirective || customPrompt,
-        });
+    if (!["subtle","balanced","defined"].includes(intensity) || !["all","combined","skin","jawline","under_eye","forehead","midface","hair"].includes(rawFocus) || (customDirective?.length || 0)>600) return NextResponse.json({error:"invalid_options"},{status:400});
+    const visionResult = combinedAppearancePreview({ intensity, simulateHair, customDirective, clientName });
+    let appearancePlan: ReturnType<typeof buildAppearancePlan> | undefined;
+    if (formData.has("appearanceControls")) {
+      try { appearancePlan = buildAppearancePlan(parseAppearanceControls(JSON.parse(String(formData.get("appearanceControls")))),{focus:rawFocus,simulateHair,directive:customDirective}); }
+      catch { return NextResponse.json({error:"invalid_appearance_controls"},{status:400}); }
+    }
+    const promptToUse = appearancePlan?.prompt || buildFullAestheticPrompt({keys:concerns.filter(k=>["skin","jawline","under_eye","forehead","midface","hair"].includes(k)) as TreatmentKey[],simulateHair,intensity,customDirective});
+    const allFocus = rawFocus === "all" || rawFocus === "combined";
+    const editRegions = appearancePlan ? {
+      hair: simulateHair && (allFocus || rawFocus === "hair") && appearancePlan.areas.find(area => area.key === "hair")?.level !== "preserve",
+      skin: (allFocus || rawFocus === "skin") && appearancePlan.areas.find(area => area.key === "skin")?.level !== "preserve",
+      contour: (allFocus || rawFocus === "jawline" || rawFocus === "midface") && appearancePlan.areas.find(area => area.key === "contour")?.level !== "preserve",
+      underEye: allFocus || rawFocus === "under_eye",
+      forehead: allFocus || rawFocus === "forehead",
+    } : undefined;
 
-    // 2. Build or resolve prompt
-    const promptToUse = customPrompt || visionResult.imagePrompt || buildFullAestheticPrompt({
-      firstName: clientName,
-      keys: concerns as TreatmentKey[],
-      simulateHair,
-      intensity,
-      customDirective,
-    });
-
-    // 3. Run Photorealistic Aesthetic Image Generation (chatgpt-image-latest)
+    // 3. Generate and locally composite one masked illustrative edit.
     const imageResult = await generateAfterImage({
       beforeBytes,
       beforeMime,
       clinicalVision: { ...visionResult, imagePrompt: promptToUse },
-      customPrompt: customPrompt || null,
+      customPrompt: promptToUse,
       simulateHair,
       intensity,
       customDirective,
+      portraitGeometry,
+      ...(editRegions ? { editRegions } : {}),
       debugPreview: true,
     });
 
     if (!imageResult.ok) {
+      const userMessage = imageResult.reason === "portrait_output_aspect_mismatch"
+        ? "OpenAI returned a differently cropped image, so the preview was safely rejected. The image request completed, but no face edit was used."
+        : imageResult.reason === "portrait_composite_failed"
+        ? "The generated image could not be safely combined with the original photo, so it was rejected."
+        : undefined;
       return NextResponse.json(
         {
           ok: false,
-          error: imageResult.review?.status === "rejected"
+          error: userMessage || (imageResult.review?.status === "rejected"
             ? `Review notice: ${imageResult.review.reason || "The draft did not pass automated quality review."}`
             : imageResult.reason.startsWith("OpenAI")
             ? imageResult.reason
-            : `Image generation failed: ${imageResult.reason}`,
+            : `Image generation failed: ${imageResult.reason}`),
           review: imageResult.review,
           ...(imageResult.debugPreview ? { rejectedPreview: `data:${imageResult.debugPreview.mime};base64,${imageResult.debugPreview.base64}` } : {}),
         },
@@ -150,11 +160,11 @@ export async function POST(req: NextRequest) {
       ok: true,
       beforeDataUrl: `data:${beforeMime};base64,${beforeBytes.toString("base64")}`,
       afterDataUrl: `data:${afterMime};base64,${afterBase64}`,
-      executiveSummary: visionResult.executiveSummary,
-      opportunities: visionResult.opportunities,
-      pillars: visionResult.pillars,
-      harmonyScore: visionResult.harmonyScore,
-      symmetryIndex: visionResult.symmetryIndex,
+      executiveSummary: "Illustrative OpenAI appearance preview. Inspect hair, skin texture, contour and identity against the original. Automated review is advisory; no treatment suitability or outcome was assessed.",
+      opportunities: [],
+      pillars: [],
+      model: imageResult.model,
+      appearancePlan,
       promptUsed: promptToUse,
       pdfBase64,
       review: imageResult.review,

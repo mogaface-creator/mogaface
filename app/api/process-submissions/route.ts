@@ -117,7 +117,7 @@ export async function processOne(
     if(!record)throw new Error("assessment_unavailable");
     const selectedPlaces = record.assessment.clinicIntake.places;
     const wantsPreview=record.assessment.clinicIntake.wantAfterPhoto !== "no";
-    const reportSummary="Your Next Face protocol brings together your answers, original photo views and any usable expression-video observations. The appearance preview, when included, is illustrative and not a treatment outcome.";
+    let reportSummary="Your Next Face protocol brings together your answers, original photo views and any usable expression-video observations. The appearance preview, when included, is illustrative and not a treatment outcome.";
     const detectedAreas=selectedPlaces.map(value=>({label:IMAGE_PLACE_OPTIONS.find(option=>option.value===value)?.label || value,description:"Selected by you for discussion; not a diagnosis."}));
 
     // Reuse only a current, already quality-screened draft after an email retry.
@@ -139,14 +139,8 @@ export async function processOne(
         afterBase64 = imageResult.base64;
         afterMime = imageResult.mime;
       } else {
-        await updateSubmission(id, {
-          status: "failed",
-          emailError: `Image generation failed: ${imageResult.reason}`,
-          retryCount: (submission.retry_count ?? 0) + 1,
-          reportSummary,
-          detectedAreas,
-        });
-        return { id, outcome: "failed", reason: imageResult.reason };
+        console.warn(`[process-submissions] Omitted unreliable optional preview for ${id}: ${imageResult.reason}`);
+        reportSummary += " The optional appearance preview could not be generated reliably and was omitted; the written report is unaffected.";
       }
     }
 

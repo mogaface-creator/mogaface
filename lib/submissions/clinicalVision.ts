@@ -112,42 +112,30 @@ export function buildFullAestheticPrompt(params: {
   customDirective?: string;
 }): string {
   const intensity = params.intensity || "balanced";
-  const name = (params.firstName || "this individual").trim();
-  const keys = (params.keys && params.keys.length > 0)
-    ? [...new Set(params.keys)]
-    : (["skin", "jawline", "under_eye", "forehead"] as TreatmentKey[]);
-
-  const intensityDirectives = {
-    subtle: "Apply subtle, conservative clinical aesthetic enhancements with gentle softening of lines and modest blemish reduction.",
-    balanced: "Apply a balanced, photorealistic clinical aesthetic enhancement that creates a clearly visible, attractive, and satisfying improvement side-by-side with the baseline photo.",
-    defined: "Apply a prominent, highly defined aesthetic enhancement with razor-sharp mandibular contouring, pristine dermal blemish clearance, lifted cheek apex, and thoroughly refreshed under-eyes.",
+  const keys = [...new Set(params.keys?.length ? params.keys : ["skin", "jawline", "under_eye", "forehead"] as TreatmentKey[])].filter(k => k !== "hair" || params.simulateHair);
+  if (params.simulateHair && !keys.includes("hair")) keys.push("hair");
+  const edits: Record<TreatmentKey, string> = {
+    skin: "Reduce the contrast of visible blemishes and post-blemish marks across the face. Keep pores, fine facial hair, natural unevenness and permanent distinguishing marks. Do not erase all texture or lighten skin.",
+    jawline: "Moderately reduce outer-cheek and beneath-chin soft-tissue fullness to give a visibly cleaner jaw-to-neck transition. Keep the original jaw width, chin shape and neck length. No hollow cheeks or V-shaped replacement face.",
+    under_eye: "Reduce dark under-eye shadow contrast modestly, preserving lower-lid folds and the exact eye shape.",
+    forehead: "Soften the deeper visible forehead lines while retaining fine skin texture and the same eyebrow position.",
+    midface: "Gently refine cheek contour without enlarging cheeks or changing the underlying facial proportions.",
+    hair: "Tidy the existing hairstyle, give the top natural lift and believable fullness around visibly sparse areas, and groom the sides. Retain the same hair colour, curl pattern and individual flyaway strands. Keep a plausible irregular hairline, without a dense wig-like cap. If the scalp is completely bald or shaved, preserve that state.",
   };
-
-  const lines = [
-    `Perform photorealistic non-surgical clinical aesthetic enhancements on ${name}:`,
-    "",
-    "STRICT IDENTITY & ANATOMICAL PRESERVATION (CRITICAL - DO NOT ALTER):",
-    "- This MUST remain 100% undeniably the exact same person. Do NOT substitute with another individual or generic model.",
-    "- Keep their exact bone structure: same nose shape, bridge, and nostrils; same eye shape, iris color, and gaze; same eyebrows, mouth, lips, skull proportions, and ear structure.",
-    "- COMPLEXION INTEGRITY: Strictly preserve their natural skin melanin and undertones (tan, brown, olive, fair). Absolutely ZERO skin bleaching or artificial whitening.",
-    "- HAIR & SCALP STATUS: " + (params.simulateHair
-      ? "Restore healthy follicular density and style their hair neatly."
-      : "If bald or shaved, KEEP their bald/shaved scalp exactly as it is (DO NOT ADD HAIR). If hair present, keep their natural hairstyle cleanly groomed."),
-    "- PHOTOGRAPHIC REALISM: Retain the exact same camera angle, perspective, lighting direction, background, and clothing. Must look like an authentic, high-resolution DSLR photograph with visible natural micro-pores and realistic skin texture (NO plastic blur, NO porcelain wax doll filter, NO cartoon rendering).",
-    "",
-    `ENHANCEMENT DIRECTIVE (${intensity.toUpperCase()} INTENSITY):`,
-    intensityDirectives[intensity],
-    "",
-    "TARGETED CLINICAL REFINEMENTS:",
-    ...keys.map((k, i) => `${i + 1}. ${CATALOG[k]?.title || k}: ${CATALOG[k]?.edit || ""}`),
-  ];
-
-  if (params.customDirective?.trim()) {
-    lines.push("", `CLIENT SPECIFIC FOCUS:`, params.customDirective.trim());
-  }
-
-  lines.push("", "The final result must look like an authentic, high-resolution photograph of the exact same person looking their absolute best.");
-  return lines.join("\n");
+  const strength = {
+    subtle: "Make restrained but visible changes to the selected areas.",
+    balanced: "Make the requested improvements clearly noticeable side by side, while retaining a believable everyday photographic appearance.",
+    defined: "Make the selected refinements more visible than the balanced version, within the same identity and anatomical constraints. Do not exaggerate facial slimming or skin smoothing.",
+  }[intensity];
+  return [
+    "Edit this original portrait into ONE illustrative after photograph. Return only the edited photo, with no labels or collage.",
+    "PRESERVE: the same person, eye shape and spacing, nose, lips, eyebrows, ears, expression, age appearance, head pose and camera perspective. Keep the original crop, clothing, background, lighting, exposure and skin colour. Retain the photographic texture and quality of the source; do not turn it into a studio portrait.",
+    `CHANGE ONLY THESE SELECTED AREAS: ${strength}`,
+    ...keys.map(k => `- ${edits[k]}`),
+    ...(!keys.includes("hair") ? ["Preserve all hair, hairline, density and styling unchanged."] : []),
+    ...(params.customDirective?.trim() ? [`Additional appearance direction, within the preservation constraints: ${params.customDirective.trim()}`] : []),
+    "Keep the result natural at close inspection: real pores, varied skin texture and believable hair edges. Avoid beauty-filter blur, relighting, changed facial features or a radically slimmer neck. This is an illustrative appearance edit, not a prediction of treatment results.",
+  ].join("\n");
 }
 
 export function buildBenchmarkImagePrompt(params: {

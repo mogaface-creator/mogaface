@@ -72,6 +72,8 @@ import { isSupabaseConfigured, supabaseRequest } from "./supabaseClient.ts";
 import type { SupabaseEnv } from "./supabaseClient.ts";
 import { ANALYSIS_RECORD_VERSION } from "./types.ts";
 import type { AnalysisRecord, AnalysisSessionHandle } from "./types.ts";
+import { validPortraitGeometry } from "../image-generation/portraitGeometry.ts";
+import type { PortraitGeometry } from "../image-generation/portraitGeometry.ts";
 
 const TTL_MS = 60 * 60_000; // one hour — long enough for one assessment session, short enough to bound either store's growth
 
@@ -182,7 +184,7 @@ async function logSupabaseFailure(operation: string, res: Response | null, err?:
  * Map — when production persistence is unavailable (see the module comment).
  */
 export async function createAnalysisRecord(
-  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown },
+  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown; portraitGeometry?: unknown },
   deps: AnalysisSessionStoreDeps = {},
 ): Promise<AnalysisSessionHandle | null> {
   const { env, fetchImpl } = resolveDeps(deps);
@@ -231,6 +233,7 @@ export async function createAnalysisRecord(
     createdAt: new Date(now).toISOString(),
     status: "active",
     availableAngles,
+    ...(validPortraitGeometry(input.portraitGeometry) ? { portraitGeometry: input.portraitGeometry as PortraitGeometry } : {}),
     ...(contact ? { contact } : {}),
   };
 

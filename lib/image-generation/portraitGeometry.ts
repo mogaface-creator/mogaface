@@ -2,6 +2,8 @@ import { LANDMARK } from "../facial-analysis/landmarkMapping.ts";
 import type { LandmarkList } from "../facial-analysis/types.ts";
 export interface Ellipse { cx: number; cy: number; rx: number; ry: number }
 export interface PortraitGeometry { face: Ellipse; hair: Ellipse; protected: Ellipse[] }
+export interface PortraitEditRegions { hair: boolean; skin: boolean; contour: boolean; underEye: boolean; forehead: boolean }
+export const ALL_PORTRAIT_EDIT_REGIONS: PortraitEditRegions = { hair: true, skin: true, contour: true, underEye: true, forehead: true };
 export function validPortraitGeometry(value: unknown): value is PortraitGeometry {
   if (!value || typeof value !== "object") return false;
   const g = value as PortraitGeometry;
@@ -39,4 +41,31 @@ export function portraitEditWeight(x:number,y:number,g:PortraitGeometry):number 
   const selected=Math.max(ellipseWeight(x,y,g.face),ellipseWeight(x,y,g.hair));
   const protectedWeight=Math.max(...g.protected.map(e=>ellipseWeight(x,y,e)));
   return selected*(1-protectedWeight);
+}
+
+const smoothstep=(edge0:number,edge1:number,value:number)=>{
+  const t=Math.max(0,Math.min(1,(value-edge0)/(edge1-edge0)));
+  return t*t*(3-2*t);
+};
+
+/** Targeted edit weights. The hair edit excludes the estimated face oval; face features remain protected. */
+export function portraitRegionWeights(x:number,y:number,g:PortraitGeometry,regions:PortraitEditRegions){
+  const face=ellipseWeight(x,y,g.face);
+  const protectedFeatureWeight=Math.max(...g.protected.slice(0,4).map(e=>ellipseWeight(x,y,e)));
+  const foreheadProtection=ellipseWeight(x,y,g.protected[4]);
+  const eyeRegions=g.protected.slice(0,2).map(e=>({cx:e.cx,cy:e.cy+e.ry*1.25,rx:e.rx*1.25,ry:e.ry*.9}));
+  const underEyeArea=Math.max(...eyeRegions.map(e=>ellipseWeight(x,y,e)));
+  const foreheadArea=ellipseWeight(x,y,{cx:g.face.cx,cy:g.face.cy-g.face.ry*.72,rx:g.face.rx*.58,ry:g.face.ry*.17});
+  const exposedFace=face*(1-protectedFeatureWeight)*(regions.forehead?1:1-foreheadProtection)*(regions.underEye?1:1-underEyeArea);
+  const hairOutline=ellipseWeight(x,y,g.hair);
+  const hair=regions.hair ? hairOutline*(1-face) : 0;
+  const skin=regions.skin ? exposedFace : 0;
+  const underEye=regions.underEye ? face*underEyeArea*(1-protectedFeatureWeight) : 0;
+  const forehead=regions.forehead ? face*foreheadArea*(1-protectedFeatureWeight) : 0;
+  const normalizedY=(y-(g.face.cy-g.face.ry))/(2*g.face.ry);
+  const normalizedX=Math.abs((x-g.face.cx)/g.face.rx);
+  const jaw=regions.contour
+    ? face*(1-protectedFeatureWeight)*smoothstep(.52,.86,normalizedY)*smoothstep(.48,.88,normalizedX)
+    : 0;
+  return {hair,skin,jaw,underEye,forehead,combined:Math.max(hair,skin,jaw,underEye,forehead)};
 }

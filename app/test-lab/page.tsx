@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { DEFAULT_APPEARANCE_CONTROLS, type AppearanceControls, type EditLevel } from "@/lib/image-generation/appearancePlan";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ClinicalTransformationCard } from "@/components/visualization/ClinicalTransformationCard";
 import type { ImageReview } from "@/lib/submissions/imageReview";
 import type { ClinicalTreatmentPillar } from "@/lib/submissions/clinicalVision";
+import { findPortraitGeometry } from "@/lib/image-generation/localEditClient";
 
 interface SimulationResult {
   ok: boolean;
@@ -19,6 +21,8 @@ interface SimulationResult {
   promptUsed?: string;
   pdfBase64?: string;
   review?: ImageReview;
+  model?: string;
+  resolution?: string;
 }
 
 export default function TestLabPage() {
@@ -26,10 +30,17 @@ export default function TestLabPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [clientName, setClientName] = useState("Manoj");
-  const [generatePdf, setGeneratePdf] = useState(true);
-  const [simulateHair, setSimulateHair] = useState(false);
+  const [imageModel, setImageModel] = useState("");
+  const [openaiConsent, setOpenaiConsent] = useState(false);
+  const [openaiConfigured, setOpenaiConfigured] = useState<boolean | null>(null);
+  const checkOpenaiConfiguration = () => {
+    void fetch("/api/test-simulate", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(data => { setOpenaiConfigured(data?.configured === true); setImageModel(data?.model || ""); }).catch(() => setOpenaiConfigured(false));
+  };
+  useEffect(() => { checkOpenaiConfiguration(); }, []);
+  const [simulateHair, setSimulateHair] = useState(true);
   const [focus, setFocus] = useState("all");
-  const [intensity, setIntensity] = useState<"subtle" | "balanced" | "defined">("balanced");
+  const intensity = "balanced";
+  const [appearanceControls, setAppearanceControls] = useState<AppearanceControls>(DEFAULT_APPEARANCE_CONTROLS);
   const [customDirective, setCustomDirective] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -109,6 +120,7 @@ export default function TestLabPage() {
   const handleReset = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+    setOpenaiConsent(false);
     setResult(null);
     setError(null);
   };
@@ -119,16 +131,18 @@ export default function TestLabPage() {
       return;
     }
 
+    if (!openaiConsent) { setError("Please agree to sending this photo to OpenAI before running the preview."); return; }
+    if (!openaiConfigured) { setError("Add OPENAI_API_KEY to .env.local, then check key configuration."); return; }
     setLoading(true);
     setError(null);
-    setStepMessage("Scanning facial anatomy & golden ratio harmony...");
+    setStepMessage("Sending the selected photo and goals to OpenAI...");
 
     const timer1 = setTimeout(() => {
-      setStepMessage("Synthesizing identity-locked aesthetic enhancements with chatgpt-image-latest...");
+      setStepMessage("OpenAI is generating the preview; no other image provider is used...");
     }, 4000);
 
     const timer2 = setTimeout(() => {
-      setStepMessage("Compiling luxury 2-page clinical consultation dossier...");
+      setStepMessage("Waiting for the image from OpenAI...");
     }, 18000);
 
     try {
@@ -137,13 +151,18 @@ export default function TestLabPage() {
         fileToSend = await optimizeImageForUpload(fileToSend);
       }
 
+      setStepMessage("Locating the face locally so unselected areas can be protected...");
+      const portraitGeometry = await findPortraitGeometry(fileToSend);
+
       const formData = new FormData();
       formData.append("photo", fileToSend);
+      formData.append("portraitGeometry", JSON.stringify(portraitGeometry));
       if (clientName) formData.append("clientName", clientName);
-      formData.append("generatePdf", generatePdf ? "true" : "false");
+      formData.append("openaiConsent", "granted");
       formData.append("simulateHair", simulateHair ? "true" : "false");
       formData.append("focus", focus);
       formData.append("intensity", intensity);
+      formData.append("appearanceControls", JSON.stringify(appearanceControls));
       if (customDirective.trim()) {
         formData.append("customDirective", customDirective.trim());
       }
@@ -165,7 +184,7 @@ export default function TestLabPage() {
           throw new Error("Photo file was too large. It has been auto-compressed; please click Run again.");
         }
         if (res.status === 504 || resText.includes("Gateway Timeout")) {
-          throw new Error("OpenAI generation took longer than usual. Please click Run again.");
+          throw new Error("OpenAI did not complete in time. Retrying may incur another charge.");
         }
         throw new Error(`Server returned error (${res.status}): ${resText.slice(0, 150)}`);
       }
@@ -197,7 +216,9 @@ export default function TestLabPage() {
     if (!result?.afterDataUrl) return;
     const link = document.createElement("a");
     link.href = result.afterDataUrl;
-    link.download = `MogaFace-After-${clientName || "Simulation"}.jpg`;
+    const mime = result.afterDataUrl.slice(5).split(";")[0];
+    const extension = mime === "image/jpeg" ? "jpg" : mime === "image/webp" ? "webp" : "png";
+    link.download = `MogaFace-OpenAI-${clientName || "Preview"}.${extension}`;
     link.click();
   };
 
@@ -213,7 +234,7 @@ export default function TestLabPage() {
               </span>
             </Link>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
-              ⚡ Clinical Simulation Lab
+              OpenAI Preview Test
             </span>
           </div>
           <Link
@@ -230,15 +251,19 @@ export default function TestLabPage() {
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 mb-3">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>AI Aesthetic Consultation Engine</span>
+            <span>Direct OpenAI API</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-serif font-bold tracking-tight text-slate-900">
-            Aesthetic Consultation Diagnostic Console
+            OpenAI Before & After Test
           </h1>
           <p className="mt-2 text-sm text-slate-600 max-w-2xl">
-            Generates a photorealistic, identity-locked aesthetic simulation with <strong className="text-violet-700">chatgpt-image-latest</strong> and GPT-4o Vision.
-            Preserves authentic bone structure, skin melanin, and hair while illustrating achievable non-surgical refinements.
+            Compare one OpenAI edit with your original. Select appearance goals and inspect identity, skin texture, hair and contour. This is an illustration, not a treatment report; selected regions are composited locally with the source photo.
           </p>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm">
+          {openaiConfigured === null ? "Checking OpenAI key configuration..." : openaiConfigured ? "OpenAI key is configured. The configured image model is shown below." : "OpenAI key is missing. Add OPENAI_API_KEY to the project's .env.local file. Keep it private; do not paste it into chat."}
+          <button type="button" onClick={checkOpenaiConfiguration} className="ml-3 font-semibold text-violet-700 underline">Check key configuration</button>
         </div>
 
         {error && (
@@ -343,13 +368,14 @@ export default function TestLabPage() {
                   />
                 </div>
 
+                <p className="text-xs text-slate-500">OpenAI model: {imageModel || "checking configuration"}. One high-quality edit per run, followed by automated review. Compare every result manually.</p>
                 {/* Focus Area */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-700">
-                      Target Clinical Pillar
+                      Appearance goal
                     </label>
-                    <span className="text-[10px] text-violet-600 font-medium">Identity-locked</span>
+                    <span className="text-[10px] text-violet-600 font-medium">Illustrative</span>
                   </div>
                   <select
                     aria-label="Area to preview"
@@ -371,53 +397,17 @@ export default function TestLabPage() {
                 </div>
 
                 {/* Intensity Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">
-                    Enhancement Definition
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIntensity("subtle")}
-                      className={`cursor-pointer py-2 px-2.5 rounded-xl text-xs font-bold transition-all border text-center ${
-                        intensity === "subtle"
-                          ? "bg-violet-50 text-violet-700 border-violet-400 shadow-2xs"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      Subtle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIntensity("balanced")}
-                      className={`cursor-pointer py-2 px-2.5 rounded-xl text-xs font-bold transition-all border text-center ${
-                        intensity === "balanced"
-                          ? "bg-violet-600 text-white border-violet-600 shadow-xs"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      Balanced ★
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIntensity("defined")}
-                      className={`cursor-pointer py-2 px-2.5 rounded-xl text-xs font-bold transition-all border text-center ${
-                        intensity === "defined"
-                          ? "bg-violet-50 text-violet-700 border-violet-400 shadow-2xs"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      Defined
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1.5">
-                    {intensity === "balanced"
-                      ? "Standard clinic preview: clearly visible skin, jawline, and under-eye improvements."
-                      : intensity === "defined"
-                      ? "High-definition contouring and maximum blemish removal."
-                      : "Conservative, gentle touch-ups."}
-                  </p>
-                </div>
+                <fieldset className="space-y-3 rounded-xl border border-slate-200 p-3">
+                  <legend className="px-1 text-xs font-bold text-slate-700">Refinement controls</legend>
+                  <p className="text-xs text-slate-500">Independent controls replace the overall strength setting. Defaults keep contour changes restrained.</p>
+                  {([['hair','Hair styling and fullness'],['skin','Skin marks and clarity'],['contour','Face and jaw contour']] as const).map(([key,label]) => (
+                    <label key={key} className="block text-xs font-semibold text-slate-700">{label}
+                      <select aria-label={label} value={appearanceControls[key]} onChange={e=>setAppearanceControls(c=>({...c,[key]:e.target.value as EditLevel}))} className="mt-1 w-full rounded-lg border border-slate-200 p-2 text-sm">
+                        <option value="preserve">Preserve unchanged</option><option value="subtle">Subtle refinement</option><option value="balanced">Visible, balanced refinement</option>
+                      </select>
+                    </label>
+                  ))}
+                </fieldset>
 
                 {/* Custom Focus Note / Directive */}
                 <div>
@@ -448,23 +438,15 @@ export default function TestLabPage() {
                     </label>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <input
-                      id="genPdf"
-                      type="checkbox"
-                      checked={generatePdf}
-                      onChange={(e) => setGeneratePdf(e.target.checked)}
-                      className="w-4 h-4 rounded text-violet-600 bg-slate-100 border-slate-300 focus:ring-violet-500 cursor-pointer"
-                    />
-                    <label htmlFor="genPdf" className="text-xs text-slate-600 cursor-pointer">
-                      Compile Luxury 2-Page Clinical Consultation Dossier PDF
-                    </label>
-                  </div>
+                  <label className="flex items-start gap-3 text-xs text-slate-700">
+                    <input type="checkbox" aria-label="Consent to OpenAI photo processing" checked={openaiConsent} onChange={e => setOpenaiConsent(e.target.checked)} />
+                    I agree to send this photo and selected appearance goals to OpenAI for an illustrative preview. No clinical assessment is performed by this test.
+                  </label>
                 </div>
 
                 <button
                   type="button"
-                  disabled={loading || !photoFile}
+                  disabled={loading || !photoFile || !openaiConsent || !openaiConfigured}
                   onClick={handleRunSimulation}
                   className="w-full mt-4 py-3.5 px-6 rounded-2xl font-bold text-sm tracking-wide bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                 >
@@ -475,7 +457,7 @@ export default function TestLabPage() {
                     </>
                   ) : (
                     <>
-                      <span>⚡ Run AI Aesthetic Simulation</span>
+                      <span>Run OpenAI Preview</span>
                     </>
                   )}
                 </button>
@@ -490,11 +472,11 @@ export default function TestLabPage() {
 
               {/* Guarantees banner */}
               <div className="p-4 rounded-2xl bg-white border border-slate-200 text-xs text-slate-600 space-y-1.5 shadow-2xs">
-                <p className="font-bold text-slate-900">Clinical AI Guarantees:</p>
-                <p>• <strong>Strict Identity Lock:</strong> Exact same bone structure, nose, eyes, and skull proportions.</p>
-                <p>• <strong>Melanin Integrity:</strong> Zero skin bleaching; natural skin tones and undertones are preserved.</p>
-                <p>• <strong>Authentic Pore Texture:</strong> Real DSLR skin micro-pores with visible specular highlights (no plastic blur).</p>
-                <p>• <strong>Hair Authenticity:</strong> Bald/shaved scalps stay cleanly bald unless hair simulation is opted into.</p>
+                <p className="font-bold text-slate-900">What to check in the result:</p>
+                <p>• <strong>Identity:</strong> Check that eyes, nose, mouth and overall proportions still match the original.</p>
+                <p>• <strong>Melanin Integrity:</strong> Check that the original skin colour and lighting remain believable.</p>
+                <p>• <strong>Authentic Pore Texture:</strong> Reject plastic skin, excessive smoothing or invented texture.</p>
+                <p>• <strong>Hair Authenticity:</strong> Hair should only change when selected and should retain a natural texture.</p>
               </div>
             </div>
           </div>
@@ -506,7 +488,7 @@ export default function TestLabPage() {
               <div>
                 <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Clinical Simulation Complete
+                  OpenAI image returned - manual review required
                 </span>
                 <h2 className="text-lg font-bold text-slate-900">
                   {clientName} • Before vs. After Aesthetic Simulation
@@ -553,7 +535,7 @@ export default function TestLabPage() {
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Photo Observations &amp; Non-Surgical Clinical Opportunities
+                  Preview information
                 </h3>
                 {result.harmonyScore && (
                   <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -562,6 +544,7 @@ export default function TestLabPage() {
                 )}
               </div>
 
+              <p className="text-xs font-semibold text-violet-700">{result.model} / Direct OpenAI API</p>
               <p className="text-sm text-slate-700 leading-relaxed">
                 {result.executiveSummary}
               </p>

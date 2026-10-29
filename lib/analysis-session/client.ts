@@ -13,6 +13,7 @@ import type { Assessment } from "../assessment/types.ts";
 import type { MogaFaceAnalysis } from "../observation/types.ts";
 import type { AnalysisSessionHandle } from "./types.ts";
 import { ANGLE_SLOTS } from "../image-generation/angles.ts";
+import type { PortraitGeometry } from "../image-generation/portraitGeometry.ts";
 
 export interface CreateAnalysisSessionInput {
   assessment: Assessment;
@@ -21,6 +22,7 @@ export interface CreateAnalysisSessionInput {
   /** Whether a real left 45°/right 45° photo was actually captured this session — informational only, see AnalysisRecord.availableAngles. */
   hasLeftFortyFive?: boolean;
   hasRightFortyFive?: boolean;
+  portraitGeometry?: PortraitGeometry | null;
   contact?: LeadContact;
   fetchImpl?: typeof fetch;
 }
@@ -37,6 +39,7 @@ export async function createAnalysisSession(input: CreateAnalysisSessionInput): 
         photoQualityValid: input.photoQualityValid,
         hasLeftFortyFive: input.hasLeftFortyFive === true,
         hasRightFortyFive: input.hasRightFortyFive === true,
+        ...(input.portraitGeometry ? { portraitGeometry: input.portraitGeometry } : {}),
         ...(input.contact ? { contact: input.contact } : {}),
       }),
     });
