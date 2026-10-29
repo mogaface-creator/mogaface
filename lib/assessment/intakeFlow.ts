@@ -1,6 +1,6 @@
 /**
  * One screen per question. A follow-up appears only after the answer that needs it.
- * Ten short choice questions, followed by photos and separate processing consent.
+ * Fourteen short question steps, followed by photos and separate processing consent.
  */
 
 import { detailsOfConcern, isAppearanceConcernId } from "./appearanceConcerns.ts";
@@ -23,6 +23,10 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
       "ageConfirmed"
     ],
     "auto": true
+  },
+  {
+    "id": "protocolAgeRange",
+    "askIds": ["protocolAgeRange"]
   },
   {
     "id": "goals",
@@ -84,6 +88,19 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
       "wantAfterPhoto"
     ],
     "auto": true
+  },
+  {
+    "id": "protocolBodyMetrics",
+    "title": "Optional height and weight",
+    "askIds": ["protocolHeight", "protocolWeight"]
+  },
+  {
+    "id": "protocolDiet",
+    "askIds": ["protocolDiet"]
+  },
+  {
+    "id": "protocolActivity",
+    "askIds": ["protocolActivity"]
   }
 ];
 

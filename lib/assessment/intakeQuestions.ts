@@ -79,8 +79,27 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
     ]
   },
   {
-    "section": "report",
+    "section": "about",
     "n": 2,
+    "asks": [
+      {
+        "id": "protocolAgeRange",
+        "prompt": "What is your age range?",
+        "kind": "choice",
+        "options": [
+          { "value": "18to24", "label": "18-24" },
+          { "value": "25to34", "label": "25-34" },
+          { "value": "35to44", "label": "35-44" },
+          { "value": "45to54", "label": "45-54" },
+          { "value": "55plus", "label": "55 or older" },
+          { "value": "preferNot", "label": "Prefer not to say" }
+        ]
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 3,
     "asks": [
       {
         "id": "places",
@@ -127,7 +146,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 3,
+    "n": 4,
     "asks": [
       {
         "id": "protocolHairTexture",
@@ -164,7 +183,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 4,
+    "n": 5,
     "asks": [
       {
         "id": "protocolHairGoal",
@@ -197,7 +216,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 5,
+    "n": 6,
     "asks": [
       {
         "id": "protocolSkinConcerns",
@@ -234,7 +253,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 6,
+    "n": 7,
     "asks": [
       {
         "id": "protocolSensitivity",
@@ -259,7 +278,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 7,
+    "n": 8,
     "asks": [
       {
         "id": "protocolBeardGoal",
@@ -292,7 +311,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 8,
+    "n": 9,
     "asks": [
       {
         "id": "protocolBudget",
@@ -321,7 +340,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 9,
+    "n": 10,
     "asks": [
       {
         "id": "maxWilling",
@@ -346,13 +365,67 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 10,
+    "n": 11,
     "asks": [
       {
         "id": "wantAfterPhoto",
         "prompt": "Would you like an after preview?",
         "kind": "yesno",
         "hint": "An illustration, not a promised treatment result."
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 12,
+    "asks": [
+      {
+        "id": "protocolHeight",
+        "prompt": "Height (cm)",
+        "kind": "height",
+        "hint": "Optional - used only to describe your starting point."
+      },
+      {
+        "id": "protocolWeight",
+        "prompt": "Weight (kg)",
+        "kind": "weight",
+        "hint": "Optional - used only to describe your starting point."
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 13,
+    "asks": [
+      {
+        "id": "protocolDiet",
+        "prompt": "Which best describes your usual eating pattern?",
+        "kind": "choice",
+        "options": [
+          { "value": "omnivore", "label": "I eat both plant and animal foods" },
+          { "value": "vegetarian", "label": "Vegetarian" },
+          { "value": "vegan", "label": "Vegan" },
+          { "value": "other", "label": "Other" },
+          { "value": "preferNot", "label": "Prefer not to say" }
+        ]
+      }
+    ]
+  },
+  {
+    "section": "report",
+    "n": 14,
+    "asks": [
+      {
+        "id": "protocolActivity",
+        "prompt": "How often are you physically active in a usual week?",
+        "kind": "choice",
+        "options": [
+          { "value": "lessThanOnce", "label": "Less than once a week" },
+          { "value": "1to2PerWeek", "label": "1-2 days" },
+          { "value": "3to4PerWeek", "label": "3-4 days" },
+          { "value": "5plusPerWeek", "label": "5 or more days" },
+          { "value": "preferNot", "label": "Prefer not to say" }
+        ]
       }
     ]
   }

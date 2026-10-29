@@ -20,7 +20,7 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
  const doc=await PDFDocument.create();const font=await doc.embedFont(StandardFonts.Helvetica),bold=await doc.embedFont(StandardFonts.HelveticaBold);
  doc.setTitle(`Next Face - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("Next Face / MogaFace");
  const approved=(input.previewApproved===true || input.previewStatus==="quality_checked") && !!input.afterImageBytes;
- const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
+ const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,reportScopeNote:input.reportScopeNote,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
  const assets=new Map<string,Awaited<ReturnType<typeof doc.embedJpg>>>();
  for(const region of ["portrait","hair","eyes","jaw","skin"] as const){assets.set(region,await doc.embedJpg(await jpeg(input.beforeImageBytes,region)));if(approved)assets.set(`${region}-after`,await doc.embedJpg(await jpeg(input.afterImageBytes!,region)));}
  if(input.leftImageBytes)assets.set("left",await doc.embedJpg(await jpeg(input.leftImageBytes)));
@@ -36,13 +36,35 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
   p.drawText(clean(data.title),{x:M,y:716,font:bold,size:titleSize,color:C.ink});
   let top=687;
   if(index===0){
-   drawImage(p,"portrait",W-M-225,252,225,408);
+   const imageX=W-M-225,imageY=252,imageW=225,imageH=408;
+   if(approved){const panelW=(imageW-8)/2;drawImage(p,"portrait",imageX,imageY,panelW,imageH);drawImage(p,"portrait-after",imageX+panelW+8,imageY,panelW,imageH);p.drawText("ORIGINAL",{x:imageX,y:238,font:bold,size:6.5,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW",{x:imageX+panelW+8,y:238,font:bold,size:6.5,color:C.muted});p.drawText("NOT A TREATMENT RESULT",{x:imageX,y:222,font:bold,size:7,color:C.accent});}
+   else drawImage(p,"portrait",imageX,imageY,imageW,imageH);
    p.drawText("PREPARED FOR",{x:M,y:650,font:bold,size:8,color:C.accent});
    const nameLines=wrap(input.clientName,bold,24,240);let y=615;for(const line of nameLines){p.drawText(line,{x:M,y,font:bold,size:24,color:C.plum});y-=30;}
    const lines=wrap(data.blocks[1].text,font,11,225);y-=20;for(const line of lines){p.drawText(line,{x:M,y,font,size:11,color:C.ink});y-=17;}
    y-=24;p.drawText("YOUR STATED PRIORITIES",{x:M,y,font:bold,size:8,color:C.accent});y-=20;for(const line of wrap(data.blocks[2].text,font,10,220).slice(0,11)){p.drawText(line,{x:M,y,font,size:10,color:C.ink});y-=15;}
-   p.drawRectangle({x:M,y:120,width:CW,height:95,color:C.plum});p.drawText("A COMPLETE GUIDE. PERSONALISED TO YOUR ANSWERS.",{x:M+17,y:190,font:bold,size:9,color:C.white});
+   p.drawRectangle({x:M,y:120,width:CW,height:95,color:C.plum});p.drawText(input.reportScopeNote ? "A COMPLETE GUIDE. TEST LAB GOALS ONLY." : "A COMPLETE GUIDE. PERSONALISED TO YOUR ANSWERS.",{x:M+17,y:190,font:bold,size:9,color:C.white});
    let ty=170;for(const line of wrap(data.takeaway,font,10,CW-34)){p.drawText(line,{x:M+17,y:ty,font,size:10,color:C.white});ty-=15;}
+  }else if(data.id==="overview"){
+   const panelGap=12,panelW=(CW-panelGap)/2,imageY=431,imageH=235;
+   if(approved){drawImage(p,"portrait",M,imageY,panelW,imageH);drawImage(p,"portrait-after",M+panelW+panelGap,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL",{x:M,y:imageY-14,font:bold,size:6.8,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW / NOT A TREATMENT RESULT",{x:M+panelW+panelGap,y:imageY-14,font:bold,size:6.8,color:C.muted});}
+   else{drawImage(p,"portrait",M+panelW/2,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL PHOTO",{x:M+panelW/2,y:imageY-14,font:bold,size:6.8,color:C.muted});}
+   const cardY=184,cardH=210;
+   const drawOverviewCard=(x:number,title:string,blocks:ProtocolPage["blocks"])=>{
+    p.drawRectangle({x,y:cardY,width:panelW,height:cardH,color:C.pale,borderColor:C.line,borderWidth:0.7});
+    p.drawText(title,{x:x+13,y:cardY+cardH-19,font:bold,size:7.2,color:C.accent});
+    let y=cardY+cardH-38;
+    for(const block of blocks){
+     p.drawText(clean(block.title),{x:x+13,y,font:bold,size:9.5,color:C.plum});y-=15;
+     for(const line of wrap(block.text,font,8.7,panelW-26)){p.drawText(line,{x:x+13,y,font,size:8.7,color:C.ink});y-=11;}
+     y-=7;
+    }
+   };
+   drawOverviewCard(M,"YOUR GOALS",data.blocks.slice(0,2));
+   drawOverviewCard(M+panelW+panelGap,"PRESERVE & REVIEW",data.blocks.slice(2));
+   p.drawRectangle({x:M,y:94,width:CW,height:70,color:C.plum});
+   p.drawText("A PERSONALISED PLAN, WITH CLEAR LIMITS",{x:M+14,y:145,font:bold,size:8,color:C.white});
+   for(const [i,line]of wrap(data.takeaway,font,9,CW-28).entries())p.drawText(line,{x:M+14,y:127-i*12,font,size:9,color:C.white});
   }else{
    if(data.region){
     const height=154;const pair=approved;
