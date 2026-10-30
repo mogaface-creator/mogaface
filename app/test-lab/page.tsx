@@ -1,6 +1,6 @@
 "use client";
 
-import { DEFAULT_APPEARANCE_CONTROLS, type AppearanceControls, type EditLevel } from "@/lib/image-generation/appearancePlan";
+import { DEFAULT_APPEARANCE_CONTROLS, type AppearanceControls, type EditLevel } from "@/lib/image-generation/appearanceControls";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -159,6 +159,7 @@ export default function TestLabPage() {
       formData.append("portraitGeometry", JSON.stringify(portraitGeometry));
       if (clientName) formData.append("clientName", clientName);
       formData.append("openaiConsent", "granted");
+      formData.append("generatePdf", "true");
       formData.append("simulateHair", simulateHair ? "true" : "false");
       formData.append("focus", focus);
       formData.append("intensity", intensity);

@@ -1,6 +1,7 @@
-import { buildAppearancePlan, parseAppearanceControls } from "@/lib/image-generation/appearancePlan";
+import { comparisonSummary } from "@/lib/submissions/imageReview";
+import { buildAppearancePlan, parseAppearanceControls, DEFAULT_APPEARANCE_CONTROLS } from "@/lib/image-generation/appearancePlan";
 import { NextRequest, NextResponse } from "next/server";
-import { combinedAppearancePreview, buildFullAestheticPrompt, type TreatmentKey } from "@/lib/submissions/clinicalVision";
+import { combinedAppearancePreview } from "@/lib/submissions/clinicalVision";
 import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
 import { DEFAULT_IMAGE_MODEL } from "@/lib/image-generation/openaiImages";
@@ -80,20 +81,21 @@ export async function POST(req: NextRequest) {
 
     if (!["subtle","balanced","defined"].includes(intensity) || !["all","combined","skin","jawline","under_eye","forehead","midface","hair"].includes(rawFocus) || (customDirective?.length || 0)>600) return NextResponse.json({error:"invalid_options"},{status:400});
     const visionResult = combinedAppearancePreview({ intensity, simulateHair, customDirective, clientName });
-    let appearancePlan: ReturnType<typeof buildAppearancePlan> | undefined;
-    if (formData.has("appearanceControls")) {
-      try { appearancePlan = buildAppearancePlan(parseAppearanceControls(JSON.parse(String(formData.get("appearanceControls")))),{focus:rawFocus,simulateHair,directive:customDirective}); }
-      catch { return NextResponse.json({error:"invalid_appearance_controls"},{status:400}); }
-    }
-    const promptToUse = appearancePlan?.prompt || buildFullAestheticPrompt({keys:concerns.filter(k=>["skin","jawline","under_eye","forehead","midface","hair"].includes(k)) as TreatmentKey[],simulateHair,intensity,customDirective});
-    const allFocus = rawFocus === "all" || rawFocus === "combined";
-    const editRegions = appearancePlan ? {
-      hair: simulateHair && (allFocus || rawFocus === "hair") && appearancePlan.areas.find(area => area.key === "hair")?.level !== "preserve",
-      skin: (allFocus || rawFocus === "skin") && appearancePlan.areas.find(area => area.key === "skin")?.level !== "preserve",
-      contour: (allFocus || rawFocus === "jawline" || rawFocus === "midface") && appearancePlan.areas.find(area => area.key === "contour")?.level !== "preserve",
-      underEye: allFocus || rawFocus === "under_eye",
-      forehead: allFocus || rawFocus === "forehead",
-    } : undefined;
+    const allowedTargets = ["skin","jawline","under_eye","forehead","midface","hair"];
+    if (targets.some(target => !allowedTargets.includes(target))) return NextResponse.json({error:"invalid_targets"},{status:400});
+    let appearancePlan: ReturnType<typeof buildAppearancePlan>;
+    try {
+      const controls = formData.has("appearanceControls")
+        ? parseAppearanceControls(JSON.parse(String(formData.get("appearanceControls"))))
+        : {...DEFAULT_APPEARANCE_CONTROLS, contour: "preserve" as const};
+      appearancePlan = buildAppearancePlan(controls,{focus:rawFocus,simulateHair,directive:customDirective,targets: targets.length ? targets : undefined});
+    } catch { return NextResponse.json({error:"invalid_appearance_controls"},{status:400}); }
+    const promptToUse = appearancePlan.prompt;
+    const enabled = (key:string) => appearancePlan.areas.some(area => area.key === key && area.level !== "preserve");
+    const editRegions = {
+      hair: enabled("hair"), skin: enabled("skin"), contour: enabled("contour"),
+      underEye: enabled("under_eye"), forehead: enabled("forehead"),
+    };
 
     // 3. Generate and locally composite one masked illustrative edit.
     const imageResult = await generateAfterImage({
@@ -134,7 +136,9 @@ export async function POST(req: NextRequest) {
     const afterMime = imageResult.mime;
     const afterBytes = Buffer.from(afterBase64, "base64");
 
-    // 4. Optional 2-Page Clinical PDF Dossier Generation
+    const reportSummary = comparisonSummary(imageResult.review);
+
+    // 4. Optional preview PDF generation
     let pdfBase64: string | undefined;
     if (wantPdf) {
       try {
@@ -143,12 +147,13 @@ export async function POST(req: NextRequest) {
           referenceId: `CLINIC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
           beforeImageBytes: beforeBytes,
           afterImageBytes: afterBytes,
-          reportSummary: visionResult.executiveSummary,
-          detectedAreas: visionResult.opportunities,
+          previewStatus: "quality_checked",
+          reportSummary,
+          reportScopeNote: "Local preview only. No clinical assessment, treatment suitability, measured improvement or outcome prediction was performed.",
+          detectedAreas: [],
           intakeConcerns: concerns,
-          pillars: visionResult.pillars,
-          harmonyScore: visionResult.harmonyScore,
-          symmetryIndex: visionResult.symmetryIndex,
+          pillars: [],
+
         });
         pdfBase64 = Buffer.from(pdfBytes).toString("base64");
       } catch (pdfErr) {
@@ -160,12 +165,11 @@ export async function POST(req: NextRequest) {
       ok: true,
       beforeDataUrl: `data:${beforeMime};base64,${beforeBytes.toString("base64")}`,
       afterDataUrl: `data:${afterMime};base64,${afterBase64}`,
-      executiveSummary: "Illustrative OpenAI appearance preview. Inspect hair, skin texture, contour and identity against the original. Automated review is advisory; no treatment suitability or outcome was assessed.",
+      executiveSummary: reportSummary,
       opportunities: [],
       pillars: [],
       model: imageResult.model,
-      appearancePlan,
-      promptUsed: promptToUse,
+      // Keep image-generation instructions on the server, including in local tests.
       pdfBase64,
       review: imageResult.review,
     });

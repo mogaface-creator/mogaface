@@ -91,7 +91,8 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   let appearancePlan:ReturnType<typeof appearancePlanFromAssessment>|null=null;
   if(input.record?.assessment){
     appearancePlan=appearancePlanFromAssessment(input.record.assessment);
-    if(!prompt)prompt=appearancePlan.prompt;
+    // Production preferences always determine the prompt; callers cannot replace them.
+    prompt=appearancePlan.prompt;
     editRegions=appearancePlan.editRegions;
   }
 
@@ -121,7 +122,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     }
   }
 
-  console.log(`[imageJob] Dispatching aesthetic simulation to OpenAI (${model}):\n${prompt.slice(0, 200)}...`);
+  console.log(`[imageJob] Dispatching aesthetic simulation to OpenAI (${model}).`);
 
   try {
     const postEdit = async (modelName: string, size?: string, quality?: string) => {

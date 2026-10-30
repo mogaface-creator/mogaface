@@ -16,6 +16,7 @@
 
 import type { FaceLandmarker as FaceLandmarkerType } from "@mediapipe/tasks-vision";
 import type { LandmarkList } from "./types.ts";
+import { withLandmarkerLogging, withLandmarkerInitializationLogging } from "./landmarkerLogging.ts";
 
 const WASM_CDN_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
 const MODEL_ASSET_PATH = "/models/face_landmarker.task";
@@ -80,7 +81,7 @@ async function createLandmarker(): Promise<FaceLandmarkerType> {
 /** Loads (once) and returns the shared FaceLandmarker instance. */
 export function getFaceLandmarker(): Promise<FaceLandmarkerType> {
   if (!landmarkerPromise) {
-    landmarkerPromise = createLandmarker().catch((err) => {
+    landmarkerPromise = withLandmarkerInitializationLogging(createLandmarker).catch((err) => {
       landmarkerPromise = null; // allow retry on next call
       throw err;
     });
@@ -98,7 +99,7 @@ export async function detectFace(image: HTMLImageElement | HTMLCanvasElement): P
   const landmarker = await getFaceLandmarker();
   let result;
   try {
-    result = landmarker.detect(image);
+    result = withLandmarkerLogging(() => landmarker.detect(image));
   } catch {
     throw new FaceLandmarkerError("Face analysis failed on this image. Try a different photo.");
   }

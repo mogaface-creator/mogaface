@@ -1,3 +1,4 @@
+import { comparisonSummary } from "@/lib/submissions/imageReview";
 import {protocolInput} from "@/lib/submissions/protocolInput";
 /**
  * Background job runner: POST /api/process-submissions
@@ -126,7 +127,7 @@ export async function processOne(
     let afterBase64: string | null = null;
     let afterMime: string | null = null;
 
-    if(consented && wantsPreview && !options?.regenerate && submission.report_summary?.startsWith("Your Next Face protocol") && submission.after_image_base64){afterBase64=submission.after_image_base64;afterMime=submission.after_image_mime;}
+    if(consented && wantsPreview && !options?.regenerate && submission.report_summary?.startsWith("Your Next Face protocol") && submission.after_image_base64){afterBase64=submission.after_image_base64;afterMime=submission.after_image_mime;reportSummary=submission.report_summary;}
 
     if (consented && wantsPreview && !afterBase64) {
       const imageResult = await generateAfterImage({
@@ -138,6 +139,7 @@ export async function processOne(
       if (imageResult.ok) {
         afterBase64 = imageResult.base64;
         afterMime = imageResult.mime;
+        reportSummary += "\n" + comparisonSummary(imageResult.review);
       } else {
         console.warn(`[process-submissions] Omitted unreliable optional preview for ${id}: ${imageResult.reason}`);
         reportSummary += " The optional appearance preview could not be generated reliably and was omitted; the written report is unaffected.";

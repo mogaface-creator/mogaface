@@ -21,6 +21,10 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
  doc.setTitle(`Next Face - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("Next Face / MogaFace");
  const approved=(input.previewApproved===true || input.previewStatus==="quality_checked") && !!input.afterImageBytes;
  const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,reportScopeNote:input.reportScopeNote,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
+ if (approved && input.reportSummary.includes("Illustrative before-and-after comparison;")) {
+  const comparisons=input.reportSummary.split("\n").filter(line=>/^(hair|skin|jaw|under eye|forehead):/.test(line));
+  for(const [index,text] of comparisons.entries()) pages.push({id:`observed-comparison-${index}`,title:"Observed preview comparison",subtitle:"ORIGINAL AND FINAL IMAGE REVIEW",blocks:[{title:text.split(":")[0].toUpperCase(),text}],takeaway:"Automated visual comparison can be mistaken. No diagnosis, measured improvement or achievable treatment outcome is established."});
+ }
  const assets=new Map<string,Awaited<ReturnType<typeof doc.embedJpg>>>();
  for(const region of ["portrait","hair","eyes","jaw","skin"] as const){assets.set(region,await doc.embedJpg(await jpeg(input.beforeImageBytes,region)));if(approved)assets.set(`${region}-after`,await doc.embedJpg(await jpeg(input.afterImageBytes!,region)));}
  if(input.leftImageBytes)assets.set("left",await doc.embedJpg(await jpeg(input.leftImageBytes)));
@@ -75,7 +79,7 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
    }
    const bottom=154,available=top-bottom;let size=11.2;let lineHeight=17.2;
    const needed=(sz:number,lh:number)=>data.blocks.reduce((sum,b)=>sum+22+wrap(b.text,font,sz,CW).length*lh+15,0);
-   while(needed(size,lineHeight)>available && size>9.6){size-=0.2;lineHeight-=0.3;}
+   while(needed(size,lineHeight)>available && size>(data.id==="index"?8:9.6)){size-=0.2;lineHeight-=0.3;}
    if(needed(size,lineHeight)>available)throw new Error(`protocol_page_overflow:${data.id}`);
    let y=top;
    for(const block of data.blocks){p.drawRectangle({x:M,y:y-11,width:2,height:12,color:C.accent});p.drawText(clean(block.title),{x:M+10,y:y-10,font:bold,size:11.5,color:C.plum});y-=28;for(const line of wrap(block.text,font,size,CW)){p.drawText(line,{x:M,y,font,size,color:C.ink});
