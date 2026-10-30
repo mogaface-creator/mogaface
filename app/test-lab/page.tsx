@@ -263,7 +263,7 @@ export default function TestLabPage() {
         </div>
 
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm">
-          {openaiConfigured === null ? "Checking OpenAI key configuration..." : openaiConfigured ? "OpenAI key is configured. The configured image model is shown below." : "OpenAI key is missing. Add OPENAI_API_KEY to the project's .env.local file. Keep it private; do not paste it into chat."}
+          {process.env.NODE_ENV === "production" ? "This Test Lab runs only on localhost. Its API is disabled on Vercel; this does not indicate whether the production OpenAI key is configured. Use the main assessment on the deployed website." : openaiConfigured === null ? "Checking OpenAI key configuration..." : openaiConfigured ? "OpenAI key is configured. The configured image model is shown below." : "Local OpenAI configuration is unavailable. Check OPENAI_API_KEY and IMAGE_GENERATION_PROVIDER=openai, and confirm the local server is running. Keep the key private."}
           <button type="button" onClick={checkOpenaiConfiguration} className="ml-3 font-semibold text-violet-700 underline">Check key configuration</button>
         </div>
 
