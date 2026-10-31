@@ -2,14 +2,12 @@ import { expressionContext } from "../observation/expressionContext.ts";
 import type { Assessment } from "../assessment/types.ts";
 import { allAsks, IMAGE_PLACE_OPTIONS } from "../assessment/intakeQuestions.ts";
 import { replyOf, pickedOf } from "../assessment/clinicIntake.ts";
-import type { AuthoredReport } from "./reportAuthor.ts";
-import { applyAuthor } from "./protocolAuthored.ts";
 export interface ProtocolBlock { title: string; text: string }
 export interface ProtocolRow { head?:string; label:string; title?:string; text:string }
 export interface ProtocolPage { id:string; title:string; subtitle:string; blocks:ProtocolBlock[]; region?:"portrait"|"hair"|"eyes"|"jaw"|"skin"; takeaway:string;
  /** Label/value or product rows drawn above the text blocks. */ rows?:ProtocolRow[]; stats?:{label:string;value:string;sub?:string}[];
  /** Hero page: score bars, what is already good, and the two age figures. */ scope?:{area:string;now:number;achievable:number}[]; holding?:string; ages?:{now:string;nowLabel:string;achievable:string} }
-export interface ProtocolContext { name:string; assessment?:Assessment|null; concerns?:string[]; previewApproved?:boolean; previewStatus?:"quality_checked"; reportScopeNote?:string; previewMessage?:string; analysis?:import("../observation/types.ts").MogaFaceAnalysis|null; photoViews?:number; author?:AuthoredReport|null; realAge?:number|null }
+export interface ProtocolContext { name:string; assessment?:Assessment|null; concerns?:string[]; previewApproved?:boolean; previewStatus?:"quality_checked"; reportScopeNote?:string; previewMessage?:string; analysis?:import("../observation/types.ts").MogaFaceAnalysis|null; photoViews?:number }
 export const PROTOCOL_SOURCES = [
  "https://www.aad.org/public/everyday-care/hair-scalp-care/hair/curly-hair-care",
  "https://www.aad.org/public/diseases/hair-loss/treatment/diagnosis-treat/",
@@ -24,12 +22,7 @@ export const PROTOCOL_SOURCES = [
 export const PROTOCOL_QUESTION_MAP = {
  hair:["protocolHairTexture","protocolHairGoal"],skin:["protocolSensitivity","protocolSkinConcerns"],facialHair:["protocolBeardGoal"],toolkit:["protocolBudget"],clinical:["maxWilling"],visual:["places","wantAfterPhoto"],
 } as const;
-/** Person-specific pages when the author succeeded; otherwise the fixed, answer-driven template. */
 export function buildProtocolPages(ctx:ProtocolContext):ProtocolPage[] {
- const template=buildTemplatePages(ctx);
- return ctx.author ? applyAuthor(template,ctx.author,ctx.assessment,{realAge:ctx.realAge,name:ctx.name}) : template;
-}
-function buildTemplatePages(ctx:ProtocolContext):ProtocolPage[] {
  const a=ctx.assessment, intake=a?.clinicIntake;
  const video=expressionContext(ctx.analysis?.expression);
  const raw=(id:string)=>intake ? replyOf(intake,id) : "";
