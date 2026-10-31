@@ -23,6 +23,7 @@ export interface CreateAnalysisSessionInput {
   hasLeftFortyFive?: boolean;
   hasRightFortyFive?: boolean;
   portraitGeometry?: PortraitGeometry | null;
+  videoPreviewContextConsent?: "granted" | "declined";
   contact?: LeadContact;
   fetchImpl?: typeof fetch;
 }
@@ -37,6 +38,7 @@ export async function createAnalysisSession(input: CreateAnalysisSessionInput): 
         assessment: input.assessment,
         analysis: input.analysis,
         photoQualityValid: input.photoQualityValid,
+        videoPreviewContextConsent: input.videoPreviewContextConsent === "granted" ? "granted" : "declined",
         hasLeftFortyFive: input.hasLeftFortyFive === true,
         hasRightFortyFive: input.hasRightFortyFive === true,
         ...(input.portraitGeometry ? { portraitGeometry: input.portraitGeometry } : {}),

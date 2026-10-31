@@ -22,7 +22,7 @@ export function Header() {
             <span className="font-sans text-xl font-bold tracking-tight text-[#162125] leading-none">
               MOGA
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-semibold text-[#788b91] mt-0.5">
+            <span className="hidden sm:block text-[10px] uppercase tracking-widest font-semibold text-[#788b91] mt-0.5">
               Facial Aesthetics Intelligence
             </span>
           </div>
@@ -45,7 +45,7 @@ export function Header() {
         <div className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/assessment"
-            className="inline-flex items-center justify-center rounded-full bg-[#182327] px-5 py-2.5 text-xs font-medium text-white hover:bg-[#2c3c42] transition-all shadow-xs active:scale-98"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#182327] px-5 py-2.5 text-xs font-medium text-white hover:bg-[#2c3c42] transition-all shadow-xs active:scale-98"
           >
             Start my plan
           </Link>

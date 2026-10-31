@@ -2,6 +2,10 @@
 
 Verdict: the assessment path and PDF integration pass the checks below, but the whole repository is not release-ready. Changes are local; no deployment, live photo generation or outbound email was performed.
 
+## Subsequent video integration
+
+Video-derived observations now populate a dedicated page 19 and the eye-area chapter. A bounded expression summary can constrain selected forehead/eye edits when the new saved video-context permission is granted. Consent copy discloses the summary sharing; older records with no permission do not send video context. Original video/frames remain on-device. Missing, inconclusive, weak, duplicate and mismatched evidence are covered by targeted tests, as are unchanged edit-region selection and the actual image-worker consent gate. See PROTOCOL_REPORT.md for the data path. The counts below describe the original assessment-only audit, before these additional video tests.
+
 ## Removed
 
 - Homepage instant simulation portal and its presets.

@@ -184,7 +184,7 @@ async function logSupabaseFailure(operation: string, res: Response | null, err?:
  * Map — when production persistence is unavailable (see the module comment).
  */
 export async function createAnalysisRecord(
-  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown; portraitGeometry?: unknown },
+  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown; portraitGeometry?: unknown; videoPreviewContextConsent?: unknown },
   deps: AnalysisSessionStoreDeps = {},
 ): Promise<AnalysisSessionHandle | null> {
   const { env, fetchImpl } = resolveDeps(deps);
@@ -227,6 +227,7 @@ export async function createAnalysisRecord(
     version: ANALYSIS_RECORD_VERSION,
     methodologyVersion: { analysis: FACIAL_ANALYSIS_METHODOLOGY_VERSION, treatmentOpportunities: TREATMENT_OPPORTUNITY_ENGINE_VERSION },
     assessment,
+    videoPreviewContextConsent: input.videoPreviewContextConsent === "granted" ? "granted" : "declined",
     analysis,
     opportunities,
     predictionPlan,

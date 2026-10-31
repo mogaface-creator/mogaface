@@ -44,6 +44,14 @@ The assessment stores validated portrait geometry, three photo views, questionna
 
 Generation or quality-review failures can still produce a written report without an after image. The report and submission status explain the reason; inclusion is not guaranteed. Clinic review remains pending.
 
+## How expression video is used
+
+The browser samples up to 24 frames and compares neutral and expression frames for brow raise, frown, smile and squint. Saved observations now populate page 19, **Your expression video**, including usable/missing expression coverage, evidence completeness, supported changes in line contrast and recording/review guidance. Inconclusive video is kept distinct from an absent video; neither becomes an invented finding. The eye-area chapter also uses the same validated coverage. The report stays 25 pages.
+
+Moderate/high-completeness movement comparisons can add preservation constraints to a selected forehead or under-eye edit. For example, brow movement constrains brow position and natural folds; smile/squint movement constrains eyelid folds and smile creases. Video does not unlock unselected regions, prescribe a treatment or predict movement after treatment. Raw notes, percentages, video frames and the video file are not sent to the image service.
+
+The assessment's consent wording now includes a short video-expression summary. Its permission is saved as `videoPreviewContextConsent` in the existing private analysis-record JSON. The image worker uses video-derived context only when that field is `granted` and photo processing is also permitted. Missing permission on older records is treated as not granted; their video observations can still appear in the written report. No database column migration is needed. This is per-assessment analysis, not model training.
+
 ## Review limits
 
 The PDF text is a deterministic educational and preference-based draft. It does not automatically diagnose images, verify product prices or assign medical treatment. No clinician sign-off system is implemented; clinical review remains pending. Real treatment selection and a current product shortlist require separate review. General sources are linked on the final page.

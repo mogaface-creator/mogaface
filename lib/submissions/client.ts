@@ -1,3 +1,5 @@
+import { preparePhotoUpload } from "./photoUpload.ts";
+
 /**
  * Client-side call to POST /api/submit-assessment.
  * Sends the front photo bytes + analysis session handle → server creates the
@@ -25,14 +27,7 @@ export type SubmitAssessmentResult =
 export async function submitAssessment(input: SubmitAssessmentInput): Promise<SubmitAssessmentResult> {
   const form = new FormData();
   // Three compact JPEGs keep the complete multipart request below Vercel's body limit.
-  const compress = async (file: File): Promise<Blob> => {
-    const bitmap=await createImageBitmap(file);try {
-      const scale=Math.min(1,1200/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);
-      const ctx=canvas.getContext("2d");if(!ctx)throw new Error("photo_preparation_failed");ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-      const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));if(!blob || blob.size>1_100_000)throw new Error("photo_too_large");return blob;
-    } finally {bitmap.close();}
-  };
-  try { for(const [field,file] of [["photo",input.frontPhotoFile],["leftPhoto",input.leftPhotoFile],["rightPhoto",input.rightPhotoFile]] as const)form.append(field,await compress(file),`${field}.jpg`); }
+  try { for(const [field,file] of [["photo",input.frontPhotoFile],["leftPhoto",input.leftPhotoFile],["rightPhoto",input.rightPhotoFile]] as const)form.append(field,await preparePhotoUpload(file),`${field}.jpg`); }
   catch {return {ok:false,reason:"photo_preparation_failed"};}
   form.append(
     "payload",

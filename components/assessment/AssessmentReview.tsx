@@ -214,6 +214,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       analysis: nextMogaFaceAnalysis,
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
       portraitGeometry:safePortraitGeometry,
+      videoPreviewContextConsent: photoConsent === "granted" && !!videoFile ? "granted" : "declined",
       hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
       hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
       ...(lead ? { contact: lead } : {}),
@@ -284,8 +285,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
             <dl className="mt-4 space-y-2">
               {section.rows.map((row) => (
                 <div key={row.label} className={section.stack ? "block" : "flex items-baseline justify-between gap-4"}>
-                  <dt className="text-sm text-muted">{row.label}</dt>
-                  <dd className={section.stack ? "mt-1 text-sm leading-6 whitespace-pre-wrap" : "text-right text-sm"}>{row.value}</dd>
+                  <dt className="min-w-0 flex-1 text-sm text-muted">{row.label}</dt>
+                  <dd className={section.stack ? "mt-1 break-words text-sm leading-6 whitespace-pre-wrap" : "min-w-0 max-w-[60%] break-words text-right text-sm"}>{row.value}</dd>
                 </div>
               ))}
               {section.title === "Photos" && (
@@ -370,12 +371,12 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
           aria-label="Expression video"
           disabled={isRunning}
           onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
-          className="mt-3 block text-sm"
+          className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"
         />
         {videoFile && (
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 break-words text-xs text-muted [overflow-wrap:anywhere]">
             {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`}{" "}
-            <button type="button" onClick={() => onVideoFileChange(null)} className="underline">
+            <button type="button" onClick={() => onVideoFileChange(null)} className="min-h-11 px-2 underline">
               Remove
             </button>
           </p>
@@ -408,7 +409,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
                 placeholder={placeholder}
                 value={contact[key]}
                 onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
-                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </label>
           ))}
@@ -418,9 +419,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
       <fieldset className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <legend className="px-2 text-sm font-medium">Optional illustrative after photo</legend>
-        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo is sent to OpenAI. An after image is an illustration, not a prediction of treatment results.</p>
-        <label className="block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI photo processing and an illustrative after photo.</label>
-        <label className="mt-3 block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo to AI.</label>
+        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo and, if supplied and usable, a short summary of video expression observations are sent to OpenAI. Your video file and frames stay on this device. An after image is an illustration, not a prediction of treatment results.</p>
+        <label className="flex min-h-12 cursor-pointer items-start gap-3 py-3 text-sm"><input className="mt-0.5 h-5 w-5 shrink-0" type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI processing of my front photo and usable video-expression summary for an illustrative after photo.</label>
+        <label className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo or video-expression summary to AI.</label>
       </fieldset>
       {submitError && <p role="alert" className="mt-4 text-sm">{submitError}</p>}
       <StepNav

@@ -19,6 +19,8 @@ export const ANALYSIS_RECORD_VERSION = "0.1.0";
 export type AnalysisRecordStatus = "active" | "expired";
 
 export interface AnalysisRecord {
+  /** Separate permission for sharing bounded video-derived context; absent on older records. */
+  videoPreviewContextConsent?: "granted" | "declined";
   /** Client-side MediaPipe geometry for tightly masked preview edits; optional on older records. */
   portraitGeometry?: PortraitGeometry;
   /** Validated, compressed side photographs stored with this private record for report generation. */
