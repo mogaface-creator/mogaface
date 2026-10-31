@@ -86,7 +86,11 @@ function previewStatusMessage(summary:string,hasAfter:boolean):string{
   case "geometry_unavailable": return "The after photo could not be safely prepared from this portrait, so it was left out.";
   case "quality_review": return "The generated draft did not pass the identity and quality review, so it was left out.";
   case "review_unavailable": return "The generated draft could not be verified, so it was left out.";
+  case "aspect_mismatch": return "The generated image did not match the original photo framing, so it was left out rather than stretched.";
+  case "composition_failed": return "The generated image could not be aligned safely with your original photo, so it was left out.";
+  case "invalid_provider_image": return "The image service returned an unusable image, so no after photo was included.";
   case "provider_unavailable": return "The image service could not generate a preview this time. Your written report is ready.";
+  case "generation_error": return "The image generation step failed before a usable preview was ready. Your written report is ready.";
   default: return "No after photo was included. Your written report is ready.";
  }
 }

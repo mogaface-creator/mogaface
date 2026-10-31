@@ -146,7 +146,15 @@ export async function processOne(
       } else {
         console.warn(`[process-submissions] Omitted unreliable optional preview for ${id}: ${imageResult.reason}`);
         const reason=imageResult.reason.toLowerCase();
-        previewStatus=reason.includes("geometry") || reason.includes("mask") ? "geometry_unavailable" : reason.includes("quality") ? "quality_review" : reason.includes("review_unavailable") ? "review_unavailable" : reason.includes("openai") || reason.includes("provider") || reason.includes("timeout") ? "provider_unavailable" : "generation_failed";
+        previewStatus=reason.includes("geometry") || reason.includes("mask") ? "geometry_unavailable"
+          : reason.includes("quality") ? "quality_review"
+          : reason.includes("review_unavailable") ? "review_unavailable"
+          : reason.includes("aspect_mismatch") ? "aspect_mismatch"
+          : reason.includes("composite_failed") || reason.includes("composited_image") ? "composition_failed"
+          : reason.includes("invalid_result_image") ? "invalid_provider_image"
+          : reason.includes("openai") || reason.includes("provider") || reason.includes("timeout") || reason.includes("rate limit") ? "provider_unavailable"
+          : reason.includes("generation_error") ? "generation_error"
+          : "generation_failed";
         reportSummary += " The optional appearance preview could not be generated reliably and was omitted; the written report is unaffected.";
       }
     }

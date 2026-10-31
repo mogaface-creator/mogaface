@@ -78,7 +78,10 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   }
 
   const rawModel = env.IMAGE_GENERATION_MODEL?.trim();
-  const model = rawModel || DEFAULT_IMAGE_MODEL;
+  // Treat an accidentally copied env-var name as unset. Vercel was passing the
+  // literal "IMAGE_GENERATION_MODEL" and forcing every request through a 400
+  // fallback with the wrong portrait size.
+  const model = !rawModel || rawModel === "IMAGE_GENERATION_MODEL" ? DEFAULT_IMAGE_MODEL : rawModel;
 
   const timeoutMs = Number(env.IMAGE_GENERATION_TIMEOUT_MS) > 0
     ? Math.min(120_000, Math.max(10_000, Number(env.IMAGE_GENERATION_TIMEOUT_MS)))
@@ -152,7 +155,10 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     if (!response.ok && response.status === 400 && model !== DEFAULT_IMAGE_MODEL) {
       console.warn(`[imageJob] Retrying with default model ${DEFAULT_IMAGE_MODEL}...`);
       usedModel = DEFAULT_IMAGE_MODEL;
-      response = await postEdit(DEFAULT_IMAGE_MODEL);
+      // Recompute size for the fallback model. Reusing the invalid model's
+      // default 1024x1536 request caused a portrait aspect mismatch at compose.
+      const fallbackSize = aspectMatchedImageSize(editBytes, DEFAULT_IMAGE_MODEL);
+      response = await postEdit(DEFAULT_IMAGE_MODEL, fallbackSize);
     }
 
     if (!response.ok) {

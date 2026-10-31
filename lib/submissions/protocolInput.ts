@@ -9,7 +9,11 @@ function previewMessage(summary:string, hasAfter:boolean):string{
   case "geometry_unavailable": return "The after photo could not be safely prepared from this portrait. A new, clear, front-facing photo may be needed.";
   case "quality_review": return "The generated draft did not pass the image identity and quality review, so it was excluded.";
   case "review_unavailable": return "The generated draft could not be verified, so it was excluded.";
+  case "aspect_mismatch": return "The generated image did not match the original photo framing, so it was excluded rather than stretched.";
+  case "composition_failed": return "The generated image could not be aligned safely with your original photo, so it was excluded.";
+  case "invalid_provider_image": return "The image service returned an unusable image, so no after photo was included.";
   case "provider_unavailable": return "The image service could not generate a preview this time. The written report is ready.";
+  case "generation_error": return "The image generation step failed before a usable preview was ready. The written report is ready.";
   case "generation_failed": return "The after photo could not be generated reliably this time. The written report is ready.";
   default: return "No after photo was included. The report uses your original photo.";
  }
