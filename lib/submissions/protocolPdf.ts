@@ -9,26 +9,31 @@ const clean=(s:string)=>s.replace(/[\u2010-\u2015]/g,"-").replace(/[\u2018\u2019
 function wrap(text:string,font:PDFFont,size:number,width:number):string[]{
  return clean(text).split("\n").flatMap(part=>{const lines:string[]=[];let line="";for(const word of part.split(/\s+/).filter(Boolean)){if(font.widthOfTextAtSize((line?line+" ":"")+word,size)>width && line){lines.push(line);line="";} if(font.widthOfTextAtSize(word,size)>width){if(line){lines.push(line);line="";}let chunk="";for(const ch of word){if(font.widthOfTextAtSize(chunk+ch,size)>width){lines.push(chunk);chunk="";}chunk+=ch;}line=chunk;}else line+=(line?" ":"")+word;}if(line)lines.push(line);return lines.length?lines:[""];});
 }
-async function jpeg(bytes:Buffer|Uint8Array,region?:ProtocolPage["region"]){
+async function jpeg(bytes:Buffer|Uint8Array,targetAspect:number,region?:ProtocolPage["region"]){
  const oriented=await sharp(Buffer.from(bytes)).rotate().toBuffer();const meta=await sharp(oriented).metadata();const w=meta.width!,h=meta.height!;
  const boxes={hair:[0.02,0.04,0.96,0.36],eyes:[0.15,0.25,0.72,0.27],jaw:[0.16,0.48,0.74,0.43],skin:[0.2,0.36,0.62,0.32]} as const;
  let image=sharp(oriented);
  if(region && region!=="portrait"){const [x,y,bw,bh]=boxes[region];image=image.extract({left:Math.floor(w*x),top:Math.floor(h*y),width:Math.floor(w*bw),height:Math.floor(h*bh)});}
- return image.resize({width:1300,height:1500,fit:"inside",withoutEnlargement:true}).jpeg({quality:88}).toBuffer();
+ const width=1400,height=Math.max(1,Math.round(width/targetAspect));
+ return image.resize({width,height,fit:"cover",position:"attention"}).jpeg({quality:88}).toBuffer();
 }
 export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<Uint8Array>{
  const doc=await PDFDocument.create();const font=await doc.embedFont(StandardFonts.Helvetica),bold=await doc.embedFont(StandardFonts.HelveticaBold);
  doc.setTitle(`Next Face - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("Next Face / MogaFace");
  const approved=(input.previewApproved===true || input.previewStatus==="quality_checked") && !!input.afterImageBytes;
- const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,reportScopeNote:input.reportScopeNote,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
+ const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,previewMessage:input.previewMessage,reportScopeNote:input.reportScopeNote,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes)});
  if (approved && input.reportSummary.includes("Illustrative before-and-after comparison;")) {
   const comparisons=input.reportSummary.split("\n").filter(line=>/^(hair|skin|jaw|under eye|forehead):/.test(line));
   for(const [index,text] of comparisons.entries()) pages.push({id:`observed-comparison-${index}`,title:"Observed preview comparison",subtitle:"ORIGINAL AND FINAL IMAGE REVIEW",blocks:[{title:text.split(":")[0].toUpperCase(),text}],takeaway:"Automated visual comparison can be mistaken. No diagnosis, measured improvement or achievable treatment outcome is established."});
  }
  const assets=new Map<string,Awaited<ReturnType<typeof doc.embedJpg>>>();
- for(const region of ["portrait","hair","eyes","jaw","skin"] as const){assets.set(region,await doc.embedJpg(await jpeg(input.beforeImageBytes,region)));if(approved)assets.set(`${region}-after`,await doc.embedJpg(await jpeg(input.afterImageBytes!,region)));}
- if(input.leftImageBytes)assets.set("left",await doc.embedJpg(await jpeg(input.leftImageBytes)));
- if(input.rightImageBytes)assets.set("right",await doc.embedJpg(await jpeg(input.rightImageBytes)));
+ const embed=async(key:string,bytes:Buffer|Uint8Array,aspect:number,region?:ProtocolPage["region"])=>assets.set(key,await doc.embedJpg(await jpeg(bytes,aspect,region)));
+ const coverAspect=225/250,coverPairAspect=((225-8)/2)/250,overviewAspect=((CW-12)/2)/235,pairAspect=((CW-14)/2)/154,detailAspect=CW/154,trioAspect=((CW-16)/3)/154;
+ await embed("cover-single",input.beforeImageBytes,coverAspect);await embed("cover-pair",input.beforeImageBytes,coverPairAspect);await embed("overview",input.beforeImageBytes,overviewAspect);
+ if(approved){await embed("cover-pair-after",input.afterImageBytes!,coverPairAspect);await embed("overview-after",input.afterImageBytes!,overviewAspect);}
+ for(const region of ["hair","eyes","jaw","skin"] as const){await embed(`${region}-detail`,input.beforeImageBytes,detailAspect,region);if(approved)await embed(`${region}-pair`,input.beforeImageBytes,pairAspect,region);if(approved)await embed(`${region}-pair-after`,input.afterImageBytes!,pairAspect,region);}
+ if(input.leftImageBytes)await embed("left",input.leftImageBytes,trioAspect);
+ if(input.rightImageBytes)await embed("right",input.rightImageBytes,trioAspect);
  const drawImage=(p:PDFPage,key:string,x:number,y:number,width:number,height:number)=>{const im=assets.get(key)!;p.drawRectangle({x,y,width,height,color:C.pale});const s=Math.min(width/im.width,height/im.height);p.drawImage(im,{x:x+(width-im.width*s)/2,y:y+(height-im.height*s)/2,width:im.width*s,height:im.height*s});};
  const date=input.dateStr || new Date().toLocaleDateString("en-GB",{timeZone:"Asia/Kolkata",day:"2-digit",month:"long",year:"numeric"});
  for(const [index,data] of pages.entries()){
@@ -40,9 +45,9 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
   p.drawText(clean(data.title),{x:M,y:716,font:bold,size:titleSize,color:C.ink});
   let top=687;
   if(index===0){
-   const imageX=W-M-225,imageY=252,imageW=225,imageH=408;
-   if(approved){const panelW=(imageW-8)/2;drawImage(p,"portrait",imageX,imageY,panelW,imageH);drawImage(p,"portrait-after",imageX+panelW+8,imageY,panelW,imageH);p.drawText("ORIGINAL",{x:imageX,y:238,font:bold,size:6.5,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW",{x:imageX+panelW+8,y:238,font:bold,size:6.5,color:C.muted});p.drawText("NOT A TREATMENT RESULT",{x:imageX,y:222,font:bold,size:7,color:C.accent});}
-   else drawImage(p,"portrait",imageX,imageY,imageW,imageH);
+   const imageX=W-M-225,imageY=390,imageW=225,imageH=250;
+   if(approved){const panelW=(imageW-8)/2;drawImage(p,"cover-pair",imageX,imageY,panelW,imageH);drawImage(p,"cover-pair-after",imageX+panelW+8,imageY,panelW,imageH);p.drawText("ORIGINAL",{x:imageX,y:imageY-14,font:bold,size:6.5,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW",{x:imageX+panelW+8,y:imageY-14,font:bold,size:6.5,color:C.muted});p.drawText("NOT A TREATMENT RESULT",{x:imageX,y:imageY-29,font:bold,size:7,color:C.accent});}
+   else drawImage(p,"cover-single",imageX,imageY,imageW,imageH);
    p.drawText("PREPARED FOR",{x:M,y:650,font:bold,size:8,color:C.accent});
    const nameLines=wrap(input.clientName,bold,24,240);let y=615;for(const line of nameLines){p.drawText(line,{x:M,y,font:bold,size:24,color:C.plum});y-=30;}
    const lines=wrap(data.blocks[1].text,font,11,225);y-=20;for(const line of lines){p.drawText(line,{x:M,y,font,size:11,color:C.ink});y-=17;}
@@ -51,17 +56,23 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
    let ty=170;for(const line of wrap(data.takeaway,font,10,CW-34)){p.drawText(line,{x:M+17,y:ty,font,size:10,color:C.white});ty-=15;}
   }else if(data.id==="overview"){
    const panelGap=12,panelW=(CW-panelGap)/2,imageY=431,imageH=235;
-   if(approved){drawImage(p,"portrait",M,imageY,panelW,imageH);drawImage(p,"portrait-after",M+panelW+panelGap,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL",{x:M,y:imageY-14,font:bold,size:6.8,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW / NOT A TREATMENT RESULT",{x:M+panelW+panelGap,y:imageY-14,font:bold,size:6.8,color:C.muted});}
-   else{drawImage(p,"portrait",M+panelW/2,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL PHOTO",{x:M+panelW/2,y:imageY-14,font:bold,size:6.8,color:C.muted});}
+   if(approved){drawImage(p,"overview",M,imageY,panelW,imageH);drawImage(p,"overview-after",M+panelW+panelGap,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL",{x:M,y:imageY-14,font:bold,size:6.8,color:C.muted});p.drawText("ILLUSTRATIVE PREVIEW / NOT A TREATMENT RESULT",{x:M+panelW+panelGap,y:imageY-14,font:bold,size:6.8,color:C.muted});}
+   else{drawImage(p,"overview",M+panelW/2,imageY,panelW,imageH);p.drawText("CURRENT LOOK / ORIGINAL PHOTO",{x:M+panelW/2,y:imageY-14,font:bold,size:6.8,color:C.muted});}
    const cardY=184,cardH=210;
    const drawOverviewCard=(x:number,title:string,blocks:ProtocolPage["blocks"])=>{
     p.drawRectangle({x,y:cardY,width:panelW,height:cardH,color:C.pale,borderColor:C.line,borderWidth:0.7});
     p.drawText(title,{x:x+13,y:cardY+cardH-19,font:bold,size:7.2,color:C.accent});
+    const innerHeight=cardH-56;
+    let textSize=8.2;
+    const bodyLines=(size:number)=>blocks.map(block=>wrap(block.text,font,size,panelW-26));
+    const required=(size:number)=>bodyLines(size).reduce((sum,lines)=>sum+12+lines.length*(size+2)+5,0);
+    while(required(textSize)>innerHeight&&textSize>6.6)textSize-=0.2;
+    const wrapped=bodyLines(textSize);
     let y=cardY+cardH-38;
-    for(const block of blocks){
-     p.drawText(clean(block.title),{x:x+13,y,font:bold,size:9.5,color:C.plum});y-=15;
-     for(const line of wrap(block.text,font,8.7,panelW-26)){p.drawText(line,{x:x+13,y,font,size:8.7,color:C.ink});y-=11;}
-     y-=7;
+    for(const [i,block] of blocks.entries()){
+     p.drawText(clean(block.title),{x:x+13,y,font:bold,size:8.2,color:C.plum});y-=12;
+     for(const line of wrapped[i]){p.drawText(line,{x:x+13,y,font,size:textSize,color:C.ink});y-=textSize+2;}
+     y-=5;
     }
    };
    drawOverviewCard(M,"YOUR GOALS",data.blocks.slice(0,2));
@@ -72,14 +83,14 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
   }else{
    if(data.region){
     const height=154;const pair=approved;
-    if(data.id==="jaw" && assets.has("left") && assets.has("right")){const pw=(CW-16)/3;for(const [i,key]of ["left","portrait","right"].entries()){drawImage(p,key,M+i*(pw+8),top-height,pw,height);}p.drawText("LEFT 45-DEGREE / FRONT / RIGHT 45-DEGREE - ORIGINAL VIEWS",{x:M,y:top-height-13,font,size:7,color:C.muted});}
-    else if(pair){drawImage(p,data.region,M,top-height,(CW-14)/2,height);drawImage(p,`${data.region}-after`,M+(CW+14)/2,top-height,(CW-14)/2,height);p.drawText("ORIGINAL",{x:M,y:top-height-13,font,size:7,color:C.muted});p.drawText("ILLUSTRATIVE DRAFT / NOT A TREATMENT RESULT",{x:M+(CW+14)/2,y:top-height-13,font,size:7,color:C.muted});}
-    else{drawImage(p,data.region,M,top-height,CW,height);p.drawText("ORIGINAL PHOTO / UNRETOUCHED DETAIL",{x:M,y:top-height-13,font,size:7,color:C.muted});}
+    if(data.id==="jaw" && assets.has("left") && assets.has("right")){const pw=(CW-16)/3;for(const [i,key]of ["left","overview","right"].entries()){drawImage(p,key,M+i*(pw+8),top-height,pw,height);}p.drawText("LEFT 45-DEGREE / FRONT / RIGHT 45-DEGREE - ORIGINAL VIEWS",{x:M,y:top-height-13,font,size:7,color:C.muted});}
+    else if(pair){drawImage(p,`${data.region}-pair`,M,top-height,(CW-14)/2,height);drawImage(p,`${data.region}-pair-after`,M+(CW+14)/2,top-height,(CW-14)/2,height);p.drawText("ORIGINAL",{x:M,y:top-height-13,font,size:7,color:C.muted});p.drawText("ILLUSTRATIVE DRAFT / NOT A TREATMENT RESULT",{x:M+(CW+14)/2,y:top-height-13,font,size:7,color:C.muted});}
+    else{drawImage(p,`${data.region}-detail`,M,top-height,CW,height);p.drawText("ORIGINAL PHOTO / UNRETOUCHED DETAIL",{x:M,y:top-height-13,font,size:7,color:C.muted});}
     top-=height+34;
    }
    const bottom=154,available=top-bottom;let size=11.2;let lineHeight=17.2;
    const needed=(sz:number,lh:number)=>data.blocks.reduce((sum,b)=>sum+22+wrap(b.text,font,sz,CW).length*lh+15,0);
-   while(needed(size,lineHeight)>available && size>(data.id==="index"?8:9.6)){size-=0.2;lineHeight-=0.3;}
+   while(needed(size,lineHeight)>available && size>8.4){size-=0.2;lineHeight-=0.3;}
    if(needed(size,lineHeight)>available)throw new Error(`protocol_page_overflow:${data.id}`);
    let y=top;
    for(const block of data.blocks){p.drawRectangle({x:M,y:y-11,width:2,height:12,color:C.accent});p.drawText(clean(block.title),{x:M+10,y:y-10,font:bold,size:11.5,color:C.plum});y-=28;for(const line of wrap(block.text,font,size,CW)){p.drawText(line,{x:M,y,font,size,color:C.ink});

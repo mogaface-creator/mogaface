@@ -12,6 +12,7 @@ export function SubmittedView() {
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [status, setStatus] = useState<"countdown" | "processing" | "done" | "error">("processing");
   const [statusMessage, setStatusMessage] = useState<string>("Preparing your personalised report...");
+  const [previewMessage, setPreviewMessage] = useState<string>("");
 
   // When timer hits 0 (or every 10s if processing), poll check-submission-status
   useEffect(() => {
@@ -26,6 +27,7 @@ export function SubmittedView() {
 
         if (data.status === "done") {
           setStatus("done");
+          setPreviewMessage(data.previewMessage || "");
           setStatusMessage(data.deliveryWarning ? "Your report is ready to download, but email delivery was unsuccessful. Please use the download button." : "Your report is ready. Check your email if you supplied an address.");
         } else if (data.status === "failed") {
           setStatus("error");setStatusMessage("We could not complete your report. Please contact the clinic with your submission reference.");
@@ -56,6 +58,7 @@ export function SubmittedView() {
       const data = await res.json();
       if (data.status === "done") {
         setStatus("done");
+        setPreviewMessage(data.previewMessage || "");
       }
     } catch {
       // Continue normal polling
@@ -112,7 +115,7 @@ export function SubmittedView() {
 
         {status === "done" ? (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            Your personalized <strong>Next Face appearance protocol</strong> is ready. An illustrative comparison is included only when requested, consented to and successfully quality-screened. Check your email if an address was supplied.
+            Your personalized <strong>Next Face appearance protocol</strong> is ready. Check the note below to see whether an illustrative after photo was included. Check your email if an address was supplied.
           </p>
         ) : (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
@@ -165,6 +168,7 @@ export function SubmittedView() {
               <p className="text-sm font-medium text-emerald-800">
                 Your report has been prepared.
               </p>
+              {previewMessage && <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-body-text">{previewMessage}</p>}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 <button
                   type="button"

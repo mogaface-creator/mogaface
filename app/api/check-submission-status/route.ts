@@ -32,10 +32,11 @@ export async function GET(request: NextRequest): Promise<Response> {
         status: "done",
         emailSentAt: submission.email_sent_at,
         hasAfterImage: !!submission.after_image_base64,
+        previewMessage: previewStatusMessage(submission.report_summary||"",!!submission.after_image_base64),
       });
     }
 
-    if (submission.status === "failed" && submission.email_error?.startsWith("Email delivery failed:") && submission.report_summary) return Response.json({status:"done",emailSentAt:null,deliveryWarning:true});
+    if (submission.status === "failed" && submission.email_error?.startsWith("Email delivery failed:") && submission.report_summary) return Response.json({status:"done",emailSentAt:null,deliveryWarning:true,hasAfterImage:!!submission.after_image_base64,previewMessage:previewStatusMessage(submission.report_summary,!!submission.after_image_base64)});
     if (submission.status === "failed") return Response.json({status:"failed",message:"We could not complete this report. Please contact the clinic."});
 
     if (submission.status === "processing") {
@@ -52,8 +53,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (now >= sendAfter) {
       // Time has passed: process immediately!
       const outcome = await processOne(submission);
+      const updated = await getSubmission(id);
       return Response.json({
         status: outcome.outcome,
+        ...(updated ? {hasAfterImage:!!updated.after_image_base64,previewMessage:previewStatusMessage(updated.report_summary||"",!!updated.after_image_base64)} : {}),
         message:
           outcome.outcome === "done"
             ? "Report successfully compiled and dispatched to your email."
@@ -72,4 +75,18 @@ export async function GET(request: NextRequest): Promise<Response> {
     const errorMsg = err instanceof Error ? err.message : "status_check_error";
     return Response.json({ error: errorMsg }, { status: 500 });
   }
+}
+
+function previewStatusMessage(summary:string,hasAfter:boolean):string{
+ if(hasAfter)return "An illustrative after photo passed the image quality review and is included. It is not a treatment prediction.";
+ const marker=/\[PREVIEW_STATUS:([^\]]+)\]/.exec(summary)?.[1];
+ switch(marker){
+  case "not_requested": return "No illustrative after photo was requested. Your report is based on the original photo and your answers.";
+  case "no_ai_consent": return "Clinic review only was selected. Your photo was not sent to the AI image service.";
+  case "geometry_unavailable": return "The after photo could not be safely prepared from this portrait, so it was left out.";
+  case "quality_review": return "The generated draft did not pass the identity and quality review, so it was left out.";
+  case "review_unavailable": return "The generated draft could not be verified, so it was left out.";
+  case "provider_unavailable": return "The image service could not generate a preview this time. Your written report is ready.";
+  default: return "No after photo was included. Your written report is ready.";
+ }
 }

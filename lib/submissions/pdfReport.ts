@@ -41,6 +41,8 @@ export interface GeneratePdfReportInput {
   symmetryIndex?: number;
   /** Additional scope note for local/demo reports that do not include the full intake. */
   reportScopeNote?: string;
+  /** User-facing reason an illustrative preview was included or omitted. */
+  previewMessage?: string;
 }
 
 // Brand Color Palette (Clinic Next Face Brand Identity v1.0)

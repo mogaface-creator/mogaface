@@ -127,7 +127,9 @@ export async function processOne(
     let afterBase64: string | null = null;
     let afterMime: string | null = null;
 
-    if(consented && wantsPreview && !options?.regenerate && submission.report_summary?.startsWith("Your Next Face protocol") && submission.after_image_base64){afterBase64=submission.after_image_base64;afterMime=submission.after_image_mime;reportSummary=submission.report_summary;}
+    if(consented && wantsPreview && !options?.regenerate && submission.report_summary?.startsWith("Your Next Face protocol") && submission.after_image_base64){afterBase64=submission.after_image_base64;afterMime=submission.after_image_mime;}
+    let previewStatus = afterBase64 ? "included" : !wantsPreview ? "not_requested" : !consented ? "no_ai_consent" : "generation_failed";
+    if(afterBase64 && submission.report_summary?.startsWith("Your Next Face protocol"))reportSummary=submission.report_summary;
 
     if (consented && wantsPreview && !afterBase64) {
       const imageResult = await generateAfterImage({
@@ -140,11 +142,16 @@ export async function processOne(
         afterBase64 = imageResult.base64;
         afterMime = imageResult.mime;
         reportSummary += "\n" + comparisonSummary(imageResult.review);
+        previewStatus = "included";
       } else {
         console.warn(`[process-submissions] Omitted unreliable optional preview for ${id}: ${imageResult.reason}`);
+        const reason=imageResult.reason.toLowerCase();
+        previewStatus=reason.includes("geometry") || reason.includes("mask") ? "geometry_unavailable" : reason.includes("quality") ? "quality_review" : reason.includes("review_unavailable") ? "review_unavailable" : reason.includes("openai") || reason.includes("provider") || reason.includes("timeout") ? "provider_unavailable" : "generation_failed";
         reportSummary += " The optional appearance preview could not be generated reliably and was omitted; the written report is unaffected.";
       }
     }
+
+    if(!/\[PREVIEW_STATUS:[^\]]+\]/.test(reportSummary))reportSummary += ` [PREVIEW_STATUS:${previewStatus}]`;
 
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
