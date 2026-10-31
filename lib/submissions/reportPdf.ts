@@ -4,7 +4,7 @@
  * hairline-stage chart, brow shapes, glasses icons, anatomy illustrations, face-shape diagram.
  * Falls back to nothing: the caller uses the fixed template when there is no authored content.
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, pushGraphicsState, popGraphicsState, moveTo, lineTo, appendBezierCurve, closePath, clip, endPath, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import type { GeneratePdfReportInput } from "./pdfReport.ts";
 import type { AuthoredReport, BrowShape, GlassesStyle, HairlineStage } from "./reportAuthor.ts";
 import { bodyTargets } from "./reportAuthor.ts";
@@ -121,15 +121,29 @@ function drawHeadSilhouette(p: PDFPage, x: number, top: number, length: "short" 
   };
   p.drawSvgPath(caps[length], { x, y: top - 4, color: MID });
 }
-function wave(p: PDFPage, yTop: number, color: ReturnType<typeof rgb>, opacity: number, flip = false) {
-  const path = flip ? `M0,0 C150,40 300,-40 450,0 S560,30 ${W},-10 V-300 H0 Z` : `M0,0 C150,-44 300,44 450,0 S560,-34 ${W},10 V300 H0 Z`;
-  p.drawSvgPath(path, { x: 0, y: yTop, color, opacity });
+/** One wave layer: an opaque band that fills downward (or upward when flipped); `phase` varies the curve so layers do not run parallel. */
+function wave(p: PDFPage, yTop: number, color: ReturnType<typeof rgb>, phase = 0, flip = false) {
+  const d = flip ? -1 : 1, a = phase % 2 === 0 ? 44 : 30, b = phase % 2 === 0 ? 34 : 46;
+  p.drawSvgPath(`M0,${phase * -6} C150,${-a * d} 300,${a * d} 450,${phase * 5} S560,${-b * d} ${W},${10 * d} V${300 * d} H0 Z`, { x: 0, y: yTop, color });
 }
+/** Diagonal hatching clipped to the first wave's shape, like the textured top band of the reference cover. */
+function hatchedWave(p: PDFPage, yTop: number, base: ReturnType<typeof rgb>) {
+  wave(p, yTop, base, 0);
+  const y = (v: number) => yTop - v;
+  p.pushOperators(pushGraphicsState(), moveTo(0, y(0)), appendBezierCurve(150, y(-44), 300, y(44), 450, y(0)), appendBezierCurve(600, y(-44), 560, y(-34), W, y(10)), lineTo(W, y(120)), lineTo(0, y(120)), closePath(), clip(), endPath());
+  for (let x = -120; x < W + 40; x += 7) p.drawLine({ start: { x, y: yTop + 60 }, end: { x: x + 70, y: yTop - 100 }, thickness: 0.7, color: C.white, opacity: 0.16 });
+  p.pushOperators(popGraphicsState());
+}
+/** Small caps with letter spacing (pdf-lib has no tracking option). */
+function spaced(p: PDFPage, text: string, x: number, y: number, size: number, font: PDFFont, color: ReturnType<typeof rgb>, track = 2.2) {
+  let cx = x; for (const ch of text) { p.drawText(ch, { x: cx, y, font, size, color }); cx += font.widthOfTextAtSize(ch, size) + track; }
+}
+const mix = (a: [number, number, number], b: [number, number, number], t: number) => rgb((a[0] + (b[0] - a[0]) * t) / 255, (a[1] + (b[1] - a[1]) * t) / 255, (a[2] + (b[2] - a[2]) * t) / 255);
 
 export async function generateReportPdf(input: GeneratePdfReportInput & { author: AuthoredReport }): Promise<Uint8Array> {
   const { face: f, body } = input.author, name = clean(input.clientName);
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica), bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const font = await doc.embedFont(StandardFonts.Helvetica), bold = await doc.embedFont(StandardFonts.HelveticaBold), mark = await doc.embedFont(StandardFonts.TimesRomanItalic);
   doc.setTitle(`MogaFace - ${name} - Glow-Up Protocol`); doc.setAuthor("MogaFace");
   const approved = (input.previewApproved === true || input.previewStatus === "quality_checked") && !!input.afterImageBytes;
   const date = input.dateStr || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "long", year: "numeric" }).toUpperCase();
@@ -160,23 +174,25 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
 
   // 1 cover
   add({ id: "cover", chapter: "", title: "", chrome: false, custom: p => {
-    p.drawRectangle({ x: 0, y: H * 0.42, width: W, height: H * 0.58, color: DEEP });
-    wave(p, H * 0.42 - 8, hex("#8d79a8"), 0.6); wave(p, H * 0.42 - 62, hex("#c9bcdc"), 0.8); wave(p, H * 0.42 - 116, hex("#ffffff"), 1);
-    p.drawText("MogaFace", { x: 70, y: H - 110, font: bold, size: 30, color: C.white });
-    p.drawText("GLOW-UP", { x: 70, y: H - 330, font: bold, size: 44, color: C.white }); p.drawText("PROTOCOL", { x: 70, y: H - 380, font, size: 44, color: SOFT });
-    p.drawText("PREPARED FOR", { x: 70, y: 232, font, size: 8.5, color: C.muted });
-    let fs = 34; while (font.widthOfTextAtSize(name, fs) > W - 140 && fs > 16) fs -= 1; p.drawText(name, { x: 70, y: 190, font, size: fs, color: C.ink });
-    p.drawLine({ start: { x: 70, y: 168 }, end: { x: 140, y: 168 }, thickness: 1.5, color: MID });
-    p.drawText("MOGAFACE", { x: 70, y: 142, font, size: 8, color: C.muted }); p.drawText(date, { x: 190, y: 142, font, size: 8, color: C.muted });
+    const top0 = H * 0.5, strips = 48;
+    for (let i = 0; i < strips; i++) p.drawRectangle({ x: 0, y: H - ((i + 1) * (H - top0)) / strips - 1, width: W, height: (H - top0) / strips + 2, color: mix([86, 60, 126], [44, 31, 68], i / strips) });
+    hatchedWave(p, top0 + 20, hex("#43305f")); wave(p, top0 - 30, hex("#8f7da9"), 1); wave(p, top0 - 80, hex("#d6cde4"), 2); wave(p, top0 - 130, hex("#ffffff"), 3);
+    p.drawText("Moga", { x: 70, y: H - 112, font, size: 32, color: C.white }); p.drawText("Face", { x: 70 + font.widthOfTextAtSize("Moga", 32), y: H - 112, font: bold, size: 32, color: C.white });
+    p.drawText("GLOW-UP", { x: 70, y: H - 330, font: bold, size: 46, color: C.white }); p.drawText("PROTOCOL", { x: 70, y: H - 382, font, size: 46, color: C.white });
+    spaced(p, "PREPARED FOR", 70, 232, 8, font, C.muted, 2.6);
+    let fs = 36; while (font.widthOfTextAtSize(name, fs) > W - 140 && fs > 16) fs -= 1; p.drawText(name, { x: 70, y: 188, font, size: fs, color: C.ink });
+    p.drawLine({ start: { x: 70, y: 166 }, end: { x: 134, y: 166 }, thickness: 1.5, color: MID });
+    spaced(p, "MOGAFACE", 70, 140, 7.6, font, C.muted, 2.4); spaced(p, date, 180, 140, 7.6, font, C.muted, 2.4);
   } });
   // 2 disclaimer
+  const narrow = (b: Blk, r = 0.88): Blk => ({ h: (w, s) => b.h(w * r, s), draw: (p, x, top, w, s) => b.draw(p, x, top, w * r, s) });
   add({ id: "disclaimer", chapter: "Disclaimer", title: "Disclaimer", blocks: [
-    k.para("This protocol is an aesthetic and lifestyle advisory document. It is not medical advice, a diagnosis, or a treatment plan.", { size: 13.5 }), k.gap(10),
-    k.para("What follows is a personalised assessment of your appearance, based on the photographs, expression video and questionnaire you submitted, together with grooming, skincare, training, nutrition and styling guidance that follows from it. Everything recommended here is something you can do yourself."), k.gap(8),
-    k.para("It is not a medical or dermatological consultation. We do not diagnose conditions. The clinic options page lists categories of treatment only so you can discuss them with a qualified clinician, who must assess your history, medication, allergies and skin; no doses or device settings are given. If you have a skin, hair, joint or dietary condition, or take prescription medication, speak to a qualified professional before changing your routine."), k.gap(8),
-    k.para("Your photographs are read by an AI system. Lighting, camera angle and expression all affect what can be seen, and anything the photographs cannot show has been left unstated rather than guessed at. Treat the observations as a considered reading of your photographs, not a measurement of your face."), k.gap(8),
-    k.para("Projected images, scores and visual ages illustrate a realistic direction of change from consistent effort. They are not a promise of outcome. Results vary with genetics, consistency, age and starting point, and features that cannot change without surgery are identified as such throughout."), k.gap(8),
-    k.para("Product and supplement suggestions are based on your stated budget and the concerns found in your assessment; prices are indicative. We are not responsible for third-party products, and you should always patch-test anything new on a small area of skin first."),
+    narrow(k.para("This protocol is an aesthetic and lifestyle advisory document. It is not medical advice, a diagnosis, or a treatment plan.", { size: 15 }), 0.84), k.gap(14),
+    narrow(k.para("What follows is a personalised assessment of your appearance, based on the photographs, expression video and questionnaire you submitted, together with grooming, skincare, training, nutrition and styling guidance that follows from it. Everything recommended here is something you can do yourself.")), k.gap(8),
+    narrow(k.para("It is not a medical or dermatological consultation. We do not diagnose conditions. The clinic options page lists categories of treatment only so you can discuss them with a qualified clinician, who must assess your history, medication, allergies and skin; no doses or device settings are given. If you have a skin, hair, joint or dietary condition, or take prescription medication, speak to a qualified professional before changing your routine.")), k.gap(8),
+    narrow(k.para("Your photographs are read by an AI system. Lighting, camera angle and expression all affect what can be seen, and anything the photographs cannot show has been left unstated rather than guessed at. Treat the observations as a considered reading of your photographs, not a measurement of your face.")), k.gap(8),
+    narrow(k.para("Projected images, scores and visual ages illustrate a realistic direction of change from consistent effort. They are not a promise of outcome. Results vary with genetics, consistency, age and starting point, and features that cannot change without surgery are identified as such throughout.")), k.gap(8),
+    narrow(k.para("Product and supplement suggestions are based on your stated budget and the concerns found in your assessment; prices are indicative. We are not responsible for third-party products, and you should always patch-test anything new on a small area of skin first.")),
   ] });
   // 3 index placeholder (filled after page numbers are known)
   add({ id: "index", chapter: "Index", title: "Index" });
@@ -281,10 +297,8 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     p.drawText("MogaFace", { x: 70, y: H - 120, font: bold, size: 28, color: DEEP });
     p.drawLine({ start: { x: 70, y: 470 }, end: { x: 140, y: 470 }, thickness: 1.5, color: MID });
     p.drawText("Thank you for choosing MogaFace.", { x: 70, y: 420, font, size: 30, color: C.ink }); p.drawText("We wish you the very best.", { x: 70, y: 390, font, size: 13, color: C.ink });
-    p.drawRectangle({ x: 0, y: 0, width: W, height: 300, color: DEEP });
-    wave(p, 300, hex("#ffffff"), 1, true); wave(p, 262, hex("#c9bcdc"), 0.85, true); wave(p, 222, hex("#8d79a8"), 0.8, true);
-    p.drawRectangle({ x: 0, y: 0, width: W, height: 212, color: DEEP });
-    p.drawText("MOGAFACE", { x: 70, y: 58, font, size: 8, color: SOFT });
+    wave(p, 330, hex("#d6cde4"), 2); wave(p, 284, hex("#8f7da9"), 1); hatchedWave(p, 238, hex("#43305f"));
+    spaced(p, "MOGAFACE", 70, 58, 7.6, font, SOFT, 2.4);
   } });
 
   const total = defs.length;
@@ -294,7 +308,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   for (const [i, d] of defs.entries()) {
     const p = doc.addPage([W, H]), no = i + 1;
     if (d.chrome === false) { d.custom?.(p); continue; }
-    p.drawText("MOGAFACE", { x: 44, y: H - 40, font: bold, size: 8, color: MID });
+    p.drawText("M", { x: 44, y: H - 46, font: mark, size: 24, color: MID });
     const tsz = 23; p.drawText(clean(d.title), { x: (W - font.widthOfTextAtSize(clean(d.title), tsz)) / 2, y: H - 80, font, size: tsz, color: C.ink });
     let top = H - 118;
     if (d.subtitle) { p.drawText(clean(d.subtitle), { x: (W - font.widthOfTextAtSize(clean(d.subtitle), 9.6)) / 2, y: H - 100, font, size: 9.6, color: C.muted }); top = H - 130; }
