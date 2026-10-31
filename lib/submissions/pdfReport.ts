@@ -45,6 +45,8 @@ export interface GeneratePdfReportInput {
   previewMessage?: string;
   /** Person-specific content written from the photos; the fixed template is used when absent. */
   author?: import("./reportAuthor.ts").AuthoredReport | null;
+  /** Normalised face/hair ellipses from the browser; used to crop close-ups onto the right region. */
+  portraitGeometry?: import("../image-generation/portraitGeometry.ts").PortraitGeometry | null;
   realAge?: number | null;
 }
 

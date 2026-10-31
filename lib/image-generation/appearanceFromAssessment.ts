@@ -6,16 +6,20 @@ import { renderRealismPrompt } from "./realismPrompt.server.ts";
 import type { ExpressionAnalysis } from "../observation/types.ts";
 import { expressionContext } from "../observation/expressionContext.ts";
 /** Only allowlisted cosmetic preferences reach the renderer. No history, budget, medication, or raw free text. */
-export function appearancePlanFromAssessment(a:Assessment,expression?:ExpressionAnalysis|null){
- const intake=a.clinicIntake,places=new Set(intake.places);
- const hair=places.has("HAIR") && replyOf(intake,"protocolHairGoal")!=="maintain";
- const skin=["SKIN_TEXTURE","SKIN_TONE","PIGMENTATION","BLEMISHES"].some(k=>places.has(k as typeof intake.places[number])) && !pickedOf(intake,"protocolSkinConcerns").includes("none");
- const contour=places.has("FACIAL_DEFINITION");
- const underEye=places.has("UNDER_EYE");
- const forehead=places.has("FACIAL_LINES");
+/**
+ * `improveAll` (the customer report) edits every area that can visibly improve, not only the questionnaire ticks:
+ * hair unless the user wants to keep their style or is bald, skin unless they said "none", plus jaw, under-eye and forehead.
+ */
+export function appearancePlanFromAssessment(a:Assessment,expression?:ExpressionAnalysis|null,options:{improveAll?:boolean}={}){
+ const intake=a.clinicIntake,places=new Set(intake.places),all=options.improveAll===true;
+ const hair=(all||places.has("HAIR")) && replyOf(intake,"protocolHairGoal")!=="maintain";
+ const skin=(all||["SKIN_TEXTURE","SKIN_TONE","PIGMENTATION","BLEMISHES"].some(k=>places.has(k as typeof intake.places[number]))) && !pickedOf(intake,"protocolSkinConcerns").includes("none");
+ const contour=all||places.has("FACIAL_DEFINITION");
+ const underEye=all||places.has("UNDER_EYE");
+ const forehead=all||places.has("FACIAL_LINES");
  const plan=buildAppearancePlan({hair:hair?"balanced":"preserve",skin:skin?"balanced":"preserve",contour:contour?"balanced":"preserve"},{simulateHair:hair,focus:"all"});
  // Full reports cover all areas; image changes still require the user's selection.
- plan.areas=plan.areas.map(area=>area.key==="under_eye" && !places.has("UNDER_EYE") ? {...area,level:"preserve",instruction:"Preserve under-eye shadows, eye shape and eyelids unchanged."} : area.key==="forehead" && !places.has("FACIAL_LINES") ? {...area,level:"preserve",instruction:"Preserve forehead lines and expression unchanged."} : area);
+ plan.areas=all ? plan.areas : plan.areas.map(area=>area.key==="under_eye" && !places.has("UNDER_EYE") ? {...area,level:"preserve",instruction:"Preserve under-eye shadows, eye shape and eyelids unchanged."} : area.key==="forehead" && !places.has("FACIAL_LINES") ? {...area,level:"preserve",instruction:"Preserve forehead lines and expression unchanged."} : area);
  const texture=replyOf(intake,"protocolHairTexture");
  if(hair && ["straight","wavy","curly","coily","bald"].includes(texture)){
   const h=plan.areas.find(area=>area.key==="hair")!;

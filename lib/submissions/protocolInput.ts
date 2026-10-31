@@ -1,5 +1,6 @@
 import type { AnalysisRecord } from "../analysis-session/types.ts";
 import type { GeneratePdfReportInput } from "./pdfReport.ts";
+import { validPortraitGeometry } from "../image-generation/portraitGeometry.ts";
 function previewMessage(summary:string, hasAfter:boolean):string{
  if(hasAfter)return "A quality-screened AI illustration is included. It is not a predicted treatment result.";
  const marker=/\[PREVIEW_STATUS:([^\]]+)\]/.exec(summary)?.[1];
@@ -24,5 +25,5 @@ export function protocolInput(record:AnalysisRecord, input:{name:string;id:strin
  return {clientName:input.name,referenceId:input.id,assessment:record.assessment,analysis:record.analysis,beforeImageBytes:input.front,
  leftImageBytes:record.reportPhotos ? Buffer.from(record.reportPhotos.leftFortyFive.base64,"base64") : null,
  rightImageBytes:record.reportPhotos ? Buffer.from(record.reportPhotos.rightFortyFive.base64,"base64") : null,
- afterImageBytes:input.after,...(input.after?{previewStatus:"quality_checked" as const}:{}),previewMessage:previewMessage(summary,!!input.after),reportSummary:summary,author:input.author,detectedAreas:[],intakeConcerns:record.assessment.clinicIntake.places};
+ afterImageBytes:input.after,...(input.after?{previewStatus:"quality_checked" as const}:{}),previewMessage:previewMessage(summary,!!input.after),reportSummary:summary,author:input.author,portraitGeometry:validPortraitGeometry(record.portraitGeometry)?record.portraitGeometry:null,detectedAreas:[],intakeConcerns:record.assessment.clinicIntake.places};
 }

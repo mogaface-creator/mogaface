@@ -93,7 +93,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   let editRegions=input.editRegions ?? ALL_PORTRAIT_EDIT_REGIONS;
   let appearancePlan:ReturnType<typeof appearancePlanFromAssessment>|null=null;
   if(input.record?.assessment){
-    appearancePlan=appearancePlanFromAssessment(input.record.assessment,input.record.videoPreviewContextConsent === "granted" ? input.record.analysis.expression : undefined);
+    appearancePlan=appearancePlanFromAssessment(input.record.assessment,input.record.videoPreviewContextConsent === "granted" ? input.record.analysis.expression : undefined,{improveAll:true});
     // Production preferences always determine the prompt; callers cannot replace them.
     prompt=appearancePlan.prompt;
     editRegions=appearancePlan.editRegions;
