@@ -8,6 +8,12 @@ import type { AuthoredReport } from "./reportAuthor.ts";
 import type { ProtocolPage, ProtocolBlock } from "./protocolContent.ts";
 
 const b = (title: string, text: string): ProtocolBlock => ({ title, text });
+/** Cuts to whole sentences so a card never ends mid-word. */
+const brief = (t: string, max = 220) => {
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max), i = cut.lastIndexOf(". ");
+  return i > 60 ? cut.slice(0, i + 1) : `${cut.replace(/\s+\S*$/, "")}...`;
+};
 const inr = (n: number) => (n > 0 ? `Rs ${n.toLocaleString("en-IN")}` : "");
 const HAIR_CARE: Record<string, string> = {
   curly: "Wash 2 times a week with a sulfate-free shampoo, condition every wash from mid-length to ends, detangle only when wet with fingers or a wide-tooth comb, and air-dry or diffuse on low heat. Scrunch in a light curl cream on damp hair.",
@@ -27,7 +33,7 @@ export function bodyStats(a: Assessment | null | undefined): { label: string; va
     const act = replyOf(a.clinicIntake, "protocolActivity"), factor = act === "5plusPerWeek" ? 1.55 : act === "3to4PerWeek" ? 1.45 : 1.3;
     out.push({ label: "MAINTENANCE (EST.)", value: `${Math.round((bmr * factor) / 10) * 10} kcal`, sub: "Daily energy at your activity level" });
   }
-  out.push({ label: "PROTEIN (EST.)", value: `${Math.round((w * 1.6) / 5) * 5} g`, sub: "Per day, 1.6 g per kg" }, { label: "WATER (EST.)", value: `${(Math.round(w * 35 / 250) * 250 / 1000).toFixed(2).replace(/0$/, "")} L`, sub: "Per day, minimum" });
+  out.push({ label: "PROTEIN (EST.)", value: `${Math.round((w * 1.6) / 5) * 5} g`, sub: "Per day, 1.6 g per kg" });
   return out;
 }
 
@@ -49,26 +55,22 @@ export function applyAuthor(template: ProtocolPage[], r: AuthoredReport, a: Asse
   pages.push({ id: "index", title: "Contents", subtitle: "YOUR PROTOCOL AT A GLANCE", blocks: [], takeaway: "" }); // filled below once page numbers are known
 
   pages.push(page("overview", `${opts.name}'s protocol`, "CURRENT LOOK AND OPTIMAL LOOK", r.outcomes.map(o => b(o.title, o.text)), {
-    region: "portrait", scope: r.scope, holding: r.holding,
+    region: "portrait", scope: r.scope, holding: brief(r.holding),
     ages: r.apparentAge && r.achievableAge ? { now: String(opts.realAge ?? r.apparentAge), nowLabel: opts.realAge ? "REAL AGE" : "LOOKS AROUND", achievable: String(Math.min(r.achievableAge, opts.realAge ?? r.apparentAge)) } : undefined,
   }));
 
-  pages.push(page("hair", "Hair and scalp", "YOUR STARTING POINT", [
+  pages.push(page("hair", "Hair and hairline", "YOUR STARTING POINT", [
     b("What we see", r.hair.summary + (r.hair.tags.length ? `\nTags: ${r.hair.tags.join(" / ")}` : "")),
     b("Hair care", texture === "bald" ? "Cleanse the scalp 2 to 3 times a week with a gentle shampoo and moisturise it; use sunscreen on exposed scalp outdoors." : HAIR_CARE[texture] || HAIR_CARE.wavy),
+    b(`Hairline${r.hair.hairlineStage ? `: ${r.hair.hairlineStage}` : ""} (a description of shape, not a prediction)`, r.hair.hairline),
+    b("If shedding is changing", "If hair is shedding more than usual or the part and temples are widening, see a dermatologist: the cause decides the treatment, and a haircut or a generated image cannot establish it."),
   ], { region: "hair" }));
   pages.push(page("haircut", "Your haircut", `${r.hair.cut.toUpperCase()}`, [b("Why this cut", r.hair.why), b("What to ask your barber for", r.hair.barber), b("How to style it", r.hair.styling)]));
-  pages.push(page("hairline", "Hairline and density", `STAGE: ${(r.hair.hairlineStage || "described below").toUpperCase()} (A DESCRIPTION OF SHAPE, NOT A PREDICTION)`, [
-    b("What is visible", r.hair.hairline),
-    b("If shedding is changing", "If hair is shedding more than usual or the part and temples are widening, see a dermatologist: the cause decides the treatment, and a haircut or a generated image cannot establish it."),
-  ]));
   pages.push(page("eyes", "Eye area", "SHADOW, TEXTURE AND EXPRESSION", [b("Assessment", r.eyes.assessment), b("Under-eye care", r.eyes.care)], {
     region: "eyes", rows: r.eyes.features.map(f => ({ label: f.label.toUpperCase(), text: f.value })),
   }));
-  pages.push(page("brows", "Eyebrows", `YOURS NOW: ${r.eyes.browShape.toUpperCase() || "NATURAL"}`, [b("Plan", r.eyes.browPlan)]));
-  pages.push(page("glasses", "Glasses", "WHAT SUITS YOUR FACE", [b(`Frames that work for your ${r.faceShape || "face"} shape`, r.eyes.glasses)]));
-  pages.push(page("jaw", "Jaw and lower face", "STRUCTURE AND SOFT TISSUE", [b("Structure", r.jaw.structure), b("Fat and fluid", r.jaw.softTissue)], { region: "jaw" }));
-  pages.push(page("definition", "Defining the jaw", "CORRECTIVE METHODS", r.jaw.methods.map((m, i) => b(`${String(i + 1).padStart(2, "0")} / ${m.title}`, m.text))));
+  pages.push(page("brows", "Eyebrows and glasses", `BROWS NOW: ${r.eyes.browShape.toUpperCase() || "NATURAL"}`, [b("Brow plan", r.eyes.browPlan), b(`Frames that work for your ${r.faceShape || "face"} shape`, r.eyes.glasses)]));
+  pages.push(page("jaw", "Jaw and lower face", "STRUCTURE, SOFT TISSUE AND WHAT CHANGES IT", [b("Structure", r.jaw.structure), b("Fat and fluid", r.jaw.softTissue), ...r.jaw.methods.map((m, i) => b(`${String(i + 1).padStart(2, "0")} / ${m.title}`, m.text))], { region: "jaw" }));
   if (r.facialHair.now || r.facialHair.plan) pages.push(page("facial-hair", "Facial hair", "WHERE YOU ARE NOW", [b("Where you are now", r.facialHair.now), b("Your plan", r.facialHair.plan)], { region: "jaw" }));
   pages.push(page("skin", "Skin", "CONDITION", [b("Condition", r.skin.condition), b("Skin type", r.skin.type), b("Rules that protect the results", "Patch-test any new product on a small area first. Add one new active at a time and wait two weeks before the next. Do not over-exfoliate. Wear SPF 30 or higher every morning; it protects every other step.")], { region: "skin" }));
   pages.push(page("skin-concerns", "Skin concerns", "WHAT WE SEE AND WHAT TO DO", r.skin.concerns.map(c => b(c.title, `${c.seen ? c.seen + "\n" : ""}${c.action}`))));
@@ -90,9 +92,11 @@ export function applyAuthor(template: ProtocolPage[], r: AuthoredReport, a: Asse
     ...r.weaknesses.map(s => b(`Can improve: ${s.title}`, s.text)),
   ]));
   pages.push(page("priorities", "What to focus on", "YOUR PRIORITIES", [...r.priorities.map((p, i) => b(`${String(i + 1).padStart(2, "0")} / ${p.title}`, p.text)), b("Your potential", r.potential)]));
-  pages.push({ ...tpl("sources"), takeaway: "Thank you for choosing MogaFace. Bring this protocol to a clinician or stylist; update it when your goals change." });
+  const sources = tpl("sources");
+  sources.blocks = sources.blocks.map(x => x.title === "How this report was assembled" ? b(x.title, "Written by MogaFace's AI analysis of your photographs and questionnaire answers. Styling and product suggestions are directions to try; scope scores and visual age are estimates, not measurements or beauty ratings.") : x);
+  pages.push({ ...sources, takeaway: "Thank you for choosing MogaFace. Bring this protocol to a clinician or stylist; update it when your goals change." });
 
-  const groups: [string, string[]][] = [["Start here", ["scope", "overview"]], ["Hair", ["hair", "haircut", "hairline"]], ["Face", ["eyes", "brows", "glasses", "jaw", "definition", "facial-hair"]], ["Skin and clinic", ["skin", "skin-concerns", "clinical"]], ["Lifestyle", ["exercise", "facial-exercises", "nutrition", "style", "toolkit"]], ["Close", ["summary", "priorities", "sources"]]];
+  const groups: [string, string[]][] = [["Start here", ["scope", "overview"]], ["Hair", ["hair", "haircut"]], ["Face", ["eyes", "brows", "jaw", "facial-hair"]], ["Skin and clinic", ["skin", "skin-concerns", "clinical"]], ["Lifestyle", ["exercise", "facial-exercises", "nutrition", "style", "toolkit"]], ["Close", ["summary", "priorities", "sources"]]];
   const num = (id: string) => pages.findIndex(p => p.id === id) + 1;
   const idx = pages.find(p => p.id === "index")!;
   idx.blocks = groups.map(([g, ids]) => b(g, ids.filter(id => num(id) > 0).map(id => `${String(num(id)).padStart(2, "0")} / ${pages[num(id) - 1].title}`).join("\n"))).filter(x => x.text);

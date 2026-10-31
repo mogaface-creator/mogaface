@@ -205,21 +205,20 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     const finalBase64=Buffer.from(finalBytes).toString("base64");
     if(!validateGeneratedImage(finalBase64,bytes).ok)return {ok:false,reason:"invalid_composited_image"};
 
-    // Automated quality & identity preservation triage
-    const review = await reviewAfterImage({
-      apiKey,
-      model: env.CLINICAL_VISION_MODEL?.trim() || "gpt-4o",
-      before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`,
-      after: `data:${finalMime};base64,${finalBase64}`,
-      prompt,
-    });
+    // Automated quality & identity preservation triage. gpt-4o intermittently returns an unusable
+    // answer for this two-face comparison, so the reviewer defaults to gpt-4.1 (IMAGE_REVIEW_MODEL to override)
+    // and an unusable reply is retried once.
+    const reviewModel = env.IMAGE_REVIEW_MODEL?.trim() || "gpt-4.1";
+    const reviewInput = { apiKey, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt };
+    let review = await reviewAfterImage(reviewInput);
+    if (review.status === "unavailable" && review.code === "review_invalid_response") review = await reviewAfterImage(reviewInput);
 
     console.log("[imageJob] Image review outcome:", review.status);
 
     if (review.status !== "approved") {
       if (review.status === "unavailable") {
         console.warn(
-          `[imageJob] Image review unavailable (${review.code}${review.httpStatus ? `; HTTP ${review.httpStatus}` : ""}; model ${env.CLINICAL_VISION_MODEL?.trim() || "gpt-4o"}).`,
+          `[imageJob] Image review unavailable (${review.code}${review.httpStatus ? `; HTTP ${review.httpStatus}` : ""}; model ${reviewModel}).`,
         );
       }
       return {ok:false,reason:review.status === "rejected" ? "image_quality_review_failed" : "image_review_unavailable",review,...(input.debugPreview ? {debugPreview:{base64:finalBase64,mime:finalMime}} : {})};

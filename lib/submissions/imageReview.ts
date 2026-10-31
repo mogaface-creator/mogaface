@@ -51,8 +51,10 @@ export async function reviewAfterImage(input: {
     if (!response.ok) return { status: "unavailable", code: "review_provider_error", httpStatus: response.status };
     try {
       const data = await response.json();
-      const parsed = JSON.parse(data.choices?.[0]?.message?.content ?? "null");
+      const content: string = data.choices?.[0]?.message?.content ?? "null";
+      const parsed = JSON.parse(content);
       const review = parseReview(parsed), comparison = parseComparison(parsed?.comparison);
+      if (!(review && comparison)) console.warn(`[imageReview] unusable review reply (${input.model}): ${content.slice(0, 200)}`);
       return review && comparison ? {...review, comparison} : { status: "unavailable", code: "review_invalid_response" };
     } catch { return { status: "unavailable", code: "review_invalid_response" }; }
   } catch (error) {
