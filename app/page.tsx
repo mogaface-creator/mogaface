@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AsSeenInMarquee } from "@/components/marketing/AsSeenInMarquee";
-import { HeroConsultationPortal } from "@/components/marketing/HeroConsultationPortal";
 import { TransformationShowcase } from "@/components/marketing/TransformationShowcase";
 import { QovesWhyGlowUp } from "@/components/marketing/QovesWhyGlowUp";
 import { QovesCompleteAnalysis } from "@/components/marketing/QovesCompleteAnalysis";
@@ -43,7 +42,7 @@ export default function Home() {
               {/* Primary Dual CTAs */}
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/#portal"
+                  href="/assessment"
                   className="rounded-full bg-[#182327] px-8 py-3.5 text-sm font-semibold text-white hover:bg-[#28383f] transition-all shadow-xs"
                 >
                   Start my plan
@@ -77,13 +76,6 @@ export default function Home() {
 
         {/* Media Coverage / As Seen In Marquee */}
         <AsSeenInMarquee />
-
-        {/* Instant Interactive AI Consultation & Simulation Portal */}
-        <section className="py-12 sm:py-16 bg-[#ffffff] border-b border-[#e6ebed]">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <HeroConsultationPortal />
-          </div>
-        </section>
 
         {/* Life-changing Transformations Showcase */}
         <TransformationShowcase />

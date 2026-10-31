@@ -16,7 +16,7 @@ const STEPS = [
   {
     step: "03",
     title: "Get Your Protocol & Visuals",
-    body: "Receive your comprehensive non-surgical transformation protocol, realistic identity-locked before/after previews, and your 2-Page Executive Clinical Consultation Dossier.",
+    body: "Receive your 25-page Personal Appearance Protocol. If requested, consented to and quality-screened, an illustrative before-and-after preview is included. Clinic options require clinician review.",
     badge: "Compounding Non-Surgical Results",
   },
 ];

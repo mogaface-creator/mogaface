@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function DossierPreview() {
@@ -57,16 +56,8 @@ export function DossierPreview() {
             </div>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
-              <a href="#portal" className="w-full sm:w-auto">
+              <a href="/assessment" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto shadow-elevated">Get Your Free Dossier</Button>
-              </a>
-              <a
-                href="/api/test-pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-semibold tracking-wide text-violet-700 underline decoration-violet-300 decoration-2 underline-offset-4 hover:text-violet-900 text-center sm:text-left"
-              >
-                View Sample PDF Report ↗
               </a>
             </div>
           </div>

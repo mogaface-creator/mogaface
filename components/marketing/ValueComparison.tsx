@@ -5,8 +5,8 @@ const INCLUDED_BENEFITS = [
   "Complete 512-point facial analysis across all facial thirds",
   "Personalized non-surgical facial improvement protocol",
   "Biometric scores: symmetry index & golden ratio facial harmony",
-  "Realistic before-and-after visualizations with 100% identity lock",
-  "Executive 2-Page Clinical Consultation Dossier (PDF)",
+  "Optional illustrative before-and-after preview, subject to quality review",
+  "25-page Personal Appearance Protocol (PDF)",
   "Access to our care team whenever you need advice",
   "Encrypted & confidential: photos never shared publicly",
 ];
@@ -77,7 +77,7 @@ export function ValueComparison() {
                   <h3 className="text-xl sm:text-2xl font-medium text-[#141e22] mt-1">Full Clinical Plan</h3>
                 </div>
                 <span className="rounded-full bg-[#edf2f4] px-3.5 py-1 text-xs font-bold text-[#182327]">
-                  Instant ~60s
+                  After assessment
                 </span>
               </div>
 
@@ -95,7 +95,7 @@ export function ValueComparison() {
 
             <div className="mt-8 pt-6 border-t border-[#edf2f4]">
               <Link
-                href="/#portal"
+                href="/assessment"
                 className="w-full inline-flex items-center justify-center rounded-full bg-[#182327] hover:bg-[#28383f] text-white text-sm font-semibold py-3.5 px-6 transition-all shadow-xs"
               >
                 Start my plan now

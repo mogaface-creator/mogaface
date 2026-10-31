@@ -13,12 +13,14 @@ import {generateAfterImage} from '../../lib/submissions/imageJob.ts';
 import {protocolInput} from '../../lib/submissions/protocolInput.ts';
 import {generatePdfReport} from '../../lib/submissions/pdfReport.ts';
 import {downloadSubmissionReport} from '../../lib/submissions/reportDownload.ts';
+import {COMPARISON_REGIONS} from '../../lib/submissions/imageReview.ts';
 import {buildProtocolPages} from '../../lib/submissions/protocolContent.ts';
 const deps={env:{NODE_ENV:'test'}};
+const geometry={face:{cx:.5,cy:.55,rx:.25,ry:.25},hair:{cx:.5,cy:.25,rx:.3,ry:.16},protected:[{cx:.4,cy:.45,rx:.07,ry:.04},{cx:.6,cy:.45,rx:.07,ry:.04},{cx:.5,cy:.55,rx:.04,ry:.08},{cx:.5,cy:.66,rx:.08,ry:.04},{cx:.5,cy:.35,rx:.1,ry:.02}]};
 test('questions + three photos + saved video evidence reach the after-image report and protected download',async()=>{
  let a=projectPlaces(createEmptyAssessment(),['HAIR','BLEMISHES']);a=setAnswer(a,'protocolHairTexture','curly');a=setAnswer(a,'protocolHairGoal','texture');a=setAnswer(a,'wantAfterPhoto','yes');
  const analysis=buildMogaFaceAnalysis(a,null);analysis.expression={status:'analyzed',measured:[],expressions:[{type:'dynamic_expression_observation',expression:'BROW_RAISE',region:'FOREHEAD',status:'observed',evidence:{neutralFrames:[0],expressionFrames:[1],movementMetric:'test movement vs neutral',movementPct:12},strength:'low',reason:'Synthetic test fixture'}],linePatterns:[],notes:[]};
- const handle=await createAnalysisRecord({assessment:a,analysis,photoQualityValid:true,hasLeftFortyFive:true,hasRightFortyFive:true},deps);assert.ok(handle);
+ const handle=await createAnalysisRecord({assessment:a,analysis,photoQualityValid:true,hasLeftFortyFive:true,hasRightFortyFive:true,portraitGeometry:geometry},deps);assert.ok(handle);
  const original=await sharp({create:{width:600,height:800,channels:3,background:'#777777'}}).jpeg().toBuffer();
  const after=await sharp({create:{width:600,height:800,channels:3,background:'#888888'}}).jpeg().toBuffer();
  const form=new FormData();for(const field of ['photo','leftPhoto','rightPhoto'])form.set(field,new Blob([original],{type:'image/jpeg'}),field+'.jpg');form.set('payload',JSON.stringify({...handle,photoVisualizationConsent:'granted'}));
@@ -27,7 +29,7 @@ test('questions + three photos + saved video evidence reach the after-image repo
  assert.equal(await claimSubmission(submissionId,deps),true);assert.equal(await claimSubmission(submissionId,deps),false);
  const previousFetch=globalThis.fetch,previousKey=process.env.OPENAI_API_KEY,previousProvider=process.env.IMAGE_GENERATION_PROVIDER;
  process.env.OPENAI_API_KEY='test-only-key';process.env.IMAGE_GENERATION_PROVIDER='openai';let edits=0;
- globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/images/edits')){edits++;assert.match(String((init?.body as FormData).get('prompt')),/reports curly hair/);return Response.json({data:[{b64_json:after.toString('base64')}]});}return Response.json({choices:[{message:{content:JSON.stringify({samePerson:true,naturalTexture:true,preservedLighting:true,preservedUnselectedAreas:true,subtleChanges:true,reason:'Synthetic test review'})}}]});};
+ globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/images/edits')){edits++;assert.match(String((init?.body as FormData).get('prompt')),/reports curly hair/);return Response.json({data:[{b64_json:after.toString('base64')}]});}return Response.json({choices:[{message:{content:JSON.stringify({samePerson:true,naturalTexture:true,preservedLighting:true,preservedUnselectedAreas:true,subtleChanges:true,reason:'Synthetic test review',comparison:COMPARISON_REGIONS.map(region=>({region,original:'Original detail.',change:'No clear change.',status:'no_clear_change',artifacts:'Synthetic fixture.'}))})}}]});};
  let generated:Awaited<ReturnType<typeof generateAfterImage>>;
  try{generated=await generateAfterImage({beforeBytes:original,beforeMime:'image/jpeg',record});}finally{globalThis.fetch=previousFetch;if(previousKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=previousKey;if(previousProvider===undefined)delete process.env.IMAGE_GENERATION_PROVIDER;else process.env.IMAGE_GENERATION_PROVIDER=previousProvider;}
  assert.equal(generated.ok,true);assert.equal(edits,1);if(!generated.ok)throw Error('test generation failed');

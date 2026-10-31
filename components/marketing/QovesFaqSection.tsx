@@ -18,7 +18,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "What exactly will I receive?",
-    a: "You receive: (1) A comprehensive facial analysis evaluating bilateral symmetry, proportions, and facial thirds; (2) A personalized non-surgical glow-up protocol with step-by-step guidance; (3) Your exact biometric scores; (4) Realistic identity-locked before-and-after visualizations; and (5) A luxury 2-page Clinical Consultation Dossier PDF that you can save, print, and bring directly to your aesthetic practitioner.",
+    a: "You receive a 25-page Personal Appearance Protocol based on your assessment answers and submitted photographs, with guidance on hair, grooming, skin, lifestyle and style. An illustrative before-and-after preview is included only when requested, consented to and quality-screened. You can download the PDF and receive it by email if you supplied an address. Clinic options require a qualified clinician’s review.",
   },
   {
     q: "What makes this different from beauty apps or filters?",

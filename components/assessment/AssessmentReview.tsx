@@ -204,6 +204,10 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     // /submitted — the background job handles image generation + PDF + email.
     const frontRecord = nextRecords.find((r) => r.slot === "front");
     const safePortraitGeometry=frontRecord?.landmarks ? buildPortraitGeometry(frontRecord.landmarks) : null;
+    if (photoConsent === "granted" && assessment.clinicIntake.wantAfterPhoto !== "no" && !safePortraitGeometry) {
+      setSubmitError("We could not locate your face clearly enough to prepare the after photo. Please replace the front photo with a clear, level portrait and try again, or choose a report without an after photo.");
+      return;
+    }
     setCreatingSession(true);
     const session = await createAnalysisSession({
       assessment,

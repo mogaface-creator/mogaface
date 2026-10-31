@@ -44,14 +44,7 @@ export function Header() {
         {/* Right Actions */}
         <div className="flex items-center gap-4 sm:gap-6">
           <Link
-            href="/test-lab"
-            className="hidden sm:inline-block text-xs font-semibold text-[#50636a] hover:text-[#162125] transition-colors"
-          >
-            Testing Lab
-          </Link>
-
-          <Link
-            href="/#portal"
+            href="/assessment"
             className="inline-flex items-center justify-center rounded-full bg-[#182327] px-5 py-2.5 text-xs font-medium text-white hover:bg-[#2c3c42] transition-all shadow-xs active:scale-98"
           >
             Start my plan

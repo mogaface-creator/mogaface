@@ -39,7 +39,6 @@ function checkNewRequested(): boolean {
 function initialAssessment(): Assessment {
   if (checkNewRequested()) {
     clearAssessment();
-    void clearAllMedia();
     return createEmptyAssessment();
   }
   return loadAssessment() ?? createEmptyAssessment();
@@ -47,6 +46,8 @@ function initialAssessment(): Assessment {
 
 export function AssessmentShell() {
   const [assessment, setAssessment] = useState<Assessment>(initialAssessment);
+  const [resetRequested] = useState(checkNewRequested);
+  const resetMediaRef = useRef<Promise<void> | null>(null);
   const [stepId, setStepId] = useState<StepId>("intro");
   const [cursor, setCursor] = useState(0);
   const [sessionFiles, setSessionFiles] = useState<SessionFiles>({});
@@ -64,16 +65,19 @@ export function AssessmentShell() {
   // the metadata loaded at mount. Runs once: later photo/video changes update sessionFiles
   // directly, they don't need to go through IndexedDB again.
   useEffect(() => {
-    if (checkNewRequested()) {
-      clearAssessment();
-      void clearAllMedia();
-      setSessionFiles({});
-      setSessionVideo(null);
-      setMediaHydrated(true);
+    if (resetRequested) {
+      // State already starts empty for a new assessment. Wait for old media
+      // to be removed before allowing photo collection to proceed.
+      let cancelled = false;
+      // Reuse the cleanup if React replays this effect in development.
+      resetMediaRef.current ??= clearAllMedia();
+      void resetMediaRef.current.then(() => {
+        if (!cancelled) setMediaHydrated(true);
+      });
       if (typeof window !== "undefined" && window.history?.replaceState) {
         window.history.replaceState({}, "", window.location.pathname);
       }
-      return;
+      return () => { cancelled = true; };
     }
 
     let cancelled = false;

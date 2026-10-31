@@ -31,8 +31,7 @@ export function Footer() {
             </div>
             <div className="flex flex-col gap-2.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#90a2a8]">Tools</span>
-              <Link href="/#portal" className="hover:text-[#162125] transition-colors">AI Simulation</Link>
-              <Link href="/test-lab" className="hover:text-[#162125] transition-colors">Testing Lab</Link>
+              <Link href="/assessment" className="hover:text-[#162125] transition-colors">Start assessment</Link>
               <Link href="/#faq" className="hover:text-[#162125] transition-colors">FAQ</Link>
             </div>
             <div className="flex flex-col gap-2.5">

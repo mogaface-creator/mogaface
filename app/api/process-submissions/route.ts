@@ -161,6 +161,16 @@ export async function processOne(
 
     if(!/\[PREVIEW_STATUS:[^\]]+\]/.test(reportSummary))reportSummary += ` [PREVIEW_STATUS:${previewStatus}]`;
 
+    // Preserve a reviewed preview before PDF rendering or email can fail. A retry
+    // reuses these exact bytes rather than paying for a different generated image.
+    if (afterBase64 && !await updateSubmission(id, {
+      status: "processing",
+      afterImageBase64: afterBase64,
+      afterImageMime: afterMime,
+      reportSummary,
+      detectedAreas,
+    })) throw new Error("preview_storage_failed");
+
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
     // 6. Generate the full questionnaire-driven Next Face protocol
