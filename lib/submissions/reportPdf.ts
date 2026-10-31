@@ -198,7 +198,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   add({ id: "index", chapter: "Index", title: "Index" });
   // 4 protocol (hero)
   add({ id: "hero", chapter: `${name}'s Protocol`, title: `${name}'s Protocol` });
-  const heroNow = await addPhoto("hero-now", "now", "portrait", (CWD - 14) / 2, 214), heroAfter = approved ? await addPhoto("hero-after", "after", "portrait", (CWD - 14) / 2, 214) : null;
+  const heroNow = await addPhoto("hero-now", "now", "portrait", (CWD - 14) / 2, 246), heroAfter = approved ? await addPhoto("hero-after", "after", "portrait", (CWD - 14) / 2, 246) : null;
 
   // 5 hair
   const hairCareGrid = k.grid(f.hair.care.map(c => k.sub(c.title, c.text)), 2);
@@ -323,25 +323,25 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
       continue;
     }
     if (d.id === "hero") {
-      const gw = (CWD - 14) / 2, ih = 214, iy = top - 4;
+      const gw = (CWD - 14) / 2, ih = 246, iy = top - 4;
       for (const [x, label, key] of [[MX, "CURRENT LOOK", heroNow], ...(heroAfter ? [[MX + gw + 14, "OPTIMAL LOOK", heroAfter]] : [])] as [number, string, string][]) { p.drawRectangle({ x, y: iy - 26, width: gw, height: 26, color: hex("#1f1530") }); p.drawText(label, { x: x + (gw - bold.widthOfTextAtSize(label, 8.6)) / 2, y: iy - 17, font: bold, size: 8.6, color: C.white }); const im = imgs.get(key)!; p.drawImage(im, { x, y: iy - 26 - ih, width: gw, height: ih }); }
       if (!heroAfter) p.drawText("An illustrative after photo is not included with this report.", { x: MX + gw + 14, y: iy - 140, font, size: 8.6, color: C.muted });
-      const cy = iy - 26 - ih - 16, ch = 268, hw = (CWD - 14) / 2;
+      const cy = iy - 26 - ih - 14, ch = 246, hw = (CWD - 14) / 2;
       for (const x of [MX, MX + hw + 14]) p.drawSvgPath(k.roundRect(hw, ch, 6), { x, y: cy, color: C.white, borderColor: C.line, borderWidth: 0.8 });
       const oc = f.outcomes.slice(0, 5); p.drawText("PROTOCOL OUTCOMES", { x: MX + (hw - bold.widthOfTextAtSize("PROTOCOL OUTCOMES", 7.6)) / 2, y: cy - 18, font: bold, size: 7.6, color: C.ink });
       let ts = 8.8; const ol = (sz: number) => oc.map(o => wrap(o.text, font, sz, hw - 28)); while (ol(ts).reduce((a, l) => a + 14 + l.length * (ts + 2) + 6, 0) > ch - 36 && ts > 6.4) ts -= 0.2;
       let oy = cy - 38; oc.forEach((o, n) => { p.drawText(clean(o.title), { x: MX + 14, y: oy, font: bold, size: 9.6, color: C.ink }); oy -= 13; for (const l of ol(ts)[n]) { p.drawText(l, { x: MX + 14, y: oy, font, size: ts, color: C.ink }); oy -= ts + 2; } oy -= 6; });
       const rx = MX + hw + 14; p.drawText("SCOPE OF IMPROVEMENT", { x: rx + (hw - bold.widthOfTextAtSize("SCOPE OF IMPROVEMENT", 7.6)) / 2, y: cy - 18, font: bold, size: 7.6, color: C.ink });
       const tx = rx + 60, tw2 = hw - 60 - 46; let by = cy - 48;
-      for (const sc of f.scope) { const nx = tx + tw2 * sc.now / 100, ax = tx + tw2 * sc.achievable / 100; p.drawText(clean(sc.area), { x: rx + 14, y: by - 3, font, size: 8.6, color: C.ink }); p.drawRectangle({ x: tx, y: by - 3, width: tw2, height: 6, color: C.line }); p.drawRectangle({ x: nx, y: by - 1.5, width: Math.max(0, ax - nx), height: 3, color: MID }); p.drawCircle({ x: nx, y: by, size: 3.8, color: C.white, borderColor: MID, borderWidth: 1 }); p.drawCircle({ x: ax, y: by, size: 3.8, color: MID }); p.drawText(`+${sc.achievable - sc.now}`, { x: tx + tw2 + 10, y: by - 3, font, size: 8.6, color: MID }); by -= 23; }
+      for (const sc of f.scope) { const nx = tx + tw2 * sc.now / 100, ax = tx + tw2 * sc.achievable / 100; p.drawText(clean(sc.area), { x: rx + 14, y: by - 3, font, size: 8.6, color: C.ink }); p.drawRectangle({ x: tx, y: by - 3, width: tw2, height: 6, color: C.line }); p.drawRectangle({ x: nx, y: by - 1.5, width: Math.max(0, ax - nx), height: 3, color: MID }); p.drawCircle({ x: nx, y: by, size: 3.8, color: C.white, borderColor: MID, borderWidth: 1 }); p.drawCircle({ x: ax, y: by, size: 3.8, color: MID }); p.drawText(`+${sc.achievable - sc.now}`, { x: tx + tw2 + 10, y: by - 3, font, size: 8.6, color: MID }); by -= 21.5; }
       p.drawCircle({ x: rx + hw / 2 - 40, y: by + 4, size: 3, color: C.white, borderColor: MID, borderWidth: 1 }); p.drawText("Now", { x: rx + hw / 2 - 32, y: by + 1, font, size: 7.4, color: C.muted }); p.drawCircle({ x: rx + hw / 2 + 8, y: by + 4, size: 3, color: MID }); p.drawText("Achievable", { x: rx + hw / 2 + 16, y: by + 1, font, size: 7.4, color: C.muted });
       by -= 16; p.drawLine({ start: { x: rx + 14, y: by }, end: { x: rx + hw - 14, y: by }, thickness: 0.5, color: C.line }); by -= 14;
-      p.drawText("HOLDING", { x: rx + 14, y: by, font: bold, size: 7, color: C.muted }); by -= 13; for (const l of wrap(f.holding, font, 8.2, hw - 28).slice(0, 7)) { p.drawText(l, { x: rx + 14, y: by, font, size: 8.2, color: C.ink }); by -= 11; }
+      p.drawText("HOLDING", { x: rx + 14, y: by, font: bold, size: 7, color: C.muted }); by -= 13; for (const l of wrap(f.holding, font, 8.2, hw - 28).slice(0, Math.max(1, Math.floor((by - (cy - ch) - 12) / 11)))) { p.drawText(l, { x: rx + 14, y: by, font, size: 8.2, color: C.ink }); by -= 11; }
       if (f.apparentAge && f.achievableAge && f.achievableAge < f.apparentAge) {
-        const ay = cy - ch - 14, bw = (CWD - 14) / 2;
+        const ay = cy - ch - 10, bw = (CWD - 14) / 2;
         p.drawSvgPath(k.roundRect(bw, 58, 6), { x: MX, y: ay, color: C.white, borderColor: C.line, borderWidth: 0.9 }); p.drawText("LOOKS AROUND", { x: MX + (bw - font.widthOfTextAtSize("LOOKS AROUND", 8)) / 2, y: ay - 17, font, size: 8, color: C.muted }); p.drawText(String(f.apparentAge), { x: MX + (bw - bold.widthOfTextAtSize(String(f.apparentAge), 26)) / 2, y: ay - 47, font: bold, size: 26, color: C.ink });
         p.drawSvgPath(k.roundRect(bw, 58, 6), { x: MX + bw + 14, y: ay, color: DEEP }); p.drawText("ACHIEVABLE VISUAL AGE", { x: MX + bw + 14 + (bw - font.widthOfTextAtSize("ACHIEVABLE VISUAL AGE", 8)) / 2, y: ay - 17, font, size: 8, color: SOFT }); p.drawText(String(f.achievableAge), { x: MX + bw + 14 + (bw - bold.widthOfTextAtSize(String(f.achievableAge), 26)) / 2, y: ay - 47, font: bold, size: 26, color: C.white });
-        p.drawText("Estimates of what consistent effort can realistically give; not measurements or a promise of results.", { x: MX, y: ay - 72, font, size: 6.8, color: C.muted });
+        p.drawText("Estimates of what consistent effort can realistically give; not measurements or a promise of results.", { x: MX, y: ay - 70, font, size: 6.8, color: C.muted });
       }
       continue;
     }
