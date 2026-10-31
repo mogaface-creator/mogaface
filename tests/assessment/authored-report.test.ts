@@ -38,8 +38,8 @@ test("authored protocol renders a clean MogaFace PDF; facial-hair page is droppe
   const author = parseAuthored(model)!;
   const photo = await sharp({ create: { width: 600, height: 800, channels: 3, background: "#777777" } }).jpeg().toBuffer();
   const pages = buildProtocolPages({ name: "Asha", assessment: createEmptyAssessment(), author, realAge: 31 });
-  assert.ok(!pages.some(p => p.id === "facial-hair"));
-  assert.equal(pages.find(p => p.id === "overview")!.ages?.achievable, "27");
+  assert.equal(pages.find(p => p.id === "facial-hair")?.title, "Eyebrows and glasses", "no facial-hair content means the page is brows and glasses only");
+  assert.deepEqual(pages.find(p => p.id === "overview")!.ages, { now: "30", nowLabel: "LOOKS AROUND", achievable: "27" });
   const text = JSON.stringify(pages);
   assert.doesNotMatch(text, /NEXT FACE|Next Face|TEST LAB|Not supplied/);
   const bytes = await generateProtocolPdf({ clientName: "Asha", referenceId: "TEST", beforeImageBytes: photo, assessment: createEmptyAssessment(), author, realAge: 31, reportSummary: "", detectedAreas: [] });

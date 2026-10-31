@@ -40,23 +40,18 @@ export function bodyStats(a: Assessment | null | undefined): { label: string; va
 export function applyAuthor(template: ProtocolPage[], r: AuthoredReport, a: Assessment | null | undefined, opts: { realAge?: number | null; name: string }): ProtocolPage[] {
   const byId = new Map(template.map(p => [p.id, p]));
   const tpl = (id: string) => byId.get(id)!;
-  const texture = (a ? replyOf(a.clinicIntake, "protocolHairTexture") : "") || a?.hair.texture || "";
+  const asked = (a ? replyOf(a.clinicIntake, "protocolHairTexture") : "") || a?.hair.texture || "";
+  const texture = (r.hair.pattern || asked).toLowerCase();
   const page = (id: string, title: string, subtitle: string, blocks: ProtocolBlock[], extra: Partial<ProtocolPage> = {}): ProtocolPage =>
     ({ id, title, subtitle, blocks: blocks.filter(x => x.text.trim()), takeaway: "", ...extra });
   const pages: ProtocolPage[] = [];
 
   pages.push({ ...tpl("cover"), takeaway: "Your photographs and answers shaped every page: what we see, what to do about it and what to buy." });
-  pages.push(page("scope", "How to read this report", "READ THIS FIRST", [
-    b("What it is", "An aesthetic and lifestyle advisory built from your photographs, your answers and any expression video. It describes what is visible and suggests what to do; it is not a medical diagnosis or a treatment plan."),
-    b("What the preview shows", tpl("scope").blocks.find(x => x.title === "What the visual means")?.text || "No appearance preview is included."),
-    b("Scores and ages", "Scope scores and the visual-age figure are estimates of where consistent effort can take you, not measurements. Results vary with genetics, consistency and starting point."),
-    b("Clinic options", "Clinic options are categories to discuss with a qualified clinician. Suitability, risks, timing and cost need an in-person assessment; no doses or device settings are given here."),
-  ]));
   pages.push({ id: "index", title: "Contents", subtitle: "YOUR PROTOCOL AT A GLANCE", blocks: [], takeaway: "" }); // filled below once page numbers are known
 
   pages.push(page("overview", `${opts.name}'s protocol`, "CURRENT LOOK AND OPTIMAL LOOK", r.outcomes.map(o => b(o.title, o.text)), {
     region: "portrait", scope: r.scope, holding: brief(r.holding),
-    ages: r.apparentAge && r.achievableAge ? { now: String(opts.realAge ?? r.apparentAge), nowLabel: opts.realAge ? "REAL AGE" : "LOOKS AROUND", achievable: String(Math.min(r.achievableAge, opts.realAge ?? r.apparentAge)) } : undefined,
+    ages: r.apparentAge && r.achievableAge && r.achievableAge < r.apparentAge ? { now: String(r.apparentAge), nowLabel: "LOOKS AROUND", achievable: String(r.achievableAge) } : undefined,
   }));
 
   pages.push(page("hair", "Hair and hairline", "YOUR STARTING POINT", [
@@ -69,17 +64,18 @@ export function applyAuthor(template: ProtocolPage[], r: AuthoredReport, a: Asse
   pages.push(page("eyes", "Eye area", "SHADOW, TEXTURE AND EXPRESSION", [b("Assessment", r.eyes.assessment), b("Under-eye care", r.eyes.care)], {
     region: "eyes", rows: r.eyes.features.map(f => ({ label: f.label.toUpperCase(), text: f.value })),
   }));
-  pages.push(page("brows", "Eyebrows and glasses", `BROWS NOW: ${r.eyes.browShape.toUpperCase() || "NATURAL"}`, [b("Brow plan", r.eyes.browPlan), b(`Frames that work for your ${r.faceShape || "face"} shape`, r.eyes.glasses)]));
   pages.push(page("jaw", "Jaw and lower face", "STRUCTURE, SOFT TISSUE AND WHAT CHANGES IT", [b("Structure", r.jaw.structure), b("Fat and fluid", r.jaw.softTissue), ...r.jaw.methods.map((m, i) => b(`${String(i + 1).padStart(2, "0")} / ${m.title}`, m.text))], { region: "jaw" }));
-  if (r.facialHair.now || r.facialHair.plan) pages.push(page("facial-hair", "Facial hair", "WHERE YOU ARE NOW", [b("Where you are now", r.facialHair.now), b("Your plan", r.facialHair.plan)], { region: "jaw" }));
+  const browBlocks = [b("Brow plan", r.eyes.browPlan), b(`Frames that work for your ${r.faceShape || "face"} shape`, r.eyes.glasses)];
+  const hasFacialHair = !!(r.facialHair.now || r.facialHair.plan);
+  pages.push(page("facial-hair", hasFacialHair ? "Brows, glasses and facial hair" : "Eyebrows and glasses", hasFacialHair ? "THE FINISHING DETAILS" : `BROWS NOW: ${r.eyes.browShape.toUpperCase() || "NATURAL"}`,
+    hasFacialHair ? [...browBlocks, b("Facial hair now", r.facialHair.now), b("Facial hair plan", r.facialHair.plan)] : browBlocks, hasFacialHair ? { region: "jaw" } : {}));
   pages.push(page("skin", "Skin", "CONDITION", [b("Condition", r.skin.condition), b("Skin type", r.skin.type), b("Rules that protect the results", "Patch-test any new product on a small area first. Add one new active at a time and wait two weeks before the next. Do not over-exfoliate. Wear SPF 30 or higher every morning; it protects every other step.")], { region: "skin" }));
   pages.push(page("skin-concerns", "Skin concerns", "WHAT WE SEE AND WHAT TO DO", r.skin.concerns.map(c => b(c.title, `${c.seen ? c.seen + "\n" : ""}${c.action}`))));
   if (r.clinic.length) pages.push(page("clinical", "Clinic options", "FOR DISCUSSION WITH A QUALIFIED CLINICIAN", r.clinic.map(c => b(`${c.area}: ${c.option}`, `${c.why}${c.downtime ? ` Typical downtime: ${c.downtime}.` : ""}`)).concat(b("Before any procedure", "A clinician must assess your history, medication, allergies and skin. These are options to discuss, not a prescription, and doing nothing is always an option."))));
-  pages.push(page("exercise", "Exercise", "HOW TRAINING CHANGES HOW YOU LOOK", [b("Your plan", r.exercise), b("What exercise cannot do", "Facial fat cannot be spot-reduced and bone shape does not change; overall body composition, posture and sleep are what show in the face.")]));
   const video = tpl("facial-exercises");
-  pages.push({ ...video, title: "Your expression video", takeaway: "" });
   const stats = bodyStats(a);
-  pages.push(page("nutrition", "Nutrition and diet", "BUILT AROUND YOUR EATING PATTERN", [b("Your approach", r.nutrition)], stats.length ? { stats } : {}));
+  pages.push(page("nutrition", "Exercise, nutrition and diet", "HOW TRAINING AND EATING CHANGE HOW YOU LOOK", [b("Exercise", r.exercise), b("Nutrition", r.nutrition), b("What exercise cannot do", "Facial fat cannot be spot-reduced and bone shape does not change; overall body composition, posture and sleep are what show in the face.")], stats.length ? { stats } : {}));
+  if (!/^No expression video was supplied/.test(video.blocks[0]?.text ?? "")) pages.push({ ...video, title: "Your expression video", takeaway: "" });
   pages.push(page("style", "Style profile", "FIT, COLOUR AND DAILY CONTEXT", [b("How clothes should fit you", r.style.fit), b("Colour palette", r.style.palette), b("Casual", r.style.casual), b("Smart", r.style.smart)]));
   if (r.toolkit.length) pages.push(page("toolkit", "Toolkit", "EVERYTHING THIS PROTOCOL ASKS FOR (INDICATIVE PRICES)", [], {
     rows: r.toolkit.flatMap(t => [
@@ -87,16 +83,17 @@ export function applyAuthor(template: ProtocolPage[], r: AuthoredReport, a: Asse
       ...(t.premium.name ? [{ label: "PREMIUM", title: t.premium.name, text: [inr(t.premium.priceInr), t.premium.note].filter(Boolean).join(". ") }] : []),
     ]),
   }));
-  pages.push(page("summary", "Summary", `FACE SHAPE: ${(r.faceShape || "see photos").toUpperCase()}`, [
-    ...r.strengths.map(s => b(`Strength: ${s.title}`, s.text)),
-    ...r.weaknesses.map(s => b(`Can improve: ${s.title}`, s.text)),
+  const list = (xs: { title: string; text: string }[]) => xs.map(x => `${x.title}: ${x.text}`).join("\n");
+  pages.push(page("summary", "Summary and priorities", `FACE SHAPE: ${(r.faceShape || "see photos").toUpperCase()}`, [
+    b("Strengths to keep", list(r.strengths)), b("What can improve", list(r.weaknesses)),
+    ...r.priorities.map((p, i) => b(`${String(i + 1).padStart(2, "0")} / ${p.title}`, p.text)), b("Your potential", r.potential),
   ]));
-  pages.push(page("priorities", "What to focus on", "YOUR PRIORITIES", [...r.priorities.map((p, i) => b(`${String(i + 1).padStart(2, "0")} / ${p.title}`, p.text)), b("Your potential", r.potential)]));
   const sources = tpl("sources");
-  sources.blocks = sources.blocks.map(x => x.title === "How this report was assembled" ? b(x.title, "Written by MogaFace's AI analysis of your photographs and questionnaire answers. Styling and product suggestions are directions to try; scope scores and visual age are estimates, not measurements or beauty ratings.") : x);
+  sources.blocks = [...sources.blocks.filter(x => x.title === "Care guidance" || x.title === "General health guidance"),
+    b("About this report", "Written by MogaFace's AI analysis of your photographs and answers; it describes what is visible and suggests what to do, and is not a medical diagnosis or treatment plan. The after photo is an illustration, not a predicted result. Scores and visual age are estimates, not measurements. Clinic options are categories to discuss with a qualified clinician, who must assess your history, medication, allergies and skin; no doses or device settings are given.")];
   pages.push({ ...sources, takeaway: "Thank you for choosing MogaFace. Bring this protocol to a clinician or stylist; update it when your goals change." });
 
-  const groups: [string, string[]][] = [["Start here", ["scope", "overview"]], ["Hair", ["hair", "haircut"]], ["Face", ["eyes", "brows", "jaw", "facial-hair"]], ["Skin and clinic", ["skin", "skin-concerns", "clinical"]], ["Lifestyle", ["exercise", "facial-exercises", "nutrition", "style", "toolkit"]], ["Close", ["summary", "priorities", "sources"]]];
+  const groups: [string, string[]][] = [["Start here", ["overview"]], ["Hair", ["hair", "haircut"]], ["Face", ["eyes", "facial-hair", "jaw"]], ["Skin and clinic", ["skin", "skin-concerns", "clinical"]], ["Lifestyle", ["nutrition", "facial-exercises", "style", "toolkit"]], ["Close", ["summary", "sources"]]];
   const num = (id: string) => pages.findIndex(p => p.id === id) + 1;
   const idx = pages.find(p => p.id === "index")!;
   idx.blocks = groups.map(([g, ids]) => b(g, ids.filter(id => num(id) > 0).map(id => `${String(num(id)).padStart(2, "0")} / ${pages[num(id) - 1].title}`).join("\n"))).filter(x => x.text);

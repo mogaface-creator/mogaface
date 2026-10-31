@@ -16,7 +16,7 @@ export interface AuthoredReport {
   scope: { area: string; now: number; achievable: number }[];
   holding: string;
   outcomes: Titled[];
-  hair: { summary: string; tags: string[]; cut: string; why: string; barber: string; styling: string; hairlineStage: string; hairline: string };
+  hair: { pattern: string; summary: string; tags: string[]; cut: string; why: string; barber: string; styling: string; hairlineStage: string; hairline: string };
   eyes: { features: { label: string; value: string }[]; assessment: string; care: string; browShape: string; browPlan: string; glasses: string };
   jaw: { structure: string; softTissue: string; methods: Titled[] };
   facialHair: { now: string; plan: string };
@@ -55,7 +55,7 @@ export function parseAuthored(value: unknown): AuthoredReport | null {
     scope: arr(v.scope, x => { const now = num(x.now, 0, 100), achievable = num(x.achievable, 0, 100); return str(x.area, 30) && now !== null && achievable !== null ? { area: str(x.area, 30), now, achievable: Math.max(now, achievable) } : null; }, 6),
     holding: str(v.holding, 300),
     outcomes: arr(v.outcomes, titled, 5),
-    hair: { summary: str(hair.summary), tags: (Array.isArray(hair.tags) ? hair.tags : []).slice(0, 4).map(t => str(t, 40)).filter(Boolean), cut: str(hair.cut, 80), why: str(hair.why), barber: str(hair.barber), styling: str(hair.styling), hairlineStage: str(hair.hairlineStage, 60), hairline: str(hair.hairline) },
+    hair: { pattern: str(hair.pattern, 12).toLowerCase(), summary: str(hair.summary), tags: (Array.isArray(hair.tags) ? hair.tags : []).slice(0, 4).map(t => str(t, 40)).filter(Boolean), cut: str(hair.cut, 80), why: str(hair.why), barber: str(hair.barber), styling: str(hair.styling), hairlineStage: str(hair.hairlineStage, 60), hairline: str(hair.hairline) },
     eyes: { features: arr(eyes.features, x => (str(x.label, 40) && str(x.value, 100) ? { label: str(x.label, 40), value: str(x.value, 100) } : null), 6), assessment: str(eyes.assessment), care: str(eyes.care), browShape: str(eyes.browShape, 60), browPlan: str(eyes.browPlan), glasses: str(eyes.glasses) },
     jaw: { structure: str(jaw.structure), softTissue: str(jaw.softTissue), methods: arr(jaw.methods, titled, 4) },
     facialHair: { now: str(fh.now), plan: str(fh.plan) },
@@ -116,7 +116,7 @@ JSON SHAPE (all strings plain text, 1 to 4 sentences unless noted):
 "scope":[{"area":"Skin","now":int,"achievable":int}],
 "holding":"features already in good proportion or fixed by bone structure that the protocol maintains",
 "outcomes":[{"title":"short outcome","text":"one sentence"}] (exactly 5),
-"hair":{"summary":"hair type, density, hairline and scalp as visible","tags":["3 short tags"],"cut":"named cut","why":"why this cut suits this face and hair","barber":"exact words and lengths to tell the barber","styling":"step-by-step styling with products","hairlineStage":"juvenile|maturing|mature|receded temples|thinning density","hairline":"what is visible at the hairline and temples and how to protect or improve density"},
+"hair":{"pattern":"straight|wavy|curly|coily (look at individual strands: loops and coils mean curly)","summary":"hair type, density, hairline and scalp as visible","tags":["3 short tags"],"cut":"named cut","why":"why this cut suits this face and hair","barber":"exact words and lengths to tell the barber","styling":"step-by-step styling with products","hairlineStage":"juvenile|maturing|mature|receded temples|thinning density","hairline":"what is visible at the hairline and temples and how to protect or improve density"},
 "eyes":{"features":[{"label":"Eye shape","value":"..."},{"label":"Eye spacing","value":"..."},{"label":"Brow shape","value":"..."},{"label":"Brow thickness","value":"..."},{"label":"Under-eye tone","value":"..."}],"assessment":"...","care":"specific under-eye routine","browShape":"straight|soft arch|high arch|angled|rounded (current)","browPlan":"what shape to groom toward and exactly how","glasses":"2 to 3 named frame styles that suit and why"},
 "jaw":{"structure":"bone structure from front and 45-degree views, fixed vs changeable","softTissue":"visible fat or fluid under the jaw and chin (double chin, cheek fullness) and what changes it","methods":[{"title":"...","text":"..."}] (3 to 4 practical methods)},
 "facialHair":{"now":"current facial hair pattern","plan":"specific grooming plan: neckline, cheek line, guard length, care"},
@@ -151,7 +151,7 @@ async function authorOnce(input: {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model, response_format: { type: "json_object" }, temperature: 0.4, max_tokens: 12000,
+        model, response_format: { type: "json_object" }, temperature: 0.2, max_tokens: 12000,
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: [
