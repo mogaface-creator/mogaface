@@ -217,6 +217,11 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     console.log("[imageJob] Image review outcome:", review.status);
 
     if (review.status !== "approved") {
+      if (review.status === "unavailable") {
+        console.warn(
+          `[imageJob] Image review unavailable (${review.code}${review.httpStatus ? `; HTTP ${review.httpStatus}` : ""}; model ${env.CLINICAL_VISION_MODEL?.trim() || "gpt-4o"}).`,
+        );
+      }
       return {ok:false,reason:review.status === "rejected" ? "image_quality_review_failed" : "image_review_unavailable",review,...(input.debugPreview ? {debugPreview:{base64:finalBase64,mime:finalMime}} : {})};
     }
 
