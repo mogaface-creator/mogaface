@@ -175,7 +175,7 @@ export async function getPendingSubmissions(
     const now = new Date().toISOString();
     return [...fallback.values()].filter(
       (r) =>
-        (r.status === "pending" || r.status === "failed") &&
+        (r.status === "pending" || r.status === "failed" || isStaleProcessing(r)) &&
         r.retry_count < 3 &&
         (options.force || r.send_after <= now),
     );
@@ -183,7 +183,7 @@ export async function getPendingSubmissions(
 
   const query = options.force
     ? `/submissions?status=in.(pending,failed)&retry_count=lt.3&select=*&order=created_at.desc&limit=10`
-    : `/submissions?status=in.(pending,failed)&retry_count=lt.3&send_after=lte.${encodeURIComponent(new Date().toISOString())}&select=*&order=send_after.asc&limit=10`;
+    : `/submissions?retry_count=lt.3&send_after=lte.${encodeURIComponent(new Date().toISOString())}&or=(status.in.(pending,failed),and(status.eq.processing,updated_at.lt.${encodeURIComponent(new Date(Date.now()-STALE_PROCESSING_MS).toISOString())}))&select=*&order=send_after.asc&limit=10`;
 
   const res = await supabaseRequest(
     env,
@@ -265,10 +265,16 @@ export async function updateSubmission(
   return !!res?.ok;
 }
 
+/** A "processing" row that has not been written for this long belonged to a function that timed out or was killed. */
+export const STALE_PROCESSING_MS = 10 * 60 * 1000;
+export function isStaleProcessing(row: Pick<SubmissionRow, "status" | "updated_at">, now = Date.now()): boolean {
+  return row.status === "processing" && now - new Date(row.updated_at).getTime() > STALE_PROCESSING_MS;
+}
+
 /** Compare-and-set prevents simultaneous polling and cron requests from duplicating a paid generation or email. */
 export async function claimSubmission(id:string,deps:SubmissionStoreDeps={}):Promise<boolean>{
  const {env,fetchImpl}=resolveDeps(deps);
- if(!isSupabaseConfigured(env)){if(env.NODE_ENV==="production")return false;const row=fallback.get(id);if(!row || !["pending","failed"].includes(row.status) || row.retry_count>=3)return false;row.status="processing";return true;}
- const r=await supabaseRequest(env,`/submissions?id=eq.${encodeURIComponent(id)}&status=in.(pending,failed)&retry_count=lt.3`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({status:"processing"})},fetchImpl).catch(()=>null);
+ if(!isSupabaseConfigured(env)){if(env.NODE_ENV==="production")return false;const row=fallback.get(id);if(!row || !(["pending","failed"].includes(row.status) || isStaleProcessing(row)) || row.retry_count>=3)return false;row.status="processing";row.updated_at=new Date().toISOString();return true;}
+ const r=await supabaseRequest(env,`/submissions?id=eq.${encodeURIComponent(id)}&retry_count=lt.3&or=(status.in.(pending,failed),and(status.eq.processing,updated_at.lt.${encodeURIComponent(new Date(Date.now()-STALE_PROCESSING_MS).toISOString())}))`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({status:"processing"})},fetchImpl).catch(()=>null);
  if(!r?.ok)return false;const rows=await r.json().catch(()=>null);return Array.isArray(rows)&&rows.length===1;
 }

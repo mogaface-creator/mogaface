@@ -43,6 +43,9 @@ export interface GeneratePdfReportInput {
   reportScopeNote?: string;
   /** User-facing reason an illustrative preview was included or omitted. */
   previewMessage?: string;
+  /** Person-specific content written from the photos; the fixed template is used when absent. */
+  author?: import("./reportAuthor.ts").AuthoredReport | null;
+  realAge?: number | null;
 }
 
 // Brand Color Palette (Clinic Next Face Brand Identity v1.0)

@@ -13,7 +13,7 @@ export function appearancePlanFromAssessment(a:Assessment,expression?:Expression
  const contour=places.has("FACIAL_DEFINITION");
  const underEye=places.has("UNDER_EYE");
  const forehead=places.has("FACIAL_LINES");
- const plan=buildAppearancePlan({hair:hair?"balanced":"preserve",skin:skin?"balanced":"preserve",contour:contour?"subtle":"preserve"},{simulateHair:hair,focus:"all"});
+ const plan=buildAppearancePlan({hair:hair?"balanced":"preserve",skin:skin?"balanced":"preserve",contour:contour?"balanced":"preserve"},{simulateHair:hair,focus:"all"});
  // Full reports cover all areas; image changes still require the user's selection.
  plan.areas=plan.areas.map(area=>area.key==="under_eye" && !places.has("UNDER_EYE") ? {...area,level:"preserve",instruction:"Preserve under-eye shadows, eye shape and eyelids unchanged."} : area.key==="forehead" && !places.has("FACIAL_LINES") ? {...area,level:"preserve",instruction:"Preserve forehead lines and expression unchanged."} : area);
  const texture=replyOf(intake,"protocolHairTexture");

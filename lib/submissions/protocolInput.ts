@@ -19,10 +19,10 @@ function previewMessage(summary:string, hasAfter:boolean):string{
  }
 }
 
-export function protocolInput(record:AnalysisRecord, input:{name:string;id:string;front:Uint8Array;after?:Uint8Array|null;summary?:string}):GeneratePdfReportInput{
+export function protocolInput(record:AnalysisRecord, input:{name:string;id:string;front:Uint8Array;after?:Uint8Array|null;summary?:string;author?:GeneratePdfReportInput["author"]}):GeneratePdfReportInput{
  const summary=input.summary||"";
  return {clientName:input.name,referenceId:input.id,assessment:record.assessment,analysis:record.analysis,beforeImageBytes:input.front,
  leftImageBytes:record.reportPhotos ? Buffer.from(record.reportPhotos.leftFortyFive.base64,"base64") : null,
  rightImageBytes:record.reportPhotos ? Buffer.from(record.reportPhotos.rightFortyFive.base64,"base64") : null,
- afterImageBytes:input.after,...(input.after?{previewStatus:"quality_checked" as const}:{}),previewMessage:previewMessage(summary,!!input.after),reportSummary:summary,detectedAreas:[],intakeConcerns:record.assessment.clinicIntake.places};
+ afterImageBytes:input.after,...(input.after?{previewStatus:"quality_checked" as const}:{}),previewMessage:previewMessage(summary,!!input.after),reportSummary:summary,author:input.author,detectedAreas:[],intakeConcerns:record.assessment.clinicIntake.places};
 }

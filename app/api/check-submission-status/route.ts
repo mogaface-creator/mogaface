@@ -8,7 +8,7 @@
  */
 
 import type { NextRequest } from "next/server";
-import { getSubmission } from "@/lib/submissions/store";
+import { getSubmission, isStaleProcessing, updateSubmission } from "@/lib/submissions/store";
 import { processOne } from "@/app/api/process-submissions/route";
 
 export const maxDuration = 180;
@@ -39,11 +39,16 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (submission.status === "failed" && submission.email_error?.startsWith("Email delivery failed:") && submission.report_summary) return Response.json({status:"done",emailSentAt:null,deliveryWarning:true,hasAfterImage:!!submission.after_image_base64,previewMessage:previewStatusMessage(submission.report_summary,!!submission.after_image_base64)});
     if (submission.status === "failed") return Response.json({status:"failed",message:"We could not complete this report. Please contact the clinic."});
 
-    if (submission.status === "processing") {
+    if (submission.status === "processing" && !isStaleProcessing(submission)) {
       return Response.json({
         status: "processing",
         message: "Your personalized dossier is currently being generated.",
       });
+    }
+
+    if (isStaleProcessing(submission)) {
+      // The previous run died mid-way (function timeout). Count it as a failed attempt so a job that keeps timing out stops after 3 tries.
+      await updateSubmission(id, { status: "failed", emailError: "previous_run_timed_out", retryCount: (submission.retry_count ?? 0) + 1 });
     }
 
     // If pending or failed with retries remaining, check if send_after <= now()

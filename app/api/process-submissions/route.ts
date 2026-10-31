@@ -27,6 +27,7 @@ import { generateAfterImage } from "@/lib/submissions/imageJob";
 import { getAnalysisRecord } from "@/lib/analysis-session/store";
 import { resolveLeadData } from "@/lib/submissions/lead";
 import { generatePdfReport } from "@/lib/submissions/pdfReport";
+import { authorReport } from "@/lib/submissions/reportAuthor";
 import { sendReportEmail } from "@/lib/submissions/emailDelivery";
 import { IMAGE_PLACE_OPTIONS } from "@/lib/assessment/intakeQuestions";
 
@@ -116,6 +117,18 @@ export async function processOne(
 
     const consented = submission.photo_visualization_consent === "granted";
     if(!record)throw new Error("assessment_unavailable");
+    // Person-specific report content is written from the photos in parallel with the preview; null falls back to the fixed template.
+    const dataUrl = (mime: string, base64: string) => `data:${mime};base64,${base64}`;
+    const authorPromise = consented ? authorReport({
+      assessment: record.assessment,
+      photos: [
+        { label: "front", dataUrl: dataUrl(submission.before_image_mime, submission.before_image_base64) },
+        ...(record.reportPhotos ? [
+          { label: "left 45-degree", dataUrl: dataUrl(record.reportPhotos.leftFortyFive.mime, record.reportPhotos.leftFortyFive.base64) },
+          { label: "right 45-degree", dataUrl: dataUrl(record.reportPhotos.rightFortyFive.mime, record.reportPhotos.rightFortyFive.base64) },
+        ] : []),
+      ],
+    }) : Promise.resolve(null);
     const selectedPlaces = record.assessment.clinicIntake.places;
     const wantsPreview=record.assessment.clinicIntake.wantAfterPhoto !== "no";
     let reportSummary="Your Next Face protocol brings together your answers, original photo views and any usable expression-video observations. The appearance preview, when included, is illustrative and not a treatment outcome.";
@@ -174,7 +187,9 @@ export async function processOne(
     const afterBytes = afterBase64 ? Buffer.from(afterBase64, "base64") : null;
 
     // 6. Generate the full questionnaire-driven Next Face protocol
-    const pdfBytes = await generatePdfReport(protocolInput(record,{name:lead.name,id,front:beforeBytes,after:afterBytes,summary:reportSummary}));
+    const author = await authorPromise;
+    if (!author) console.warn(`[process-submissions] No authored report content for ${id}; using the fixed template.`);
+    const pdfBytes = await generatePdfReport(protocolInput(record,{name:lead.name,id,front:beforeBytes,after:afterBytes,summary:reportSummary,author}));
 
     // 7. Deliver PDF Report via Resend Email
     if (lead.email) {

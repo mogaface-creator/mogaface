@@ -82,10 +82,10 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
       <div class="greeting">Hello ${firstName},</div>
       <div class="badge">Dossier: ${dossierId}</div>
       <p>
-        Thank you for submitting your facial aesthetic assessment. Your Next Face report brings together your questionnaire answers, submitted photo views and any usable video-expression observations.
+        Thank you for submitting your facial aesthetic assessment. Your MogaFace report brings together your questionnaire answers, submitted photo views and any usable video-expression observations.
       </p>
       <p>
-        Your full <strong>Next Face Personal Appearance Protocol</strong> has been generated and is attached to this email as a PDF.
+        Your full <strong>MogaFace Personal Appearance Protocol</strong> has been generated and is attached to this email as a PDF.
       </p>
 
       <div class="attachment-notice">

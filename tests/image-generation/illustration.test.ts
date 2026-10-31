@@ -614,6 +614,7 @@ test("18. The OpenAI key stays server-side: read only by server modules, never b
     "lib/interpretation/select.ts",
     "lib/submissions/clinicalVision.ts",
     "lib/submissions/imageJob.ts",
+    "lib/submissions/reportAuthor.ts",
     "lib/submissions/reportSummary.ts",
   ]);
   for (const f of all.filter((x) => x.path.startsWith("components/") || /"use client"/.test(x.src) || x.path === "lib/image-generation/client.ts" || x.path === "lib/interpretation/remote.ts")) {

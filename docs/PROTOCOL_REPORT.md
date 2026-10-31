@@ -59,3 +59,9 @@ The PDF text is a deterministic educational and preference-based draft. It does 
 ## Validation
 
 TypeScript and the production Webpack build passed. All 81 assessment tests pass, including repeated PDF image inclusion and the mocked-provider report journey. The full suite recorded 914 passing / 16 failing tests; existing image-generation and results-flow expectations still need reconciliation before release. See ASSESSMENT_AUDIT.md for the remaining findings and live-verification limits.
+
+## Authored content (person-specific report)
+
+`lib/submissions/reportAuthor.ts` makes one OpenAI vision call (front and both 45-degree photos plus the questionnaire facts) and returns structured content: face shape, scope scores and ages, the named haircut with barber brief, eye/brow/jaw/skin observations, skin actions, clinic options to discuss, toolkit with indicative INR prices. `protocolAuthored.ts` turns it into pages (23-24 pages; pages with no content, such as facial hair for someone with none, are dropped). It runs in parallel with the preview and only when photo consent is granted. If it fails, the fixed 25-page template above is used. Model: `REPORT_AUTHOR_MODEL` (default `gpt-4.1`).
+
+Stuck jobs: a submission left in `processing` for more than 10 minutes is counted as a failed attempt and re-run by the next status poll or cron run (max 3 attempts).
