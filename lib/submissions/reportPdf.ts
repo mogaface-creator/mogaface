@@ -229,7 +229,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   add({ id: "glasses", chapter: "Eye Area", title: "Glasses", blocks: [
     k.heading("What suits your face"), k.para(f.eyes.glassesWhy), k.gap(4), k.heading("Frames that work for you"),
     ...f.eyes.frames.map((fr, i) => k.cols([k.numbered(i + 1, fr.style[0].toUpperCase() + fr.style.slice(1), fr.text)], k.custom(54, (p, x, top, w) => { drawGlasses(p, x + (w - 90) / 2, top - 6, fr.style); p.drawText(fr.style.toUpperCase(), { x: x + (w - font.widthOfTextAtSize(fr.style.toUpperCase(), 7.4)) / 2, y: top - 52, font, size: 7.4, color: C.muted }); }), 130)),
-    k.gap(6), k.box("Eye area summary", f.eyes.summary),
+    
   ] });
   // 11 jaw
   add({ id: "jaw", chapter: "Jaw", title: "Jaw", blocks: [
@@ -269,7 +269,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     ] });
     if (body.training.length) add({ id: "training", chapter: "Exercises", title: "Training Priorities", subtitle: "Ordered by what changes the head-and-shoulders view first", blocks: await Promise.all(body.training.map(async (t, i) => k.cols([k.numbered(i + 1, t.title, t.text)], await illustrated(t.image, t.image === "upper_back" ? "UPPER BACK" : t.image === "shoulders" ? "SHOULDERS" : "NECK", 110), 130))) });
     if (body.facialExercises.length) add({ id: "facialex", chapter: "Exercises", title: "Facial Exercises", subtitle: "Only movements with a real mechanical basis", blocks: [...await Promise.all(body.facialExercises.map(async t => k.cols([k.sub(t.title, t.text)], await illustrated(t.image, t.image === "tongue" ? "TONGUE POSTURE" : t.image === "chin_tuck" ? "CERVICAL SPINE" : "NECK", 100), 120))), k.gap(4), k.box("Exercise summary", body.exercise.summary)] });
-    if (hasVideo && video) add({ id: "video", chapter: "Exercises", title: "Your Expression Video", subtitle: "Movement observations, not a diagnosis", blocks: video.blocks.map(bl => k.sub(bl.title, bl.text)) });
+    if (hasVideo && video) add({ id: "video", chapter: "Exercises", title: "Your Expression Video", subtitle: "Movement observations, not a diagnosis", blocks: video.blocks.filter(bl => bl.title !== "How this affects your preview").map(bl => k.sub(bl.title, bl.text)) });
     const stats = targets ? [["HEIGHT", `${targets.heightCm} cm`, ""], ["WEIGHT", `${targets.weightKg} kg`, ""], ["BMI", String(targets.bmi), ""], ...(targets.maintenanceKcal ? [["MAINTENANCE", `${targets.maintenanceKcal} kcal`, "Daily energy at your activity level"], ["TARGET INTAKE", `${targets.targetKcal} kcal`, targets.targetKcal! < targets.maintenanceKcal ? "A slight deficit" : "At maintenance"]] : []), ["PROTEIN", `${targets.proteinG} g`, "Per day"], ["WATER", `${targets.waterMl} ml`, "Per day, minimum"]] : [];
     const nc = stats.length > 4 ? Math.ceil(stats.length / 2) : Math.max(1, stats.length);
     const statGrid: Blk[] = stats.length ? [k.custom(Math.ceil(stats.length / nc) * 64, (p, x, top, w) => { const gw = (w - 8 * (nc - 1)) / nc; stats.forEach(([l, v, sb], i) => { const gx = x + (i % nc) * (gw + 8), gy = top - Math.floor(i / nc) * 64; p.drawSvgPath(k.roundRect(gw, 56, 5), { x: gx, y: gy, color: C.white, borderColor: C.line, borderWidth: 0.8 }); p.drawText(l, { x: gx + 9, y: gy - 14, font, size: 6.4, color: C.muted }); p.drawText(clean(v), { x: gx + 9, y: gy - 31, font: bold, size: 12.5, color: MID }); if (sb) p.drawText(clean(sb).slice(0, 44), { x: gx + 9, y: gy - 46, font, size: 5.6, color: C.muted }); }); }), k.gap(8)] : [];
