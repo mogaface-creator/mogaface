@@ -37,12 +37,20 @@ import type { LandmarkList } from "../facial-analysis/types.ts";
 import type { GuidanceResult, GuidanceState } from "./types.ts";
 
 /** Framing aids only: how far from the middle of the frame still counts as centred. */
-export const CENTER_TOLERANCE_X = 0.12;
-export const CENTER_TOLERANCE_Y = 0.15;
+export const CENTER_TOLERANCE_X = 0.08;
+export const CENTER_TOLERANCE_Y = 0.1;
+/** The face (hairline-to-chin box) must fill this share of the frame height, i.e. sit inside the on-screen oval. */
+export const FACE_HEIGHT_RANGE = { min: 0.4, max: 0.82 };
+/** Tighter than the analysis rules on purpose: the live guide asks for a clean lock; the analysis gate still decides validity. */
+export const LOCK_MAX_ROLL_DEGREES = 7;
+export const LOCK_MAX_YAW_RATIO = 1.35;
+export const LOCK_FRONT_MAX_YAW_DEGREES = 12;
+/** A 45° view must measure between these angles (from the depth of the two face edges), not just be turned a little. */
+export const LOCK_ANGLE_WINDOW = { min: 30, max: 60 };
 /** How far the face may drift between samples (fraction of the frame) and still count as "still". */
-export const STILLNESS_TOLERANCE = 0.04;
+export const STILLNESS_TOLERANCE = 0.03;
 /** The face must satisfy every condition, continuously, for this long before capture. Configurable. */
-export const DEFAULT_STABILITY_MS = 800;
+export const DEFAULT_STABILITY_MS = 1200;
 
 /** The side of the face that must face the camera for each angled view, and which way the head turns to show it. */
 export const VIEW_TARGET: Partial<Record<PhotoSlot, { nearSide: FaceSide; headTurn: "LEFT" | "RIGHT" }>> = {
@@ -84,6 +92,17 @@ export interface GuidanceInput {
 }
 
 const result = (state: GuidanceState, message: string, frameOk = false): GuidanceResult => ({ state, message, frameOk });
+
+/**
+ * Head yaw in degrees from the depth difference between the two face-edge landmarks (MediaPipe z is on the same scale as x).
+ * Null when no depth is present (z all zero), so callers fall back to the 2D rules.
+ */
+export function estimateYawDegrees(lm: LandmarkList): number | null {
+  const a = lm[LANDMARK.faceLeftEdge], b = lm[LANDMARK.faceRightEdge];
+  if (!a || !b) return null;
+  const dz = Math.abs((a.z ?? 0) - (b.z ?? 0)), dx = Math.abs(a.x - b.x);
+  return dz === 0 ? null : (Math.atan2(dz, dx) * 180) / Math.PI;
+}
 
 /** The side with the larger nose-to-face-edge span (i.e. toward the camera), or null if they are equal. */
 function raw_near_side(lm: LandmarkList): FaceSide | null {
@@ -137,6 +156,11 @@ export function evaluateGuidance(input: GuidanceInput): GuidanceResult {
   // 3. Size (existing minimum face width).
   if (width < MIN_FACE_WIDTH_WARNING) return result("TOO_FAR", MESSAGES.TOO_FAR);
 
+  // 3b. The whole face (hairline to chin) must fill the oval: not a small face floating in the frame.
+  const height = box.maxY - box.minY;
+  if (height < FACE_HEIGHT_RANGE.min) return result("TOO_FAR", MESSAGES.TOO_FAR);
+  if (height > FACE_HEIGHT_RANGE.max) return result("TOO_CLOSE", MESSAGES.TOO_CLOSE);
+
   // 4. Centred in frame.
   if (Math.abs(screenX - 0.5) > CENTER_TOLERANCE_X) return horizontalCue(screenX < 0.5);
   if (Math.abs(cy - 0.5) > CENTER_TOLERANCE_Y) return cy < 0.5 ? result("MOVE_DOWN", MESSAGES.MOVE_DOWN) : result("MOVE_UP", MESSAGES.MOVE_UP);
@@ -144,9 +168,9 @@ export function evaluateGuidance(input: GuidanceInput): GuidanceResult {
   // 5. Head orientation, per view — reusing the existing rules.
   if (target === "front") {
     const roll = estimateRollDegrees(lm, input.frameWidth, input.frameHeight);
-    if (roll !== null && Math.abs(roll) > MAX_ROLL_DEGREES) return result("HEAD_TOO_TILTED", MESSAGES.HEAD_TOO_TILTED);
-    const yaw = estimateYawRatio(lm);
-    if (yaw !== null && yaw > MAX_YAW_RATIO) {
+    if (roll !== null && Math.abs(roll) > Math.min(MAX_ROLL_DEGREES, LOCK_MAX_ROLL_DEGREES)) return result("HEAD_TOO_TILTED", MESSAGES.HEAD_TOO_TILTED);
+    const yaw = estimateYawRatio(lm), yawDeg = estimateYawDegrees(lm);
+    if ((yaw !== null && yaw > Math.min(MAX_YAW_RATIO, LOCK_MAX_YAW_RATIO)) || (yawDeg !== null && yawDeg > LOCK_FRONT_MAX_YAW_DEGREES)) {
       const near = raw_near_side(lm);
       return turn(near ? backTowardCamera(near) : "LEFT", MESSAGES.LOOK_STRAIGHT);
     }
@@ -159,6 +183,9 @@ export function evaluateGuidance(input: GuidanceInput): GuidanceResult {
     }
     if (near !== want.nearSide) return turn(want.headTurn, `Turn the other way — to your ${side(want.headTurn)}`);
     if (!validateThreeQuarter(lm, want.nearSide).plausible) return turn(opposite(want.headTurn), `Turn back a little to your ${side(opposite(want.headTurn))}`);
+    const angle = estimateYawDegrees(lm);
+    if (angle !== null && angle < LOCK_ANGLE_WINDOW.min) return turn(want.headTurn, `Turn a little more to your ${side(want.headTurn)}`);
+    if (angle !== null && angle > LOCK_ANGLE_WINDOW.max) return turn(opposite(want.headTurn), `Turn back a little to your ${side(opposite(want.headTurn))}`);
   } else {
     // Profiles: the face mesh is not reliable side-on and no profile rule exists, so profiles are captured manually
     // (see profileIsManual). Guidance only checks that a face is visible and lit.
