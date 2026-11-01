@@ -33,8 +33,9 @@ export interface FaceContent {
 }
 export interface BodyContent {
   exercise: { intro: string; weights: string; cardio: string; bullets: string[]; expert: string; summary: string };
-  training: { title: string; text: string; image: "upper_back" | "shoulders" | "none" }[];
+  training: { title: string; text: string; image: "upper_back" | "shoulders" | "neck" }[];
   facialExercises: { title: string; text: string; image: "tongue" | "chin_tuck" | "neck" }[];
+  supplements: { name: string; dose: string; when: string; why: string }[];
   nutrition: { approach: string; goals: Titled[]; sampleDay: string; summary: string };
   style: { fit: string; bodyType: string; palette: string; casual: Titled; professional: Titled; summary: string };
   toolkit: { category: string; budget: Product; premium: Product }[];
@@ -72,8 +73,9 @@ export function parseBody(value: unknown): BodyContent | null {
   const v = obj(value), ex = obj(v.exercise), nu = obj(v.nutrition), st = obj(v.style);
   const body: BodyContent = {
     exercise: { intro: str(ex.intro), weights: str(ex.weights), cardio: str(ex.cardio), bullets: (Array.isArray(ex.bullets) ? ex.bullets : []).slice(0, 3).map(t => str(t, 160)).filter(Boolean), expert: str(ex.expert), summary: str(ex.summary) },
-    training: list(v.training, x => (str(x.title, 80) && str(x.text) ? { title: str(x.title, 80), text: str(x.text), image: pick(x.image, ["upper_back", "shoulders", "none"] as const, "none") } : null), 3),
+    training: list(v.training, x => (str(x.title, 80) && str(x.text) ? { title: str(x.title, 80), text: str(x.text), image: pick(x.image, ["upper_back", "shoulders", "neck"] as const, "upper_back") } : null), 3),
     facialExercises: list(v.facialExercises, x => (str(x.title, 80) && str(x.text) ? { title: str(x.title, 80), text: str(x.text), image: pick(x.image, ["tongue", "chin_tuck", "neck"] as const, "neck") } : null), 3),
+    supplements: list(v.supplements, x => (str(x.name, 80) && str(x.dose, 60) ? { name: str(x.name, 80), dose: str(x.dose, 60), when: str(x.when, 60), why: str(x.why, 500) } : null), 4),
     nutrition: { approach: str(nu.approach), goals: list(nu.goals, titled, 4), sampleDay: str(nu.sampleDay), summary: str(nu.summary) },
     style: { fit: str(st.fit), bodyType: str(st.bodyType, 60), palette: str(st.palette), casual: titled(obj(st.casual)) ?? { title: "", text: "" }, professional: titled(obj(st.professional)) ?? { title: "", text: "" }, summary: str(st.summary) },
     toolkit: list(v.toolkit, x => (str(x.category, 50) && product(x.budget).name ? { category: str(x.category, 50), budget: product(x.budget), premium: product(x.premium) } : null), 6),
@@ -155,13 +157,14 @@ SHAPE (enums are exact strings):
 
 const SYSTEM_BODY = `${COMMON}
 
-PART: exercise, training, posture exercises, nutrition, style and toolkit. There are no supplements. If bodyTargets bmi is 28 or more, or activity is low, use walking, cycling, swimming and incline walking; no sprints or high-impact intervals. Do not call targets "excellent". Style bodyType must come from bodyTargets bmi and gender, not from the face; the casual outfit should include an Indian option (kurta or ethnic wear) for suitable occasions. Use the numbers in bodyTargets exactly when you mention calories, protein or water; do not invent others. facialExercises are posture and awareness exercises only (tongue posture, chin tuck, neck posture) and must say plainly that they do not reduce facial fat or change bone. Supplements: at most 4, widely used over-the-counter items that fit this person's diet and goals, with typical label ranges and no megadoses, none if age is under 18, and say to check with a doctor if on medication; return an empty list if nothing is clearly useful. Toolkit: 5 categories (cleansing, targeted skincare, sunscreen, hair care, one more such as grooming or supplements) with budget and premium products matched to the stated budget.
+PART: exercise, training, posture exercises, nutrition, supplements, style and toolkit. Supplements: at most 4, widely used over-the-counter items that fit this person's diet and goals, with typical label ranges and no megadoses, none if age is under 18, and say to check with a doctor if on medication; return an empty list if nothing is clearly useful. If bodyTargets bmi is 28 or more, or activity is low, use walking, cycling, swimming and incline walking; no sprints or high-impact intervals. Do not call targets "excellent". Style bodyType must come from bodyTargets bmi and gender, not from the face; the casual outfit should include an Indian option (kurta or ethnic wear) for suitable occasions. Use the numbers in bodyTargets exactly when you mention calories, protein or water; do not invent others. facialExercises are posture and awareness exercises only (tongue posture, chin tuck, neck posture) and must say plainly that they do not reduce facial fat or change bone. Supplements: at most 4, widely used over-the-counter items that fit this person's diet and goals, with typical label ranges and no megadoses, none if age is under 18, and say to check with a doctor if on medication; return an empty list if nothing is clearly useful. Toolkit: 5 categories (cleansing, targeted skincare, sunscreen, hair care, one more such as grooming or supplements) with budget and premium products matched to the stated budget.
 
 SHAPE:
 {"exercise":{"intro":"how training changes how you look","weights":"weekly plan fitted to equipment and activity","cardio":"cardio plan","bullets":["3 short concrete cardio targets"],"expert":"2 to 3 sentences of expert guidance","summary":"3 sentences"},
-"training":[{"title":"Upper back and posture","text":"exercises with sets and reps","image":"upper_back"},{"title":"Shoulders and neck support","text":"exercises with sets and reps","image":"shoulders"},{"title":"Fat loss and conditioning","text":"how overall fat loss, not neck exercises, is what sharpens the jaw and neck line","image":"none"}] (exactly these three),
+"training":[{"title":"Upper back and posture","text":"exercises with sets and reps","image":"upper_back"},{"title":"Shoulders and neck support","text":"exercises with sets and reps","image":"shoulders"},{"title":"Core and neck position","text":"core work with a neutral neck; never claim it reduces chin fat","image":"neck"}] (exactly these three, in this order),
 "facialExercises":[{"title":"","text":"","image":"tongue|chin_tuck|neck"}] (3),
 "nutrition":{"approach":"3 to 4 sentences using bodyTargets (calories, protein, water) and diet","goals":[{"title":"","text":""}] (4),"sampleDay":"an Indian sample day: breakfast, lunch, snack, dinner with portions that fit the diet and targetKcal","summary":"3 sentences"},
+"supplements":[{"name":"","dose":"","when":"","why":""}],
 "style":{"fit":"how clothes should fit this build","bodyType":"e.g. Average / Rectangular","palette":"colours for this skin tone and hair","casual":{"title":"outfit name","text":"full outfit with fit details"},"professional":{"title":"","text":""},"summary":"3 sentences"},
 "toolkit":[{"category":"Cleansing and hydration","budget":{"name":"Brand - product","priceInr":int,"note":"role"},"premium":{"name":"Brand - product","priceInr":int,"note":"role"}}] (6: cleansing and moisturiser, targeted skincare, sunscreen, eye care, hair care, grooming)}`;
 

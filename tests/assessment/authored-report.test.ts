@@ -22,8 +22,9 @@ const face = {
 };
 const body = {
   exercise: { intro: "Training changes your frame.", weights: "Lift 3 times a week.", cardio: "Walk daily.", bullets: ["30 minutes"], expert: "Progressive overload.", summary: "Summary." },
-  training: [{ title: "Upper back", text: "Rows 3x12.", image: "upper_back" }, { title: "Shoulders", text: "Press 3x10.", image: "shoulders" }, { title: "Fat loss", text: "Overall fat loss sharpens the jaw line.", image: "none" }],
+  training: [{ title: "Upper back", text: "Rows 3x12.", image: "upper_back" }, { title: "Shoulders", text: "Press 3x10.", image: "shoulders" }, { title: "Core", text: "Planks with a neutral neck.", image: "neck" }],
   facialExercises: [{ title: "Tongue posture", text: "Rest the tongue up.", image: "tongue" }],
+  supplements: [{ name: "Omega-3", dose: "500-1000 mg per day taken with the main meal", when: "With a meal and a glass of water", why: "Skin barrier." }],
   nutrition: { approach: "Protein at each meal.", goals: [t("Protein"), t("Water")], sampleDay: "Breakfast: poha with eggs.", summary: "Summary." },
   style: { fit: "Tailored.", bodyType: "Average", palette: "Navy.", casual: t("Polo"), professional: t("Blazer"), summary: "Summary." },
   toolkit: [{ category: "Sunscreen", budget: { name: "Re'equil SPF 50", priceInr: 695, note: "Daily" }, premium: { name: "ISDIN Fusion Water", priceInr: 1950, note: "Light" } }],
@@ -47,8 +48,8 @@ test("authored report renders the iMorph-structure PDF: facial-hair page dropped
   const photo = await sharp({ create: { width: 600, height: 800, channels: 3, background: "#777777" } }).jpeg().toBuffer();
   const bytes = await generateProtocolPdf({ clientName: "Asha", referenceId: "TEST", beforeImageBytes: photo, afterImageBytes: photo, previewStatus: "quality_checked", assessment: createEmptyAssessment(), author, reportSummary: "", detectedAreas: [] });
   const pages = (await PDFDocument.load(bytes)).getPageCount();
-  // cover, disclaimer, index, protocol, hair x3, eye x3, jaw x2, skin x2, clinic, exercises x3, nutrition, style, toolkit, summary, focus, closing
-  assert.equal(pages, 24, "no facial-hair page and no expression-video page for this person");
+  // cover, disclaimer, index, protocol, hair x3, eye x3, jaw x2, skin x2, clinic, exercises x3, nutrition, supplements, style, toolkit, summary, focus, closing
+  assert.equal(pages, 25, "no facial-hair page and no expression-video page for this person");
   const noBody = await generateProtocolPdf({ clientName: "Asha", referenceId: "TEST", beforeImageBytes: photo, assessment: createEmptyAssessment(), author: { face: author.face, body: null }, reportSummary: "", detectedAreas: [] });
   assert.ok((await PDFDocument.load(noBody)).getPageCount() < pages, "a failed body part only omits its own pages");
 });

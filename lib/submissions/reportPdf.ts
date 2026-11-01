@@ -153,7 +153,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   const k = kit(font, bold, imgs);
   const targets = bodyTargets(input.assessment);
   const video = buildProtocolPages({ name, assessment: input.assessment, analysis: input.analysis }).find(pg => pg.id === "facial-exercises");
-  const hasVideo = !!video && !/^(No expression video was supplied|A video was supplied, but)/.test(video.blocks[0]?.text ?? "");
+  const hasVideo = !!video && !/^No expression video was supplied/.test(video.blocks[0]?.text ?? "");
 
   // Photo pairs: with an approved after image show NOW and PROJECTED; otherwise one original.
   const pair = async (region: CropRegion, id: string, w: number, h: number): Promise<Blk> => {
@@ -192,7 +192,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     narrow(k.para("It is not a medical or dermatological consultation. We do not diagnose conditions. The clinic options page lists categories of treatment only so you can discuss them with a qualified clinician, who must assess your history, medication, allergies and skin; no doses or device settings are given. If you have a skin, hair, joint or dietary condition, or take prescription medication, speak to a qualified professional before changing your routine.")), k.gap(8),
     narrow(k.para("Your photographs are read by an AI system. Lighting, camera angle and expression all affect what can be seen, and anything the photographs cannot show has been left unstated rather than guessed at. Treat the observations as a considered reading of your photographs, not a measurement of your face.")), k.gap(8),
     narrow(k.para("Projected images, scores and visual ages illustrate a realistic direction of change from consistent effort. They are not a promise of outcome. Results vary with genetics, consistency, age and starting point, and features that cannot change without surgery are identified as such throughout.")), k.gap(8),
-    narrow(k.para("Product suggestions are based on your stated budget and the concerns found in your assessment; prices are indicative. We are not responsible for third-party products, and you should always patch-test anything new on a small area of skin first.")),
+    narrow(k.para("Product and supplement suggestions are based on your stated budget and the concerns found in your assessment; prices are indicative. We are not responsible for third-party products, and you should always patch-test anything new on a small area of skin first.")),
   ] });
   // 3 index placeholder (filled after page numbers are known)
   add({ id: "index", chapter: "Index", title: "Index" });
@@ -218,7 +218,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   add({ id: "eyes", chapter: "Eye Area", title: "Eye Area", blocks: [
     await pair("eyes", "eyes", W2, 118), k.gap(8),
     k.grid([k.col([k.heading("Eye area features"), k.rows(f.eyes.features)]), k.col([k.heading("Assessment"), k.para(f.eyes.assessment)])], 2), k.gap(8),
-    k.heading("Under-eye care"), k.grid(f.eyes.care.map(c => k.sub(c.title, c.text)), 2),
+    k.heading("Under-eye care"), k.grid(f.eyes.care.map(c => k.sub(c.title, c.text)), 2), k.gap(6), k.box("Summary", f.eyes.summary),
   ] });
   // 9 brows
   add({ id: "brows", chapter: "Eye Area", title: "Eyebrows", subtitle: "Your shape today, and the shape to groom toward", blocks: [
@@ -267,15 +267,19 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
       k.heading("How training changes how you look"), k.para(body.exercise.intro), k.heading("Weight training"), k.para(body.exercise.weights), k.heading("Cardio"), k.para(body.exercise.cardio),
       ...body.exercise.bullets.map(b => k.dash(b)), k.gap(8), k.box("Expert training guidance", body.exercise.expert),
     ] });
-    if (body.training.length) add({ id: "training", chapter: "Exercises", title: "Posture and Fat Loss", subtitle: "What actually changes how your face and neck read", blocks: await Promise.all(body.training.map(async (t, i) => t.image === "none" ? k.numbered(i + 1, t.title, t.text) : k.cols([k.numbered(i + 1, t.title, t.text)], await illustrated(t.image, t.image === "upper_back" ? "UPPER BACK" : "SHOULDERS", 110), 130))) });
+    if (body.training.length) add({ id: "training", chapter: "Exercises", title: "Training Priorities", subtitle: "Ordered by what changes the head-and-shoulders view first", blocks: await Promise.all(body.training.map(async (t, i) => k.cols([k.numbered(i + 1, t.title, t.text)], await illustrated(t.image, t.image === "upper_back" ? "UPPER BACK" : t.image === "shoulders" ? "SHOULDERS" : "NECK", 110), 130))) });
     if (body.facialExercises.length) add({ id: "facialex", chapter: "Exercises", title: "Facial Exercises", subtitle: "Only movements with a real mechanical basis", blocks: [...await Promise.all(body.facialExercises.map(async t => k.cols([k.sub(t.title, t.text)], await illustrated(t.image, t.image === "tongue" ? "TONGUE POSTURE" : t.image === "chin_tuck" ? "CERVICAL SPINE" : "NECK", 100), 120))), k.gap(4), k.box("Exercise summary", body.exercise.summary)] });
     if (hasVideo && video) add({ id: "video", chapter: "Exercises", title: "Your Expression Video", subtitle: "Movement observations, not a diagnosis", blocks: video.blocks.map(bl => k.sub(bl.title, bl.text)) });
     const stats = targets ? [["HEIGHT", `${targets.heightCm} cm`, ""], ["WEIGHT", `${targets.weightKg} kg`, ""], ["BMI", String(targets.bmi), ""], ...(targets.maintenanceKcal ? [["MAINTENANCE", `${targets.maintenanceKcal} kcal`, "Daily energy at your activity level"], ["TARGET INTAKE", `${targets.targetKcal} kcal`, targets.targetKcal! < targets.maintenanceKcal ? "A slight deficit" : "At maintenance"]] : []), ["PROTEIN", `${targets.proteinG} g`, "Per day"], ["WATER", `${targets.waterMl} ml`, "Per day, minimum"]] : [];
     const nc = stats.length > 4 ? Math.ceil(stats.length / 2) : Math.max(1, stats.length);
     const statGrid: Blk[] = stats.length ? [k.custom(Math.ceil(stats.length / nc) * 64, (p, x, top, w) => { const gw = (w - 8 * (nc - 1)) / nc; stats.forEach(([l, v, sb], i) => { const gx = x + (i % nc) * (gw + 8), gy = top - Math.floor(i / nc) * 64; p.drawSvgPath(k.roundRect(gw, 56, 5), { x: gx, y: gy, color: C.white, borderColor: C.line, borderWidth: 0.8 }); p.drawText(l, { x: gx + 9, y: gy - 14, font, size: 6.4, color: C.muted }); p.drawText(clean(v), { x: gx + 9, y: gy - 31, font: bold, size: 12.5, color: MID }); if (sb) p.drawText(clean(sb).slice(0, 44), { x: gx + 9, y: gy - 46, font, size: 5.6, color: C.muted }); }); }), k.gap(8)] : [];
-    add({ id: "nutrition", chapter: "Nutrition & Diet", title: "Nutrition & Diet", blocks: [...statGrid, k.heading("Your approach"), k.para(body.nutrition.approach), k.heading("Dietary goals"), ...body.nutrition.goals.map((g, i) => k.numbered(i + 1, g.title, g.text)), ...(body.nutrition.sampleDay ? [k.heading("A sample day"), k.para(body.nutrition.sampleDay)] : []), k.gap(6), k.box("Nutrition summary", body.nutrition.summary)] });
+    add({ id: "nutrition", chapter: "Nutrition & Diet", title: "Nutrition & Diet", blocks: [...statGrid, k.heading("Your approach"), k.para(body.nutrition.approach), k.heading("Dietary goals"), ...body.nutrition.goals.map((g, i) => k.numbered(i + 1, g.title, g.text)), ...(body.nutrition.sampleDay ? [k.heading("A sample day"), k.para(body.nutrition.sampleDay)] : []), ...(body.supplements.length ? [] : [k.gap(6), k.box("Nutrition summary", body.nutrition.summary)])] });
+    if (body.supplements.length) add({ id: "supplements", chapter: "Nutrition & Diet", title: "Supplements", blocks: [
+      (() => { const cx = [0, 0.4, 0.7], cwf = [0.36, 0.27, 0.27], cell = (t: string, i: number, w: number, sz: number) => wrap(t, font, sz, w * cwf[i]); const rowH = (sp: { name: string; dose: string; when: string }, w: number) => Math.max(...[sp.name, sp.dose, sp.when].map((t, i) => cell(t, i, w, 9.4).length)) * 12 + 14; return ({ h: (w: number) => 26 + body.supplements.reduce((a, sp) => a + rowH(sp, w), 0), draw: (p: PDFPage, x: number, top: number, w: number) => { ["COMPOUND", "DOSE", "WHEN"].forEach((h, i) => p.drawText(h, { x: x + cx[i] * w, y: top - 10, font, size: 7.2, color: C.muted })); p.drawLine({ start: { x, y: top - 18 }, end: { x: x + w, y: top - 18 }, thickness: 0.6, color: C.ink }); let y = top - 18; for (const sp of body.supplements) { const rh = rowH(sp, w); [sp.name, sp.dose, sp.when].forEach((t, i) => cell(t, i, w, 9.4).forEach((l, n) => p.drawText(l, { x: x + cx[i] * w, y: y - 16 - n * 12, font, size: 9.4, color: C.ink }))); y -= rh; p.drawLine({ start: { x, y }, end: { x: x + w, y }, thickness: 0.4, color: C.line }); } } } as Blk); })(),
+      k.gap(6), k.heading("Why each one"), ...body.supplements.map(sp => k.sub(sp.name, sp.why)), k.gap(4), k.para("Check with a doctor first if you take medication, are pregnant or have a medical condition. Doses are typical over-the-counter label ranges, not a prescription.", { size: 8.6, color: C.muted }), k.gap(6), k.box("Nutrition summary", body.nutrition.summary),
+    ] });
     add({ id: "style", chapter: "Style Profile", title: "Style Profile", blocks: [
-      k.cols([k.heading("How clothes should fit you"), k.para(body.style.fit)], await illustrated("mannequin", "FIT AND PROPORTION GUIDE", 190), 200),
+      k.cols([k.heading("How clothes should fit you"), k.para(body.style.fit)], await illustrated("mannequin", `${(body.style.bodyType || "Your build").toUpperCase()} PROPORTIONS`, 190), 200),
       k.heading("Colour palette"), k.para(body.style.palette), k.gap(6),
       k.grid([k.box("Casual Wardrobe", `${body.style.casual.title}: ${body.style.casual.text}`, hex("#3e2a5c")), k.box("Professional Attire", `${body.style.professional.title}: ${body.style.professional.text}`, hex("#3e2a5c"))], 2, 14), k.gap(6), k.box("Style summary", body.style.summary),
     ] });
