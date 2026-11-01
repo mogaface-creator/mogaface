@@ -6,7 +6,7 @@ import { generateReportPdf } from "./reportPdf.ts";
 export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<Uint8Array>{
  if(input.author)return generateReportPdf({...input,author:input.author});
  const doc=await PDFDocument.create();const font=await doc.embedFont(StandardFonts.Helvetica),bold=await doc.embedFont(StandardFonts.HelveticaBold);
- doc.setTitle(`MogaFace - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("MogaFace");
+ doc.setTitle(`Moga - ${clean(input.clientName)} - Personal Appearance Protocol`);doc.setAuthor("Moga");
  const approved=(input.previewApproved===true || input.previewStatus==="quality_checked") && !!input.afterImageBytes;
  const pages=buildProtocolPages({name:input.clientName,assessment:input.assessment,concerns:input.intakeConcerns,previewApproved:input.previewApproved===true,previewStatus:input.previewStatus,previewMessage:input.previewMessage,reportScopeNote:input.reportScopeNote,analysis:input.analysis,photoViews:1+Number(!!input.leftImageBytes)+Number(!!input.rightImageBytes),});
  if (!input.author && approved && input.reportSummary.includes("Illustrative before-and-after comparison;")) {
@@ -25,7 +25,7 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
  const date=input.dateStr || new Date().toLocaleDateString("en-GB",{timeZone:"Asia/Kolkata",day:"2-digit",month:"long",year:"numeric"});
  for(const [index,data] of pages.entries()){
   const p=doc.addPage([W,H]);const pageNo=index+1;
-  p.drawText("MOGAFACE",{x:M,y:801,font:bold,size:12,color:C.plum});p.drawText("PERSONAL APPEARANCE PROTOCOL",{x:W-M-182,y:803,font,size:7,color:C.muted});
+  p.drawText("MOGA",{x:M,y:801,font:bold,size:12,color:C.plum});p.drawText("PERSONAL APPEARANCE PROTOCOL",{x:W-M-182,y:803,font,size:7,color:C.muted});
   p.drawLine({start:{x:M,y:784},end:{x:W-M,y:784},color:C.line,thickness:0.6});
   p.drawText(clean(data.subtitle),{x:M,y:754,font:bold,size:7.5,color:C.accent});
   const titleSize=Math.min(28,28*CW/Math.max(CW,bold.widthOfTextAtSize(clean(data.title),28)));
@@ -110,7 +110,7 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
    if(data.takeaway){const takeawayLines=wrap(data.takeaway,font,9,CW-30);const th=takeawayLines.length*13+35;const by=78;
    p.drawRectangle({x:M,y:by,width:CW,height:th,color:C.pale});p.drawText("YOUR TAKEAWAY",{x:M+15,y:by+th-18,font:bold,size:7.5,color:C.accent});let ty=by+th-35;for(const line of takeawayLines){p.drawText(line,{x:M+15,y:ty,font,size:9,color:C.ink});ty-=13;}}
   }
-  p.drawLine({start:{x:M,y:60},end:{x:W-M,y:60},color:C.line,thickness:0.6});p.drawText(`MOGAFACE / REF ${clean(input.referenceId).slice(0,8).toUpperCase()}`,{x:M,y:44,font,size:6.5,color:C.muted});p.drawText(`${String(pageNo).padStart(2,"0")} / ${pages.length}`,{x:W-M-34,y:44,font,size:8,color:C.muted});
+  p.drawLine({start:{x:M,y:60},end:{x:W-M,y:60},color:C.line,thickness:0.6});p.drawText(`MOGA / REF ${clean(input.referenceId).slice(0,8).toUpperCase()}`,{x:M,y:44,font,size:6.5,color:C.muted});p.drawText(`${String(pageNo).padStart(2,"0")} / ${pages.length}`,{x:W-M-34,y:44,font,size:8,color:C.muted});
   if(index===0)p.drawText(clean(date),{x:M,y:235,font,size:8,color:C.muted});
  }
  return doc.save();

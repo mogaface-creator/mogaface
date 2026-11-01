@@ -1,7 +1,7 @@
 /**
  * Safety validation of everything that can reach an image model.
  *
- * An illustration is a rendering of an approved MogaFace finding — not a
+ * An illustration is a rendering of an approved Moga finding — not a
  * treatment simulation, a procedure, an age change or a beauty edit. So any
  * instruction or prompt that names a treatment, a procedure, a quantity, an
  * age or attractiveness goal, a dramatic change, or a promise is refused.

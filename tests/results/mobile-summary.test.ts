@@ -96,7 +96,7 @@ test("StickyMobileCta reserves its own footprint: it measures its real rendered 
 
 test("StickyMobileCta is rendered after the report's footer, not inside <article>, so its spacer can never shift the summary/final-CTA sentinels it measures visibility against", () => {
   const src = read("components/results/Report.tsx");
-  const footerMarker = src.indexOf("MogaFace</p>");
+  const footerMarker = src.indexOf("Moga</p>");
   const ctaIndex = src.indexOf("<StickyMobileCta cta={cta} />");
   assert.ok(footerMarker > 0 && ctaIndex > 0, "both markers must be present");
   assert.ok(ctaIndex > footerMarker, "StickyMobileCta must be placed after the report's footer, never earlier in the document flow");

@@ -93,7 +93,7 @@ export function DossierPreview() {
               <div className="relative w-full max-w-[280px] aspect-[1/1.414] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white">
                 <Image
                   src={mobilePage === 1 ? "/images/dossier/dossier_page_1.png" : "/images/dossier/dossier_page_2.png"}
-                  alt={`MogaFace Clinical Dossier Page ${mobilePage}`}
+                  alt={`Moga Clinical Dossier Page ${mobilePage}`}
                   fill
                   className="object-cover object-top"
                   sizes="280px"
@@ -111,7 +111,7 @@ export function DossierPreview() {
               <div className="relative w-64 sm:w-72 aspect-[1/1.414] -rotate-6 translate-x-6 sm:translate-x-8 rounded-2xl overflow-hidden shadow-lg border border-slate-200 bg-white transition-transform hover:scale-105 hover:z-20">
                 <Image
                   src="/images/dossier/dossier_page_2.png"
-                  alt="MogaFace Clinical Dossier Page 2"
+                  alt="Moga Clinical Dossier Page 2"
                   fill
                   className="object-cover object-top"
                   sizes="300px"
@@ -125,7 +125,7 @@ export function DossierPreview() {
               <div className="relative w-64 sm:w-72 aspect-[1/1.414] rotate-3 -translate-x-4 sm:-translate-x-6 z-10 rounded-2xl overflow-hidden shadow-2xl border border-violet-200 bg-white transition-transform hover:scale-105 hover:z-30">
                 <Image
                   src="/images/dossier/dossier_page_1.png"
-                  alt="MogaFace Clinical Dossier Page 1"
+                  alt="Moga Clinical Dossier Page 1"
                   fill
                   className="object-cover object-top"
                   sizes="300px"

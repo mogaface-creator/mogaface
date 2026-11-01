@@ -1,4 +1,4 @@
-# MogaFace (ClinicNextFace): AI Clinical Consultation & Aesthetic Simulation Engine
+# Moga (ClinicNextFace): AI Clinical Consultation & Aesthetic Simulation Engine
 
 > **A next-generation AI consultation platform for aesthetic medicine clinics that turns prospective patient portrait photos into medically plausible, identity-locked aesthetic simulations and bespoke 2-page clinical dossiers.**
 
@@ -11,14 +11,14 @@ When prospective patients consider cosmetic or aesthetic treatments (like Botox,
 
 Traditional clinic websites ask users to fill out boring contact forms and wait days for a callback. Meanwhile, generic consumer AI face-app filters either **swap their face with a random Bollywood celebrity**, **bleach their skin**, or **slap a fake wig on a bald person**.
 
-**MogaFace solves this.**  
+**Moga solves this.**  
 In under 60 seconds, a patient uploads a selfie from their phone. Our clinical AI scans their facial anatomy, identifies real non-surgical opportunities, and generates a **photorealistic, identity-locked preview** of their results—preserving their exact bone structure, skin melanin, and hair—paired with a luxury **2-page Clinical Consultation Dossier PDF**.
 
 ---
 
 ## 2. The Core Problem in Aesthetic Medicine
 
-| The Old Way / Generic AI Apps | The MogaFace Clinical Way |
+| The Old Way / Generic AI Apps | The Moga Clinical Way |
 | :--- | :--- |
 | **Generic Face-Swapping**: Denoising diffusion turns the patient into an unrecognizable model. | **100% Identity Lock**: The patient remains undeniably themselves. Nose, eye shape, skull, and brow are locked. |
 | **Skin Bleaching**: Western diffusion models automatically whiten tan and brown complexions. | **Melanin Integrity**: Zero bleaching. Natural skin tone and undertones are preserved. |

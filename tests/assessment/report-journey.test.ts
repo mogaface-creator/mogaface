@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import {PDFDocument} from 'pdf-lib';
 import {createEmptyAssessment} from '../../lib/assessment/defaults.ts';
 import {projectPlaces,setAnswer} from '../../lib/assessment/clinicIntake.ts';
-import {buildMogaFaceAnalysis} from '../../lib/observation/build.ts';
+import {buildMogaAnalysis} from '../../lib/observation/build.ts';
 import {createAnalysisRecord,getAnalysisRecord,attachReportPhotos} from '../../lib/analysis-session/store.ts';
 import {createSubmission,getSubmission,claimSubmission,updateSubmission} from '../../lib/submissions/store.ts';
 import {handleSubmitAssessment} from '../../lib/submissions/submitHandler.ts';
@@ -19,7 +19,7 @@ const deps={env:{NODE_ENV:'test'}};
 const geometry={face:{cx:.5,cy:.55,rx:.25,ry:.25},hair:{cx:.5,cy:.25,rx:.3,ry:.16},protected:[{cx:.4,cy:.45,rx:.07,ry:.04},{cx:.6,cy:.45,rx:.07,ry:.04},{cx:.5,cy:.55,rx:.04,ry:.08},{cx:.5,cy:.66,rx:.08,ry:.04},{cx:.5,cy:.35,rx:.1,ry:.02}]};
 test('questions + three photos + saved video evidence reach the after-image report and protected download',async()=>{
  let a=projectPlaces(createEmptyAssessment(),['HAIR','BLEMISHES','FACIAL_LINES']);a=setAnswer(a,'protocolHairTexture','curly');a=setAnswer(a,'protocolHairGoal','texture');a=setAnswer(a,'wantAfterPhoto','yes');
- const analysis=buildMogaFaceAnalysis(a,null);analysis.expression={status:'analyzed',measured:[],expressions:[{type:'dynamic_expression_observation',expression:'BROW_RAISE',region:'FOREHEAD',status:'observed',evidence:{neutralFrames:[0],expressionFrames:[1],movementMetric:'test movement vs neutral',movementPct:12},strength:'moderate',reason:'Synthetic test fixture'}],linePatterns:[],notes:[]};
+ const analysis=buildMogaAnalysis(a,null);analysis.expression={status:'analyzed',measured:[],expressions:[{type:'dynamic_expression_observation',expression:'BROW_RAISE',region:'FOREHEAD',status:'observed',evidence:{neutralFrames:[0],expressionFrames:[1],movementMetric:'test movement vs neutral',movementPct:12},strength:'moderate',reason:'Synthetic test fixture'}],linePatterns:[],notes:[]};
  const handle=await createAnalysisRecord({assessment:a,analysis,photoQualityValid:true,hasLeftFortyFive:true,hasRightFortyFive:true,portraitGeometry:geometry,videoPreviewContextConsent:"granted"},deps);assert.ok(handle);
  const original=await sharp({create:{width:600,height:800,channels:3,background:'#777777'}}).jpeg().toBuffer();
  const after=await sharp({create:{width:600,height:800,channels:3,background:'#888888'}}).jpeg().toBuffer();

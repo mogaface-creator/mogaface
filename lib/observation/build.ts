@@ -13,7 +13,7 @@ import { ANALYSIS_VERSION } from "../facial-analysis/analysis.ts";
 import type { Assessment } from "../assessment/types.ts";
 import type { MultiPhotoFacialAnalysis } from "../facial-analysis/multiPhoto/types.ts";
 import type { VideoExpressionAnalysis } from "../facial-analysis/video/types.ts";
-import type { MogaFaceAnalysis, Observation } from "./types.ts";
+import type { MogaAnalysis, Observation } from "./types.ts";
 
 /**
  * Builds the full observation layer for one assessment. Pure — no I/O, no
@@ -22,11 +22,11 @@ import type { MogaFaceAnalysis, Observation } from "./types.ts";
  * reach the review step before running photo analysis; in that case every
  * photo-derived domain is simply empty rather than fabricated.
  */
-export function buildMogaFaceAnalysis(
+export function buildMogaAnalysis(
   assessment: Assessment,
   multiPhoto: MultiPhotoFacialAnalysis | null,
   video: VideoExpressionAnalysis | null = null,
-): MogaFaceAnalysis {
+): MogaAnalysis {
   const facialStructure = buildFacialStructureAnalysis(multiPhoto);
   const eyeArea = buildEyeAreaAnalysis(multiPhoto);
   const expression = buildExpressionAnalysis(video);

@@ -20,7 +20,7 @@ import {
 import { VISUAL_THRESHOLDS } from "../../lib/facial-analysis/calibration/thresholds.ts";
 import { buildVisualizationPlan } from "../../lib/visualization/build.ts";
 import { decideIllustrationEligibility } from "../../lib/visualization/eligibility.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import { createEmptyAppearanceConcerns, type AppearanceConcerns } from "../../lib/assessment/appearanceConcerns.ts";
 import { buildFilledAssessment, buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
@@ -37,7 +37,7 @@ function assessmentWith(partial: Partial<AppearanceConcerns>): Assessment {
   return a;
 }
 const withVideo = (a: Assessment) =>
-  evaluateTreatmentOpportunities({ assessment: a, analysis: buildMogaFaceAnalysis(a, { ...buildMultiPhotoAnalysisWithFront(), photos: [frontRecord()] }, videoAnalysis()) });
+  evaluateTreatmentOpportunities({ assessment: a, analysis: buildMogaAnalysis(a, { ...buildMultiPhotoAnalysisWithFront(), photos: [frontRecord()] }, videoAnalysis()) });
 
 // ---- production gating ----
 
@@ -225,7 +225,7 @@ test("terminology: a lifting opportunity is identified as facial_lifting and nev
 
 test("terminology: under-eye wording stays observational across observations, decisions and thresholds", () => {
   const rec = frontRecord(0.7);
-  const a = buildMogaFaceAnalysis(buildFilledAssessment(), { ...buildMultiPhotoAnalysisWithFront(), photos: [rec] });
+  const a = buildMogaAnalysis(buildFilledAssessment(), { ...buildMultiPhotoAnalysisWithFront(), photos: [rec] });
   const eyeText = [
     ...a.observations.filter((o) => o.id.startsWith("eyeArea.")).map((o) => o.label),
     ...a.eyeArea.notMeasured.map((n) => `${n.label} ${n.reason}`),
@@ -239,7 +239,7 @@ test("terminology: under-eye wording stays observational across observations, de
 });
 
 test("the raw evidence a developer sees never contains a diagnosis, cause, or treatment word", () => {
-  const a = buildMogaFaceAnalysis(buildFilledAssessment(), { ...buildMultiPhotoAnalysisWithFront(), photos: [frontRecord(0.7)] }, videoAnalysis());
+  const a = buildMogaAnalysis(buildFilledAssessment(), { ...buildMultiPhotoAnalysisWithFront(), photos: [frontRecord(0.7)] }, videoAnalysis());
   const text = JSON.stringify(a.observations.map((o) => o.label)).toLowerCase();
   for (const w of ["botox", "filler", "wrinkle", "aging", "diagnos", "acne", "rosacea", "laxity", "candidate"]) assert.ok(!text.includes(w), w);
   assert.ok(videoObservation("expression.x", 1).source.startsWith("video_frame_"));

@@ -18,10 +18,10 @@ import type { IllustrationHandlerDeps } from "../../lib/image-generation/handler
 import { createMemoryRateLimiter } from "../../lib/interpretation/access.ts";
 import { CALIBRATION_STATE } from "../../lib/facial-analysis/calibration/status.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
@@ -49,10 +49,10 @@ function fakePng(w: number, h: number, size: number): Uint8Array {
 const GENERATED = fakePng(1024, 1536, 8_000);
 const b64 = (b: Uint8Array) => Buffer.from(b).toString("base64");
 
-function realExpressionLinesInput(): { assessment: Assessment; analysis: MogaFaceAnalysis } {
+function realExpressionLinesInput(): { assessment: Assessment; analysis: MogaAnalysis } {
   const assessment = createEmptyAssessment();
   assessment.appearanceConcerns = { ...assessment.appearanceConcerns, selected: ["FACIAL_LINES"], details: ["FOREHEAD_LINES"], priorities: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   analysis.observations.push(
     measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }),
     measuredObservation({ id: "expression.visibleForeheadLinePattern", domain: "expression", label: "Visible forehead line pattern", value: true, source: "video_frame_0" }),

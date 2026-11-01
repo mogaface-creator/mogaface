@@ -17,8 +17,8 @@ import { normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns
 import { MultiPhotoDevResults } from "@/components/facial-analysis/MultiPhotoDevResults";
 import { analyzeSinglePhoto, buildMultiPhotoAnalysis } from "@/lib/facial-analysis/multiPhoto/coordinator.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
-import { buildMogaFaceAnalysis } from "@/lib/observation/build.ts";
-import type { MogaFaceAnalysis } from "@/lib/observation/types.ts";
+import { buildMogaAnalysis } from "@/lib/observation/build.ts";
+import type { MogaAnalysis } from "@/lib/observation/types.ts";
 import { analyzeVideoFile } from "@/lib/facial-analysis/video/capture.ts";
 import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
 import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
@@ -123,7 +123,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
   const [records, setRecords] = useState<PhotoAnalysisRecord[]>([]);
   const [analysis, setAnalysis] = useState<MultiPhotoFacialAnalysis | null>(null);
-  const [mogaFaceAnalysis, setMogaFaceAnalysis] = useState<MogaFaceAnalysis | null>(null);
+  const [mogaFaceAnalysis, setMogaAnalysis] = useState<MogaAnalysis | null>(null);
   // The optional expression video lives in memory only, like the photo files — never persisted.
   const [videoAnalysis, setVideoAnalysis] = useState<VideoExpressionAnalysis | null>(null);
   const [videoProgress, setVideoProgress] = useState<{ done: number; total: number } | null>(null);
@@ -191,9 +191,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     if (!videoFile) analyzedVideoRef.current = null;
     setVideoAnalysis(nextVideo);
 
-    const nextMogaFaceAnalysis = buildMogaFaceAnalysis(assessment, nextAnalysis, nextVideo);
-    const nextTreatmentOpportunities = evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis });
-    setMogaFaceAnalysis(nextMogaFaceAnalysis);
+    const nextMogaAnalysis = buildMogaAnalysis(assessment, nextAnalysis, nextVideo);
+    const nextTreatmentOpportunities = evaluateTreatmentOpportunities({ assessment, analysis: nextMogaAnalysis });
+    setMogaAnalysis(nextMogaAnalysis);
     setTreatmentOpportunities(nextTreatmentOpportunities);
     setProgress(null);
     setIsRunning(false);
@@ -211,7 +211,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     setCreatingSession(true);
     const session = await createAnalysisSession({
       assessment,
-      analysis: nextMogaFaceAnalysis,
+      analysis: nextMogaAnalysis,
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
       portraitGeometry:safePortraitGeometry,
       videoPreviewContextConsent: photoConsent === "granted" && !!videoFile ? "granted" : "declined",

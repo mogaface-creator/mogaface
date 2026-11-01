@@ -6,7 +6,7 @@ import { ResultsSummary } from "./ResultsSummary";
 import { StickyMobileCta } from "./StickyMobileCta";
 
 /**
- * The MogaFace report. Presentation only: it receives plain copy from
+ * The Moga report. Presentation only: it receives plain copy from
  * toReportView() and has no access to observations, evidence ids, thresholds,
  * calibration state or versions, so it cannot show them.
  */
@@ -175,7 +175,7 @@ export function Report({
         </Section>
       )}
 
-      <Section id="observed" eyebrow="What MogaFace observed" title="Structure, eyes and expression">
+      <Section id="observed" eyebrow="What Moga observed" title="Structure, eyes and expression">
         <DomainGroup sections={observed} />
       </Section>
 
@@ -238,7 +238,7 @@ export function Report({
         )}
       </Section>
 
-      <Section id="limits" eyebrow="What MogaFace can and cannot tell you" title="Good to know">
+      <Section id="limits" eyebrow="What Moga can and cannot tell you" title="Good to know">
         <ul className="mx-auto max-w-2xl divide-y divide-border text-base leading-7">
           {view.limitations.map((l) => (
             <li key={l} className="py-4">
@@ -265,7 +265,7 @@ export function Report({
       </section>
 
       <footer className="mt-16 border-t border-border pt-8 text-center text-sm text-muted">
-        <p className="font-serif text-lg text-foreground">MogaFace</p>
+        <p className="font-serif text-lg text-foreground">Moga</p>
         <p className="mt-2">{view.footer.tagline}</p>
         <p className="mt-1">{view.footer.disclaimer}</p>
       </footer>

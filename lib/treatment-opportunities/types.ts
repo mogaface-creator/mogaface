@@ -85,7 +85,7 @@ export interface ConcernSignal {
 }
 
 /**
- * Evidence from a video pipeline. No video analysis exists in MogaFace yet —
+ * Evidence from a video pipeline. No video analysis exists in Moga yet —
  * this is the input contract for when one does; the engine never produces one.
  */
 export interface VideoObservation {

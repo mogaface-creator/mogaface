@@ -1,10 +1,10 @@
-# MogaFace
+# Moga
 
-MogaFace is an AI-assisted facial analysis platform. It detects a face in a
+Moga is an AI-assisted facial analysis platform. It detects a face in a
 photo, maps its geometry, and reports measurable proportions and symmetry —
 entirely in your browser. No image is ever uploaded to a server.
 
-**MogaFace does not make beauty, attractiveness, or medical claims.** See
+**Moga does not make beauty, attractiveness, or medical claims.** See
 [FACIAL_ANALYSIS_METHODOLOGY.md](./FACIAL_ANALYSIS_METHODOLOGY.md) for the
 distinction between *measurement* and *interpretation* this project holds to.
 

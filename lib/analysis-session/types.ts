@@ -8,7 +8,7 @@
 
 import type { LeadContact } from "../leads/contact.ts";
 import type { Assessment } from "../assessment/types.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import type { AngleSlot } from "../image-generation/angles.ts";
 import type { PredictionPlan } from "../visualization/predict.ts";
@@ -46,7 +46,7 @@ export interface AnalysisRecord {
    * ONCE, here, server-side, from these raw values, and never again trusted
    * as a pre-built object from any later request.
    */
-  analysis: MogaFaceAnalysis;
+  analysis: MogaAnalysis;
   /** SERVER-COMPUTED via evaluateTreatmentOpportunities — never accepted from a client as a pre-built object. */
   opportunities: TreatmentOpportunity[];
   /**

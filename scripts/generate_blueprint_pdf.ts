@@ -131,7 +131,7 @@ export async function buildBlueprintDoc(): Promise<PDFDocument> {
       height: 0.75,
       color: C.antiqueGold,
     });
-    page.drawText("MOGAFACE AESTHETIC INTELLIGENCE • SYSTEM ARCHITECTURE SPECIFICATION", {
+    page.drawText("MOGA AESTHETIC INTELLIGENCE • SYSTEM ARCHITECTURE SPECIFICATION", {
       x: MARGIN_X,
       y: 18,
       size: 6.5,
@@ -691,8 +691,8 @@ async function main() {
   if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
   if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
 
-  const publicPath = path.join(publicDir, "MogaFace_Questionnaire_Audit_Blueprint.pdf");
-  const artifactPath = path.join(scratchDir, "MogaFace_Questionnaire_Audit_Blueprint.pdf");
+  const publicPath = path.join(publicDir, "Moga_Questionnaire_Audit_Blueprint.pdf");
+  const artifactPath = path.join(scratchDir, "Moga_Questionnaire_Audit_Blueprint.pdf");
   
   fs.writeFileSync(publicPath, Buffer.from(pdfBytes));
   fs.writeFileSync(artifactPath, Buffer.from(pdfBytes));

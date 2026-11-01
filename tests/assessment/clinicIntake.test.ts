@@ -8,7 +8,7 @@ import { sanitizeAssessment } from "../../lib/assessment/schema.ts";
 import { buildPredictionPlan } from "../../lib/visualization/predict.ts";
 import { buildPredictionIllustrationPrompt } from "../../lib/image-generation/predictionPrompt.ts";
 import { validateIllustrationPrompt } from "../../lib/visualization/safety.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 
 test("an older assessment without clinicIntake still loads, with an empty intake", () => {
   const older: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
@@ -84,7 +84,7 @@ test("treatment words and look directions stay out of the image prompt", () => {
   };
   const plan = buildPredictionPlan({
     assessment,
-    analysis: buildMogaFaceAnalysis(assessment, null),
+    analysis: buildMogaAnalysis(assessment, null),
     frontPhoto: { ref: "front", qualityValid: true },
   });
   assert.equal(plan.status, "planned");
@@ -98,7 +98,7 @@ test("treatment words and look directions stay out of the image prompt", () => {
   const withHair = projectPlaces(createEmptyAssessment(), ["HAIR"]);
   const hairPlan = buildPredictionPlan({
     assessment: withHair,
-    analysis: buildMogaFaceAnalysis(withHair, null),
+    analysis: buildMogaAnalysis(withHair, null),
     frontPhoto: { ref: "front", qualityValid: true },
   });
   assert.equal(hairPlan.status, "planned");

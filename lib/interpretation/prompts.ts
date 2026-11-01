@@ -7,13 +7,13 @@
  */
 
 import { AI_EDITABLE_SECTIONS } from "./immutable.ts";
-import type { InterpretationInput, MogaFaceReport } from "./types.ts";
+import type { InterpretationInput, MogaReport } from "./types.ts";
 
 export const INTERPRETATION_SYSTEM_PROMPT = [
-  "You are the MogaFace report wording assistant.",
+  "You are the Moga report wording assistant.",
   "",
-  "MogaFace has already performed the analysis. You are not performing analysis. You are not a clinician.",
-  "Everything you receive is STRUCTURED EVIDENCE produced by MogaFace, in the form of a draft report. You must only rewrite and organize information supplied by MogaFace.",
+  "Moga has already performed the analysis. You are not performing analysis. You are not a clinician.",
+  "Everything you receive is STRUCTURED EVIDENCE produced by Moga, in the form of a draft report. You must only rewrite and organize information supplied by Moga.",
   "",
   "Every factual statement must remain supported by the evidence references it was given.",
   "Never add a new finding. Never create a treatment opportunity. Never diagnose. Never prescribe.",
@@ -21,7 +21,7 @@ export const INTERPRETATION_SYSTEM_PROMPT = [
   "Never infer a medical cause. Never name a treatment, product or brand. Never promise an outcome.",
   "Never invent measurements. Never invent numbers: give no dose, percentage or number that is not already in the draft. Never invent evidence.",
   "Never change evidence references, confidence, opportunity status, category or consumer readiness.",
-  "Treatment-related wording must remain conservative. The deterministic MogaFace report is the source of truth.",
+  "Treatment-related wording must remain conservative. The deterministic Moga report is the source of truth.",
   "",
   "When discussing treatment-related areas, preserve the wording 'may be worth discussing with your clinician'.",
   "If evidence is insufficient, preserve the limitation exactly as written. Do not fill a gap with generic content.",
@@ -56,7 +56,7 @@ function mapAssessmentRefs(value: Walkable, fn: (ref: { sourceType: string; sour
 }
 
 /** What a model may see and reword: overview, priorities, four findings sections, areas. No questionnaire-only sections, no limitations copy, no CTA. */
-export function editableDraft(report: MogaFaceReport, assessmentId: string): Record<string, unknown> {
+export function editableDraft(report: MogaReport, assessmentId: string): Record<string, unknown> {
   const sections: Record<string, unknown> = {};
   for (const key of AI_EDITABLE_SECTIONS) sections[key] = report.sections[key] ?? null; // null = "no evidence for this section" (the schema allows it for expression only)
   const subset = { overview: report.overview, priorities: report.priorities, sections, opportunities: report.opportunities };
@@ -104,7 +104,7 @@ export function serializeEvidenceForModel(input: InterpretationInput): string {
  * server. What remains are goal and finding sentences and evidence ids.
  * Without a draft (legacy callers) only the narrow evidence summary is returned.
  */
-export function buildInterpretationPrompt(input: InterpretationInput, draft?: MogaFaceReport): { system: string; user: string } {
+export function buildInterpretationPrompt(input: InterpretationInput, draft?: MogaReport): { system: string; user: string } {
   if (!draft) return { system: INTERPRETATION_SYSTEM_PROMPT, user: `Evidence:\n${serializeEvidenceForModel(input)}` };
   return { system: INTERPRETATION_SYSTEM_PROMPT, user: `${DRAFT_MARKER}${JSON.stringify(editableDraft(draft, input.assessmentId), null, 1)}` };
 }

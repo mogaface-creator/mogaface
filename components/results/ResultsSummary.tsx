@@ -16,7 +16,7 @@ export function ResultsSummary({ view }: { view: ReportView }) {
       <div aria-hidden className="mx-auto mt-6 h-px w-14 bg-accent" />
       <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted">{view.cover.intro}</p>
       <p className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted">
-        <span>MogaFace</span>
+        <span>Moga</span>
         {view.cover.dateLabel && <span>Prepared {view.cover.dateLabel}</span>}
         {view.cover.badge && <span>{view.cover.badge}</span>}
       </p>

@@ -99,7 +99,7 @@ export interface InterpretationResult {
   evidence: EvidenceEntry[];
   clinicianReviewRequired: true;
   /** The premium personalised report, built from the same evidence. See report.ts. */
-  report: MogaFaceReport;
+  report: MogaReport;
 }
 
 /** One user-stated goal/concern, already normalized. */
@@ -146,7 +146,7 @@ export interface InterpretationProvider {
 /**
  * Where a report statement's content comes from:
  *   user_reported — the person's own answers ("Your assessment reports…")
- *   observed      — a computer-vision observation ("MogaFace observed…")
+ *   observed      — a computer-vision observation ("Moga observed…")
  *   opportunity   — a treatment opportunity produced by the existing engine
  *   limitation    — an honest statement that evidence is missing or unsupported
  */
@@ -201,7 +201,7 @@ export interface ReportOpportunity {
   category: TreatmentCategory | null;
 }
 
-export interface MogaFaceReport {
+export interface MogaReport {
   overview: ReportStatement;
   /** At most 3. */
   priorities: ReportPriority[];

@@ -36,7 +36,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 /**
  * Loads the assessment snapshot, runs interpretation → visualization plan →
- * illustration eligibility, and renders the MogaFace report. NO image is
+ * illustration eligibility, and renders the Moga report. NO image is
  * generated here: the pipeline gets no image provider, and generation happens
  * only from the button in IllustrationPanel (never on render, refresh or a timer).
  * Development-only URL switches, ignored in production builds:
@@ -231,7 +231,7 @@ export function ResultsExperience() {
           )}
           {mode.isDevPreview && (
             <p role="note" className="mb-12 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-              DEVELOPER / CLINIC TESTING ONLY. This preview is for evaluating the MogaFace experience and is not a calibrated clinical result.
+              DEVELOPER / CLINIC TESTING ONLY. This preview is for evaluating the Moga experience and is not a calibrated clinical result.
             </p>
           )}
           <Report view={mode.view} cta={cta} illustration={mode.illustration} devIllustrationTest={mode.devIllustrationTest} />

@@ -125,7 +125,7 @@ export function intakeFacts(a: Assessment): Record<string, unknown> {
   return facts;
 }
 
-const COMMON = `You write one part of the personal "MogaFace Glow-Up Protocol" for ONE person from their photographs and questionnaire facts. Output ONLY one JSON object, exactly in the shape given.
+const COMMON = `You write one part of the personal "Moga Glow-Up Protocol" for ONE person from their photographs and questionnaire facts. Output ONLY one JSON object, exactly in the shape given.
 
 PHOTO OVER FORM: the photographs are the evidence; fields named selfReported_..._VERIFY_AGAINST_PHOTOS are only what the person believes. Look at individual hair strands: loops and coils mean curly, an S-bend means wavy, and say what you actually see even when it differs. When a questionnaire answer about something visible (hair texture, facial hair, skin) contradicts the photos, trust the photos and state what you actually see. Use the questionnaire for what photos cannot show (diet, budget, routine, goals).
 

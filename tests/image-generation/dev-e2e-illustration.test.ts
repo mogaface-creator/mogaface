@@ -22,7 +22,7 @@ import { CALIBRATION_STATE, VISUAL_OBSERVATIONS_CALIBRATED, isCategoryCalibrated
 import { ILLUSTRATION_POLICY } from "../../lib/visualization/eligibility.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { TreatmentOpportunity } from "../../lib/treatment-opportunities/types.ts";
 
@@ -70,7 +70,7 @@ function stubOpenAi() {
 function realExpressionLinesOpportunities(): TreatmentOpportunity[] {
   const assessment = createEmptyAssessment();
   assessment.appearanceConcerns = { ...assessment.appearanceConcerns, selected: ["FACIAL_LINES"], details: ["FOREHEAD_LINES"], priorities: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   analysis.observations.push(
     measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }),
     measuredObservation({ id: "expression.visibleForeheadLinePattern", domain: "expression", label: "Visible forehead line pattern", value: true, source: "video_frame_0" }),
@@ -81,7 +81,7 @@ function realExpressionLinesOpportunities(): TreatmentOpportunity[] {
 function realContourOpportunities(): TreatmentOpportunity[] {
   const assessment = createEmptyAssessment();
   assessment.appearanceConcerns = { ...assessment.appearanceConcerns, selected: ["FACIAL_DEFINITION"], details: ["JAW_DEFINITION"], priorities: ["FACIAL_DEFINITION"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   analysis.observations.push(
     measuredObservation({ id: "facialStructure.contour.jawContourAngle.front.left", domain: "facial-structure", label: "Jaw contour angle, left (front)", value: 124, source: "front" }),
     measuredObservation({ id: "facialStructure.contour.jawContourAngle.leftFortyFive.left", domain: "facial-structure", label: "Jaw contour angle, left (left 45°)", value: 121, source: "leftFortyFive" }),

@@ -16,10 +16,10 @@ import { createAnalysisRecord, __clearAnalysisRecordsForTests } from "../../lib/
 import type { IllustrationHandlerDeps } from "../../lib/image-generation/handler.ts";
 import { createMemoryRateLimiter } from "../../lib/interpretation/access.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 
 const KEY = "sk-test-prediction-security-key-not-real";
 const ENABLED_ENV = { IMAGE_GENERATION_PROVIDER: "openai", OPENAI_API_KEY: KEY, NODE_ENV: "production" };
@@ -43,10 +43,10 @@ const GENERATED = fakePng(1024, 1536, 8_000);
 const b64 = (b: Uint8Array) => Buffer.from(b).toString("base64");
 
 /** A real, self-reported goal (FACIAL_LINES) plus real (uncalibrated) video evidence — the exact input predict.ts requires, with photoQualityValid: true so the front photo actually qualifies. */
-function realGoalDrivenInput(): { assessment: Assessment; analysis: MogaFaceAnalysis } {
+function realGoalDrivenInput(): { assessment: Assessment; analysis: MogaAnalysis } {
   const assessment = createEmptyAssessment();
   assessment.appearanceConcerns = { ...assessment.appearanceConcerns, selected: ["FACIAL_LINES"], details: ["FOREHEAD_LINES"], priorities: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   analysis.observations.push(
     measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }),
   );
@@ -158,7 +158,7 @@ test("the same PredictionPlan, unchanged, is applied identically to all three an
 test("the server response reports which areas were ACTUALLY illustrated (from the real trusted plan), not a client-side guess — proving the Results-page 'what this illustrates' cards can be driven by the real generation, not the always-empty legacy preview", async () => {
   const assessment = createEmptyAssessment();
   assessment.hair = { ...assessment.hair, concerns: ["hairline"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   const handle = (await createAnalysisRecord({ assessment, analysis, photoQualityValid: true }))!;
   assert.equal(handle.illustrationEligible, true);
 
@@ -175,7 +175,7 @@ test("the server response reports which areas were ACTUALLY illustrated (from th
 
 test("no goal, no evidence: an analysis session with nothing to predict still returns not_eligible, never an invented change", async () => {
   const assessment = createEmptyAssessment(); // no appearanceConcerns selected at all
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   const handle = (await createAnalysisRecord({ assessment, analysis, photoQualityValid: true }))!;
   assert.equal(handle.illustrationEligible, false);
   const api = stubOpenAi();

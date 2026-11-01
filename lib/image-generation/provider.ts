@@ -44,7 +44,7 @@ export function buildIllustrationPrompt(plan: VisualizationPlan): string {
   return [
     "Edit the supplied portrait of the same person.",
     "Keep the same photo and the same real-world situation: the same pose, framing, camera angle and setting.",
-    "Create a clearly visible, natural-looking illustrative visualization of the approved MogaFace visual change(s) listed below.",
+    "Create a clearly visible, natural-looking illustrative visualization of the approved Moga visual change(s) listed below.",
     "The output must look like a real, unretouched photograph — not a stylized, filtered, or generically enhanced image.",
     "Preserve the person's identity and every facial characteristic that is unrelated to the approved change(s).",
     "Do not retouch, stylize, smooth, apply generic photo enhancement, or otherwise alter any unrelated feature.",

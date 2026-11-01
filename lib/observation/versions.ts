@@ -4,7 +4,7 @@
  * These are distinct from, and independent of, the engine versions they
  * wrap (`ANALYSIS_VERSION` in lib/facial-analysis/analysis.ts and
  * `MULTI_PHOTO_ANALYSIS_VERSION` in lib/facial-analysis/multiPhoto/types.ts)
- * — a MogaFaceAnalysis records all of them (see MogaFaceAnalysisVersions in
+ * — a MogaAnalysis records all of them (see MogaAnalysisVersions in
  * types.ts) so a stored result is never ambiguous about which formulas,
  * which combination rules, and which observation-mapping logic produced it.
  */

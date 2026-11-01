@@ -1,5 +1,5 @@
 /**
- * Data model for the MogaFace assessment/onboarding flow.
+ * Data model for the Moga assessment/onboarding flow.
  *
  * This is purely user-provided context for a future personalization engine
  * (Step 22+ in the project roadmap) — nothing here is scored, diagnosed, or

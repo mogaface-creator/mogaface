@@ -1,5 +1,5 @@
 /**
- * The 25-page MogaFace Glow-Up Protocol, rendered from person-specific authored content.
+ * The 25-page Moga Glow-Up Protocol, rendered from person-specific authored content.
  * One page per topic, each with its own visual: cover and closing waves, score bars, haircut silhouette,
  * hairline-stage chart, brow shapes, glasses icons, anatomy illustrations, face-shape diagram.
  * Falls back to nothing: the caller uses the fixed template when there is no authored content.
@@ -144,7 +144,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   const { face: f, body } = input.author, name = clean(input.clientName);
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica), bold = await doc.embedFont(StandardFonts.HelveticaBold), mark = await doc.embedFont(StandardFonts.TimesRomanItalic);
-  doc.setTitle(`MogaFace - ${name} - Glow-Up Protocol`); doc.setAuthor("MogaFace");
+  doc.setTitle(`Moga - ${name} - Glow-Up Protocol`); doc.setAuthor("Moga");
   const approved = (input.previewApproved === true || input.previewStatus === "quality_checked") && !!input.afterImageBytes;
   const date = input.dateStr || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "long", year: "numeric" }).toUpperCase();
   const imgs = new Map<string, PDFImage>();
@@ -177,12 +177,12 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     const top0 = H * 0.5, strips = 48;
     for (let i = 0; i < strips; i++) p.drawRectangle({ x: 0, y: H - ((i + 1) * (H - top0)) / strips - 1, width: W, height: (H - top0) / strips + 2, color: mix([86, 60, 126], [44, 31, 68], i / strips) });
     hatchedWave(p, top0 + 20, hex("#43305f")); wave(p, top0 - 30, hex("#8f7da9"), 1); wave(p, top0 - 80, hex("#d6cde4"), 2); wave(p, top0 - 130, hex("#ffffff"), 3);
-    p.drawText("Moga", { x: 70, y: H - 112, font, size: 32, color: C.white }); p.drawText("Face", { x: 70 + font.widthOfTextAtSize("Moga", 32), y: H - 112, font: bold, size: 32, color: C.white });
+    p.drawText("Moga", { x: 70, y: H - 112, font: bold, size: 32, color: C.white });
     p.drawText("GLOW-UP", { x: 70, y: H - 330, font: bold, size: 46, color: C.white }); p.drawText("PROTOCOL", { x: 70, y: H - 382, font, size: 46, color: C.white });
     spaced(p, "PREPARED FOR", 70, 232, 8, font, C.muted, 2.6);
     let fs = 36; while (font.widthOfTextAtSize(name, fs) > W - 140 && fs > 16) fs -= 1; p.drawText(name, { x: 70, y: 188, font, size: fs, color: C.ink });
     p.drawLine({ start: { x: 70, y: 166 }, end: { x: 134, y: 166 }, thickness: 1.5, color: MID });
-    spaced(p, "MOGAFACE", 70, 140, 7.6, font, C.muted, 2.4); spaced(p, date, 180, 140, 7.6, font, C.muted, 2.4);
+    spaced(p, "MOGA", 70, 140, 7.6, font, C.muted, 2.4); spaced(p, date, 180, 140, 7.6, font, C.muted, 2.4);
   } });
   // 2 disclaimer
   const narrow = (b: Blk, r = 0.88): Blk => ({ h: (w, s) => b.h(w * r, s), draw: (p, x, top, w, s) => b.draw(p, x, top, w * r, s) });
@@ -294,11 +294,11 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   ] });
   add({ id: "focus", chapter: "Summary", title: "What to Focus On", blocks: [k.heading("Your priorities"), ...f.priorities.map((pr, i) => k.numbered(i + 1, pr.title, pr.text)), k.gap(6), k.heading("Your potential"), k.para(f.potential)] });
   add({ id: "closing", chapter: "", title: "", chrome: false, custom: p => {
-    p.drawText("MogaFace", { x: 70, y: H - 120, font: bold, size: 28, color: DEEP });
+    p.drawText("Moga", { x: 70, y: H - 120, font: bold, size: 28, color: DEEP });
     p.drawLine({ start: { x: 70, y: 470 }, end: { x: 140, y: 470 }, thickness: 1.5, color: MID });
-    p.drawText("Thank you for choosing MogaFace.", { x: 70, y: 420, font, size: 30, color: C.ink }); p.drawText("We wish you the very best.", { x: 70, y: 390, font, size: 13, color: C.ink });
+    p.drawText("Thank you for choosing Moga.", { x: 70, y: 420, font, size: 30, color: C.ink }); p.drawText("We wish you the very best.", { x: 70, y: 390, font, size: 13, color: C.ink });
     wave(p, 330, hex("#d6cde4"), 2); wave(p, 284, hex("#8f7da9"), 1); hatchedWave(p, 238, hex("#43305f"));
-    spaced(p, "MOGAFACE", 70, 58, 7.6, font, SOFT, 2.4);
+    spaced(p, "MOGA", 70, 58, 7.6, font, SOFT, 2.4);
   } });
 
   const total = defs.length;
@@ -315,7 +315,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     p.drawLine({ start: { x: W / 2 - 28, y: top + (d.subtitle ? 6 : 14) }, end: { x: W / 2 + 28, y: top + (d.subtitle ? 6 : 14) }, thickness: 1.2, color: MID });
     top -= 12;
     p.drawLine({ start: { x: MX, y: 66 }, end: { x: W - MX, y: 66 }, thickness: 0.5, color: C.line });
-    p.drawText(clean(`MogaFace Protocol - ${name} - ${d.title}`), { x: MX, y: 46, font, size: 7.8, color: C.muted });
+    p.drawText(clean(`Moga Protocol - ${name} - ${d.title}`), { x: MX, y: 46, font, size: 7.8, color: C.muted });
     const pn = `${no} / ${total}`; p.drawText(pn, { x: W - MX - font.widthOfTextAtSize(pn, 8.4), y: 46, font, size: 8.4, color: C.muted });
 
     if (d.id === "index") {

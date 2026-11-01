@@ -11,7 +11,7 @@
  * It reuses handleIllustrationRequest (handler.ts) UNMODIFIED — the same
  * same-origin check, consent gate, photo validation, safety-checked prompt
  * and output validation as production. Only two things are supplied here
- * that production normally lacks (since MogaFace has no auth/rate-limit
+ * that production normally lacks (since Moga has no auth/rate-limit
  * store yet — see access.ts):
  *   - an Authenticator bound to the preview secret (constant-time compared,
  *     read from a request header, never from the request body or the URL);

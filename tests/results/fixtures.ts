@@ -2,14 +2,14 @@ import { calculateContourGeometry } from "../../lib/facial-analysis/contour.ts";
 import { LANDMARK } from "../../lib/facial-analysis/landmarkMapping.ts";
 import { createEmptyAppearanceConcerns, type AppearanceConcerns } from "../../lib/assessment/appearanceConcerns.ts";
 import { buildInterpretationInput } from "../../lib/interpretation/build.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation, userReportedObservation } from "../../lib/observation/helpers.ts";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
 import { SNAPSHOT_VERSION, type AssessmentSnapshot } from "../../lib/results/types.ts";
 import { buildCompleteFrontRecord, buildFilledAssessment, buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
 import { contourFace } from "../visual/fixtures.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 import type { TreatmentOpportunity } from "../../lib/treatment-opportunities/types.ts";
 
 export function assessmentWith(partial: Partial<AppearanceConcerns>): Assessment {
@@ -20,7 +20,7 @@ export function assessmentWith(partial: Partial<AppearanceConcerns>): Assessment
 }
 
 /** A front photo (with contour + dark under-eye) and a left-45° photo, as the real pipeline produces. */
-export function analysisFor(assessment: Assessment, opts: { withVideoLines?: boolean } = {}): MogaFaceAnalysis {
+export function analysisFor(assessment: Assessment, opts: { withVideoLines?: boolean } = {}): MogaAnalysis {
   const front = buildCompleteFrontRecord();
   front.landmarks = contourFace();
   front.contour = calculateContourGeometry(contourFace(), 1200, 1600, "front");
@@ -31,7 +31,7 @@ export function analysisFor(assessment: Assessment, opts: { withVideoLines?: boo
   const turned = contourFace();
   turned[LANDMARK.noseTip] = { x: 0.35, y: 0.55, z: 0 };
   const left = { ...buildCompleteFrontRecord(), slot: "leftFortyFive" as const, contour: calculateContourGeometry(turned, 1200, 1600, "threeQuarter") };
-  const a = buildMogaFaceAnalysis(assessment, { ...buildMultiPhotoAnalysisWithFront(), photos: [front, left] });
+  const a = buildMogaAnalysis(assessment, { ...buildMultiPhotoAnalysisWithFront(), photos: [front, left] });
   if (opts.withVideoLines) {
     a.observations.push(
       measuredObservation({ id: "expression.visibleForeheadLinePattern", domain: "expression", label: "Visible forehead line pattern", value: true, source: "video_frame_0+video_frame_3" }),
@@ -42,7 +42,7 @@ export function analysisFor(assessment: Assessment, opts: { withVideoLines?: boo
 }
 
 /** The real engine's opportunities for an assessment + analysis. */
-export function opportunitiesFor(assessment: Assessment, analysis: MogaFaceAnalysis): TreatmentOpportunity[] {
+export function opportunitiesFor(assessment: Assessment, analysis: MogaAnalysis): TreatmentOpportunity[] {
   return evaluateTreatmentOpportunities({ assessment, analysis });
 }
 

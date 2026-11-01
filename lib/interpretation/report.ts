@@ -1,5 +1,5 @@
 /**
- * The personalised MogaFace report, built deterministically from the SAME
+ * The personalised Moga report, built deterministically from the SAME
  * evidence the interpretation uses. It is the local (no key, no network)
  * provider's output and also the "draft" an AI provider is asked to rephrase.
  *
@@ -23,7 +23,7 @@ import type {
   InterpretationInput,
   InterpretationOpportunity,
   InterpretationResult,
-  MogaFaceReport,
+  MogaReport,
   ReportOpportunity,
   ReportPriority,
   ReportSection,
@@ -37,8 +37,8 @@ export const REPORT_LIMITATIONS: string[] = [
   "This analysis is based only on the photos, video and answers you submitted.",
   "Lighting, camera angle, expression and image quality all affect what can be observed.",
   "Some areas, including skin, cannot currently be assessed reliably from your images.",
-  "MogaFace is not a medical assessment and cannot identify health conditions.",
-  "MogaFace does not decide which treatments, if any, are appropriate for you.",
+  "Moga is not a medical assessment and cannot identify health conditions.",
+  "Moga does not decide which treatments, if any, are appropriate for you.",
   "Every decision rests with a qualified clinician who assesses you in person.",
 ];
 
@@ -95,7 +95,7 @@ function describeVisual(id: string): string | null {
   return null;
 }
 
-export function buildReport(input: InterpretationInput, base: Base, usableId: (id: string) => boolean): MogaFaceReport {
+export function buildReport(input: InterpretationInput, base: Base, usableId: (id: string) => boolean): MogaReport {
   const byId = new Map(input.observations.map((o) => [o.id, o]));
   const measuredUsable = input.observations.filter((o) => o.type !== "user_reported" && usableId(o.id));
   const goalOf = (id: string): UserGoal | undefined => input.goals.find((g) => g.sourceId === id);
@@ -252,10 +252,10 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
     skinGoals.length > 0
       ? [
           st(`Your assessment reports skin-related concerns: ${list(skinConcerns.length > 0 ? skinConcerns : ["skin appearance"])}.`, skinRefs, "user_reported", "complete"),
-          noEvidence("MogaFace does not yet analyze skin from photographs, so the current analysis cannot characterize the cause or extent of these concerns. Your clinician can assess your skin in person.", skinRefs),
+          noEvidence("Moga does not yet analyze skin from photographs, so the current analysis cannot characterize the cause or extent of these concerns. Your clinician can assess your skin in person.", skinRefs),
         ]
       : [],
-    "You didn't select skin-related concerns, and MogaFace does not yet analyze skin from photographs.",
+    "You didn't select skin-related concerns, and Moga does not yet analyze skin from photographs.",
   );
 
   // ---- hair (questionnaire only) ----
@@ -272,7 +272,7 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
   if (hairConcerns.length > 0) hairStatements.push(st(`You noted hair concerns: ${list(hairConcerns)}.`, [q("hair.concerns")], "user_reported", "complete"));
   const cut = word("haircut", "hair.haircutFrequency");
   if (cut) hairStatements.push(st(`You reported getting your hair cut ${cut}.`, [q("hair.haircutFrequency")], "user_reported", "complete"));
-  const hair = section(hairStatements, "You didn't share hair details in your assessment, and MogaFace does not analyze hair from photographs.");
+  const hair = section(hairStatements, "You didn't share hair details in your assessment, and Moga does not analyze hair from photographs.");
 
   // ---- facial hair (questionnaire only) ----
   const fhStatements: ReportStatement[] = [];
@@ -280,7 +280,7 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
   if (fhStyle) fhStatements.push(st(`You described your current facial hair as ${fhStyle}.`, [q("facialHair.currentStyle")], "user_reported", "complete"));
   const fhGoals = words("facialHairGoal", "facialHair.improvements");
   if (fhGoals.length > 0) fhStatements.push(st(`You noted facial hair goals: ${list(fhGoals)}.`, [q("facialHair.improvements")], "user_reported", "complete"));
-  const facialHair = section(fhStatements, "You didn't share facial hair details in your assessment, and MogaFace does not analyze facial hair from photographs.");
+  const facialHair = section(fhStatements, "You didn't share facial hair details in your assessment, and Moga does not analyze facial hair from photographs.");
 
   // ---- lifestyle (descriptive only — no conclusions) ----
   const lifeStatements: ReportStatement[] = [];
@@ -344,7 +344,7 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
       status = "observation_only";
       evidence = st("Your front-photo measurements provide structural context for facial balance.", [ref, ...structural], "observed", "partial");
     } else if (goal?.area === "skin") {
-      evidence = noEvidence("This priority is recorded from your answers; MogaFace does not analyze skin from photographs.", [ref]);
+      evidence = noEvidence("This priority is recorded from your answers; Moga does not analyze skin from photographs.", [ref]);
     } else if (goal?.area === null || goal?.area === "overall" || goal?.area === "facial_balance") {
       evidence = noEvidence("This is recorded as context from your answers rather than assessed from your images.", [ref]);
     } else {
@@ -382,7 +382,7 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
       } else if (e.sourceType === "visual_observation") {
         const d = describeVisual(e.sourceId);
         if (d) lines.add(d);
-      } else if (e.sourceType === "treatment_opportunity") lines.add("Matched to your goal by MogaFace's opportunity analysis");
+      } else if (e.sourceType === "treatment_opportunity") lines.add("Matched to your goal by Moga's opportunity analysis");
     }
     return {
       id: o.id,
@@ -403,7 +403,7 @@ export function buildReport(input: InterpretationInput, base: Base, usableId: (i
   let overview: ReportStatement;
   if (discussed.length > 0) {
     overview = st(
-      `${focusSentence}Based on the available visual evidence and the concerns you selected, MogaFace identified ${discussed.length === 1 ? "one area" : `${discussed.length} areas`} that may be worth discussing with your clinician: ${list(discussed.map((o) => o.title.toLowerCase()))}.`,
+      `${focusSentence}Based on the available visual evidence and the concerns you selected, Moga identified ${discussed.length === 1 ? "one area" : `${discussed.length} areas`} that may be worth discussing with your clinician: ${list(discussed.map((o) => o.title.toLowerCase()))}.`,
       [...base.priorities.flatMap((p) => p.evidence), ...discussed.flatMap((o) => o.evidence.filter((e) => e.sourceType === "treatment_opportunity"))],
       "opportunity",
       "partial",

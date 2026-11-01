@@ -1,6 +1,6 @@
 import { PHOTO_SLOTS } from "@/lib/assessment/types.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
-import type { MogaFaceAnalysis, Observation } from "@/lib/observation/types.ts";
+import type { MogaAnalysis, Observation } from "@/lib/observation/types.ts";
 import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
 import type { AppearanceConcernSignal } from "@/lib/assessment/appearanceConcerns.ts";
 import { explainOpportunity } from "@/lib/treatment-opportunities/evidence.ts";
@@ -46,7 +46,7 @@ const TONE_CLASSES: Record<string, string> = {
 interface MultiPhotoDevResultsProps {
   photos: PhotoAnalysisRecord[];
   analysis: MultiPhotoFacialAnalysis | null;
-  mogaFaceAnalysis: MogaFaceAnalysis | null;
+  mogaFaceAnalysis: MogaAnalysis | null;
   treatmentOpportunities: TreatmentOpportunity[];
   userReportedSignals: AppearanceConcernSignal[];
   videoAnalysis: VideoExpressionAnalysis | null;

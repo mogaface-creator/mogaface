@@ -38,11 +38,11 @@ The app depends on `InterpretationProvider`, not a vendor. `localRulesProvider` 
 
 `validateInterpretation` runs on the local output **and on anything a provider returns** (`interpretWithFallback` discards invalid output and falls back to the local rules). It rejects: a statement without evidence; a reference that does not exist in the input; visual evidence that is not consumer-usable; a treatment named without a backing opportunity; a "discuss" item without a real, consumer-ready opportunity of the same category; a category on a non-"discuss" item; and forbidden language anywhere (`lib/safety/language.ts`): need/should-get/suitable/candidate claims, diagnosis and named conditions, anatomical causes, aging, scores and percentages, attractiveness, ideal/perfect face, outcome promises, transformation claims, brand names.
 
-## The MogaFace report (`lib/interpretation/report.ts`, `components/results/Report.tsx`)
+## The Moga report (`lib/interpretation/report.ts`, `components/results/Report.tsx`)
 
-`/results` renders a personalised report: cover · overview · top priorities (concern, why it matters, evidence available, status) · facial structure · eye area · expression and facial lines (**only** with valid, consumer-usable expression evidence) · skin · hair · facial hair · lifestyle · style · **areas to discuss with your clinician** (area, why it appeared, evidence, what the clinician can evaluate) · before / illustrative-after · what MogaFace can and cannot tell you · next step (CTA from the existing config) · footer.
+`/results` renders a personalised report: cover · overview · top priorities (concern, why it matters, evidence available, status) · facial structure · eye area · expression and facial lines (**only** with valid, consumer-usable expression evidence) · skin · hair · facial hair · lifestyle · style · **areas to discuss with your clinician** (area, why it appeared, evidence, what the clinician can evaluate) · before / illustrative-after · what Moga can and cannot tell you · next step (CTA from the existing config) · footer.
 
-`InterpretationResult.report` is a `MogaFaceReport`. Every `ReportStatement` is `{ id, text, evidenceRefs[], confidence, sourceType }`:
+`InterpretationResult.report` is a `MogaReport`. Every `ReportStatement` is `{ id, text, evidenceRefs[], confidence, sourceType }`:
 
 - `sourceType`: `user_reported` ("You reported…"), `observed`, `opportunity`, or `limitation` ("Not enough visual evidence was available…"). The validator ties it to the evidence: observed needs a visual observation, opportunity needs a treatment-opportunity reference, user-reported may cite neither, a limitation cannot cite an opportunity.
 - `confidence`: `complete | partial | limited` — evidence *availability* only, never a probability.
@@ -55,7 +55,7 @@ The app depends on `InterpretationProvider`, not a vendor. `localRulesProvider` 
 
 **Default: off.** With `INTERPRETATION_PROVIDER` unset (or `local`) the deterministic rules write the whole report, nothing is sent anywhere, and the browser never calls the endpoint. No live OpenAI call has been made from this repository; the model call is tested only against a stubbed `fetch`.
 
-**Role.** MogaFace's engines are the source of truth. The model only *rewords* a deterministic draft. It cannot find, create or change anything.
+**Role.** Moga's engines are the source of truth. The model only *rewords* a deterministic draft. It cannot find, create or change anything.
 
 **What is sent** (`lib/interpretation/prompts.ts` → `editableDraft`): one JSON object — the draft's overview, priorities, four findings sections (facial structure, eye area, expression, skin) and areas-to-discuss, i.e. goal/finding sentences plus evidence ids, statuses and categories — and the fixed system prompt. The assessment id is replaced by a fixed token and restored afterwards.
 
@@ -71,7 +71,7 @@ The app depends on `InterpretationProvider`, not a vendor. `localRulesProvider` 
 
 | Concern | Status |
 |---|---|
-| Authentication | **None exists in MogaFace.** The boundary is `Authenticator` (`lib/interpretation/access.ts`). In production with none supplied every request gets 401; in development anyone on localhost may call it (only if a provider is configured). **Requirement:** a real authenticator returning a stable, non-personal subject id must be wired into `route.ts` before enabling in production. |
+| Authentication | **None exists in Moga.** The boundary is `Authenticator` (`lib/interpretation/access.ts`). In production with none supplied every request gets 401; in development anyone on localhost may call it (only if a provider is configured). **Requirement:** a real authenticator returning a stable, non-personal subject id must be wired into `route.ts` before enabling in production. |
 | Rate limiting | Interface `RateLimiter` + an in-memory, per-process limiter (development only — not valid across serverless instances). In production with none supplied requests get 503. **Requirement:** a shared-store implementation (Redis/KV) wired into `route.ts`. |
 | Consent | `InterpretationConsent = not_required \| pending \| granted \| declined` (`consent.ts`). Only `granted` allows third-party processing; the default is `pending`. **No consent screen exists**, so real results stay local. Development can pass `?consent=granted`. **Undecided (product owner / legal):** the consent wording, whether `not_required` may ever allow a third party, where the decision is stored and for how long, retention and data-processing terms with the provider, the region, and any regulatory obligations. Nothing here claims compliance. |
 | Client opt-in | `NEXT_PUBLIC_INTERPRETATION_REMOTE=1` (a public, non-secret flag) — without it the browser makes no call. |
@@ -86,7 +86,7 @@ Approved changes (first version): `facial_contour` (from contouring) and `expres
 
 ## Illustrative image generation (`lib/visualization/`, `lib/image-generation/`)
 
-**The image model is a renderer.** MogaFace decides what may be visualized; the clinician decides what is appropriate; the image is illustrative only.
+**The image model is a renderer.** Moga decides what may be visualized; the clinician decides what is appropriate; the image is illustrative only.
 
 ```
 photo → analysis → treatment opportunities → visualization PLAN → GENERATION ELIGIBILITY → safety-checked prompt → image API → output validation → "Illustrative After"
@@ -135,7 +135,7 @@ So today **no real assessment is eligible**; only the demo (open gate) is, for e
 
 ## Results (`lib/results/`, `components/results/`, `app/results/page.tsx`)
 
-`MogaFaceResult { id, assessmentId, createdAt, interpretation, treatmentOpportunities, visualizationPlan, visualization, status, limitations }` — shaped for later server persistence. `visualization` is `{ status: pending | ready | unavailable | failed, provider?, imageUrl?, createdAt?, errorCode? }` — a **reference**, never image bytes; the snapshot store refuses anything image-sized.
+`MogaResult { id, assessmentId, createdAt, interpretation, treatmentOpportunities, visualizationPlan, visualization, status, limitations }` — shaped for later server persistence. `visualization` is `{ status: pending | ready | unavailable | failed, provider?, imageUrl?, createdAt?, errorCode? }` — a **reference**, never image bytes; the snapshot store refuses anything image-sized.
 
 **Flow.** After analysis the review screen shows the existing developer view **and** a "View My Results" button. It saves an `AssessmentSnapshot` (assessment, analysis, opportunities, front photo as a fresh blob URL) to `sessionStorage` and opens `/results`, which runs `runResultPipeline`: interpreting → (if eligible) preparing visualization → result. If the tab holds both an assessment snapshot and a newer single-photo `/analyze` result, the newer one is shown (`chooseResultSource`); the original measurement view remains as the fallback for `/analyze`.
 
@@ -151,7 +151,7 @@ So today **no real assessment is eligible**; only the demo (open gate) is, for e
 
 1. The assessment lives in `AssessmentShell` state (persisted to localStorage without photo bytes, `lib/assessment/storage.ts`).
 2. `AssessmentReview.runAnalysis` analyses each photo in the browser (`analyzeSinglePhoto` → `buildMultiPhotoAnalysis`) and the optional video (`analyzeVideoFile`) — all in memory.
-3. `buildMogaFaceAnalysis(assessment, multiPhoto, video)` creates the observations; `evaluateTreatmentOpportunities` creates the opportunities.
+3. `buildMogaAnalysis(assessment, multiPhoto, video)` creates the observations; `evaluateTreatmentOpportunities` creates the opportunities.
 4. "View My Results" saves an `AssessmentSnapshot` (assessment, analysis, opportunities, front-photo blob URL) to `sessionStorage` (`lib/results/store.ts`) and opens `/results`.
 5. `ResultsExperience` loads that snapshot, runs `runResultPipeline` (local interpretation → report → visualization plan) and renders `toReportView`. With no snapshot it shows "No analysis found" — never a report and never demo data.
 

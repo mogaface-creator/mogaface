@@ -5,7 +5,7 @@ import { expressionContext } from "../../lib/observation/expressionContext.ts";
 import { appearancePlanFromAssessment } from "../../lib/image-generation/appearanceFromAssessment.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
 import { projectPlaces } from "../../lib/assessment/clinicIntake.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { buildProtocolPages } from "../../lib/submissions/protocolContent.ts";
 
 function video(): ExpressionAnalysis {
@@ -53,7 +53,7 @@ test("video constrains only selected brow/eye edits without unlocking regions or
 });
 
 test("report details actual video findings and distinguishes missing from inconclusive video",()=>{
-  const a=createEmptyAssessment(), analysis=buildMogaFaceAnalysis(a,null);
+  const a=createEmptyAssessment(), analysis=buildMogaAnalysis(a,null);
   analysis.expression=video();
   const pages=buildProtocolPages({name:"Sample",assessment:a,analysis});
   assert.equal(pages.length,25);

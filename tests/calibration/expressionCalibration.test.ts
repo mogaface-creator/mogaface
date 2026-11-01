@@ -36,7 +36,7 @@ import { VISUAL_THRESHOLDS } from "../../lib/facial-analysis/calibration/thresho
 import { buildVisualizationPlan } from "../../lib/visualization/build.ts";
 import { decideIllustrationEligibility } from "../../lib/visualization/eligibility.ts";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { createEmptyAppearanceConcerns } from "../../lib/assessment/appearanceConcerns.ts";
 import { buildFilledAssessment, buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
 import { realSession, slotSample } from "./sessionFixtures.ts";
@@ -143,10 +143,10 @@ test("E. a session is never both tuning and held-out at once — the type makes 
 });
 
 // ===========================================================================
-// F. MogaFace results and human expectations are stored separately
+// F. Moga results and human expectations are stored separately
 // ===========================================================================
 
-test("F. MogaFace's result and the human expectation live in separate places, and comparison is a distinct third thing", () => {
+test("F. Moga's result and the human expectation live in separate places, and comparison is a distinct third thing", () => {
   const s = realSession("REAL-F1");
   assert.ok(s.videoSample && !("expectations" in s.videoSample));
   assert.ok(!("thresholdDecisions" in s.expectations) && !("generatedObservations" in s.expectations));
@@ -197,7 +197,7 @@ test("J. production visualization eligibility remains false for expression_lines
   const assessment = buildFilledAssessment();
   assessment.goals = { areas: [], priorities: [] };
   assessment.appearanceConcerns = { ...createEmptyAppearanceConcerns(), selected: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, buildMultiPhotoAnalysisWithFront());
+  const analysis = buildMogaAnalysis(assessment, buildMultiPhotoAnalysisWithFront());
   const opportunities = evaluateTreatmentOpportunities({ assessment, analysis });
   const plan = buildVisualizationPlan({ frontPhoto: { ref: "blob:x", qualityValid: true }, opportunities });
   const decision = decideIllustrationEligibility(plan, opportunities); // no calibrated override — the real production call shape

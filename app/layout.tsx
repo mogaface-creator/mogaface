@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Cormorant_Garamond, Playfair_Display, Cinzel, DM_Sans, Josefin_Sans } from "next/font/google";
 import "./globals.css";
 
-// Brand System v1.0 (Clinic Next Face brand guide, applied to MogaFace) — five
+// Brand System v1.0 (Clinic Next Face brand guide, applied to Moga) — five
 // intentional typographic roles, never one font everywhere. See globals.css's
 // @theme block for how each maps to a --font-* token / Tailwind utility.
 const geistMono = Geist_Mono({

@@ -45,7 +45,7 @@ export function AppearanceConcernsStep({ value, onChange, onNext, onBack }: Appe
     <div>
       <h2 className="font-serif text-2xl tracking-tight">What would you like to improve in your face and skin?</h2>
       <p className="mt-2 text-sm text-muted">
-        Select the areas you&apos;d like MogaFace to focus on. There are no right or wrong answers.
+        Select the areas you&apos;d like Moga to focus on. There are no right or wrong answers.
       </p>
 
       <div className="mt-8 space-y-8">

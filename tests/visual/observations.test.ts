@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { buildEyeAreaAnalysis, buildFacialStructureAnalysis, UNDER_EYE_NOT_MEASURED } from "../../lib/observation/photoDomains.ts";
 import { buildExpressionAnalysis } from "../../lib/observation/videoDomains.ts";
 import { validateObservation } from "../../lib/observation/validate.ts";
@@ -165,9 +165,9 @@ test("a video that yields no baseline produces no observations but keeps its rea
 
 // ---- whole analysis ----
 
-test("buildMogaFaceAnalysis: video observations join the flat list; versions record the video analysis", () => {
+test("buildMogaAnalysis: video observations join the flat list; versions record the video analysis", () => {
   const video = videoWithForeheadLines();
-  const a = buildMogaFaceAnalysis(buildFilledAssessment(), multiPhoto({ leftContour: true, underEye: { right: 0.7, left: 0.7 } }), video);
+  const a = buildMogaAnalysis(buildFilledAssessment(), multiPhoto({ leftContour: true, underEye: { right: 0.7, left: 0.7 } }), video);
   assert.equal(a.versions.videoAnalysisVersion, video.videoAnalysisVersion);
   for (const id of ["expression.visibleForeheadLinePattern", "eyeArea.visibleUnderEyeDarkness", "facialStructure.contour.jawContourAngle.front.left"]) {
     assert.ok(a.observations.some((o) => o.id === id), id);
@@ -177,8 +177,8 @@ test("buildMogaFaceAnalysis: video observations join the flat list; versions rec
   assert.equal(new Set(ids).size, ids.length, "observation ids are unique");
 });
 
-test("buildMogaFaceAnalysis without a video: videoAnalysisVersion is null and no expression observations exist", () => {
-  const a = buildMogaFaceAnalysis(buildFilledAssessment(), multiPhoto());
+test("buildMogaAnalysis without a video: videoAnalysisVersion is null and no expression observations exist", () => {
+  const a = buildMogaAnalysis(buildFilledAssessment(), multiPhoto());
   assert.equal(a.versions.videoAnalysisVersion, null);
   assert.equal(a.expression.status, "not_provided");
   assert.ok(!a.observations.some((o) => o.domain === "expression"));
@@ -187,7 +187,7 @@ test("buildMogaFaceAnalysis without a video: videoAnalysisVersion is null and no
 // ---- terminology ----
 
 test("no diagnosis, aging, or treatment terminology anywhere in the visual observations", () => {
-  const a = buildMogaFaceAnalysis(buildFilledAssessment(), multiPhoto({ leftContour: true, underEye: { right: 0.7, left: 0.7 } }), videoWithForeheadLines());
+  const a = buildMogaAnalysis(buildFilledAssessment(), multiPhoto({ leftContour: true, underEye: { right: 0.7, left: 0.7 } }), videoWithForeheadLines());
   const text = JSON.stringify({ o: a.observations, notMeasured: a.eyeArea.notMeasured, expr: a.expression.expressions.map((e) => [e.reason, e.evidence.movementMetric]) }).toLowerCase();
   const banned = [
     "botox", "filler", "threads", "neuromodulator", "laser", "wrinkle", "aging", "ageing", "laxity", "sagging", "diagnos", "acne", "melasma", "rosacea",

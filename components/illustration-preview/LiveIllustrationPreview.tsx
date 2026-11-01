@@ -88,7 +88,7 @@ export function LiveIllustrationPreview() {
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">Developer / clinic testing only</p>
         <p className="mt-2 text-xs text-muted">
           This is a temporary visualization preview. It is not part of the normal consumer experience. It illustrates only expression-line
-          changes — the one category MogaFace&apos;s visualization policy already approves — and does not establish treatment suitability, diagnosis,
+          changes — the one category Moga&apos;s visualization policy already approves — and does not establish treatment suitability, diagnosis,
           or clinical guidance of any kind.
         </p>
       </section>
@@ -96,7 +96,7 @@ export function LiveIllustrationPreview() {
       {gate.kind !== "unlocked" && (
         <section>
           <h2 className="text-sm font-semibold">Access code</h2>
-          <p className="mt-1 text-xs text-muted">Ask the MogaFace team for the current preview code. It is never stored on this device.</p>
+          <p className="mt-1 text-xs text-muted">Ask the Moga team for the current preview code. It is never stored on this device.</p>
           <input
             type="password"
             inputMode="text"

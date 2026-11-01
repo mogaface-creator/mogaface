@@ -180,8 +180,8 @@ Open `http://localhost:3000/dev/calibration` (development builds only; productio
 2. **Create a session** with an anonymous **Sample ID** such as `REAL-001`. Ids that look like an email, a phone number or a date are refused. Optionally record engineering metadata: approximate age band (prefer *not recorded*), lighting, camera, glasses, makeup. Nothing is inferred from the image.
 3. **Choose inputs** and press **Run analysis**. The chosen files exist only in the page's memory and are **discarded automatically as soon as the analysis finishes**; only numbers and your labels remain.
 4. **Read the input quality** for each photo and the video. Failed samples are never hidden — the reason is stated ("Face not detected.", "Image too dark.", "Head rotation outside the expected range.", "Face too small in frame.").
-5. **Record your engineering expectations**, ideally before you read the MogaFace column.
-6. Read **Expected vs MogaFace**, the **margins table**, **multi-view consistency**, and (expandable) the **raw output**.
+5. **Record your engineering expectations**, ideally before you read the Moga column.
+6. Read **Expected vs Moga**, the **margins table**, **multi-view consistency**, and (expandable) the **raw output**.
 7. Add notes (engineering observations only), repeat for more people, then read the **calibration summary**, record any **threshold proposals**, and **export**.
 
 ### Required photo views and video
@@ -276,8 +276,8 @@ See the exact steps in the project report / below; in short: consent → `npm ru
 3. **Sample ID** `REAL-001` → **Create session**. Set lighting/camera/glasses/makeup if you like; leave age band *not recorded*.
 4. Choose Front, Left 45°, Right 45° and the video → **Run analysis** (a 15 s video takes roughly 20–60 s). The files are discarded when it finishes.
 5. **Input quality**: every photo should show *face detected: yes*, landmarks *complete*. If a photo failed, read the reason, retake it, create `REAL-001b` and repeat — don't tune anything to rescue a bad photo.
-6. **Before** reading the MogaFace column, look at the media and fill in **Engineering expectation** (forehead/glabellar/lateral-eye lines, under-eye, each expression, and input quality per view).
-7. Read **Expected vs MogaFace**. For every MISS, FALSE POSITIVE or BORDERLINE row open **Raw output** and the **margins** table and write down *why* in Notes (e.g. "glabellar pattern not evaluated: frown was not identified — see frame table").
+6. **Before** reading the Moga column, look at the media and fill in **Engineering expectation** (forehead/glabellar/lateral-eye lines, under-eye, each expression, and input quality per view).
+7. Read **Expected vs Moga**. For every MISS, FALSE POSITIVE or BORDERLINE row open **Raw output** and the **margins** table and write down *why* in Notes (e.g. "glabellar pattern not evaluated: frown was not identified — see frame table").
 8. Read **Video calibration** (per-expression strength/movement, line-contrast values) and **Multi-view consistency**.
 9. **Export calibration JSON**; open the file and confirm it contains no image or video data.
 10. Refresh the page and confirm the session, the results and the chosen files are gone.
@@ -299,7 +299,7 @@ A `CalibrationSession` (`lib/facial-analysis/calibration/session.ts`) — the sa
 
 - `calibrationCategory: CalibrationCategory | null` — which category (`"expression"`, `"facialStructure.contour"`, or `"eyeArea.underEye"`) this session's evidence targets. Null until a developer assigns it; never guessed.
 - `datasetSplit: "tuning" | "held_out" | null` — which side of the split this session belongs to. Null until assigned. A session has exactly one value here, never both — the type makes the invalid state unrepresentable, not just disallowed by a runtime check.
-- `reviewerStatus: "not_reviewed" | "reviewed" | "approved" | "rejected"` — defaults to `"not_reviewed"`. Nothing else in the codebase advances this: recording expectations, running the pipeline, or adding notes never touches it. Only `withReviewerStatus` does, and only along `not_reviewed → reviewed → approved | rejected` — a session cannot jump straight to `approved`, so whoever entered the MogaFace result is never assumed to also be the independent reviewer.
+- `reviewerStatus: "not_reviewed" | "reviewed" | "approved" | "rejected"` — defaults to `"not_reviewed"`. Nothing else in the codebase advances this: recording expectations, running the pipeline, or adding notes never touches it. Only `withReviewerStatus` does, and only along `not_reviewed → reviewed → approved | rejected` — a session cannot jump straight to `approved`, so whoever entered the Moga result is never assumed to also be the independent reviewer.
 - `reviewerNote: string | null`.
 
 All four fields are additive to the existing type: every session already created via `createSession` continues to validate and behave exactly as before.
@@ -308,9 +308,9 @@ All four fields are additive to the existing type: every session already created
 
 Conditions: **neutral/relaxed, brow raise, frown, smile, squint** — the existing `EXPRESSIONS` states (`BROW_RAISE`, `FROWN`, `SMILE`, `SQUINT`) in `expectations.ts`, compared against the existing observations `expression.browRaise/frown/smile/squintMovementPct` and `expression.visibleForeheadLinePattern` / `visibleGlabellarLinePattern` / `visibleLateralEyeLinePattern`. No additional facial observation is introduced. `lib/facial-analysis/calibration/expressionValidation.ts`'s `EXPRESSION_DOMAINS` names exactly these seven comparison domains and nothing else.
 
-### Human expectation, MogaFace result, and agreement — kept distinct
+### Human expectation, Moga result, and agreement — kept distinct
 
-This was already true of the general workflow and remains true here: `session.expectations` (the human judgement, recorded before reading MogaFace's output) is a different object from `session.photoSamples`/`videoSample` (MogaFace's raw thresholdDecisions/generatedObservations). `compareSession` (`comparison.ts`) derives a third, separate thing — agreement or disagreement (`MATCH`/`MISS`/`FALSE_POSITIVE`/`UNCLEAR`/`NOT_RECORDED`) — from the two. Nothing treats MogaFace's output as ground truth.
+This was already true of the general workflow and remains true here: `session.expectations` (the human judgement, recorded before reading Moga's output) is a different object from `session.photoSamples`/`videoSample` (Moga's raw thresholdDecisions/generatedObservations). `compareSession` (`comparison.ts`) derives a third, separate thing — agreement or disagreement (`MATCH`/`MISS`/`FALSE_POSITIVE`/`UNCLEAR`/`NOT_RECORDED`) — from the two. Nothing treats Moga's output as ground truth.
 
 ### Tuning vs held-out
 

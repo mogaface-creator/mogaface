@@ -15,7 +15,7 @@ import { handleInterpretRequest } from "../../lib/interpretation/handler.ts";
 import type { InterpretLogEntry } from "../../lib/interpretation/handler.ts";
 import { createMemoryRateLimiter } from "../../lib/interpretation/access.ts";
 import { buildDemoSnapshot } from "../../lib/results/demo.ts";
-import type { MogaFaceReport } from "../../lib/interpretation/types.ts";
+import type { MogaReport } from "../../lib/interpretation/types.ts";
 import { assessmentWith, inputFor } from "../results/fixtures.ts";
 
 const KEY = "sk-test-not-a-real-key-000000000000";
@@ -197,11 +197,11 @@ test("the output schema is valid for OpenAI strict mode, and every real editable
 // ---- 11–18: a model that returns the right shape but wrong content is still rejected ----
 
 /** Runs a stub OpenAI that edits the draft it was sent. Uses the REAL calibration gate (closed), so the selector's own draft is the reference. */
-const bad = async (edit: (r: MogaFaceReport) => void) => {
+const bad = async (edit: (r: MogaReport) => void) => {
   const input = inputFor(assessmentWith({ selected: ["SKIN_TONE", "FACIAL_DEFINITION", "UNDER_EYE"], priorities: ["SKIN_TONE", "FACIAL_DEFINITION"] })).input;
   const fetchImpl: typeof fetch = async (_u, init) => {
     const user: string = JSON.parse(String(init!.body)).input;
-    const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaFaceReport;
+    const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaReport;
     edit(draft);
     return new Response(okBody(JSON.stringify(draft)), { status: 200 });
   };
@@ -210,7 +210,7 @@ const bad = async (edit: (r: MogaFaceReport) => void) => {
 };
 
 test("OpenAI output with changed facts or forbidden wording is rejected and the deterministic report is used", async () => {
-  const cases: [string, (r: MogaFaceReport) => void][] = [
+  const cases: [string, (r: MogaReport) => void][] = [
     ["invalid evidence reference", (r) => r.priorities[0].why.evidenceRefs.push({ sourceType: "visual_observation", sourceId: "nope.invented" })],
     ["changed evidence reference", (r) => (r.priorities[0].evidence.evidenceRefs[0] = { sourceType: "questionnaire", sourceId: "user_reports_facial_definition_goal" })],
     ["changed opportunity status", (r) => (r.opportunities.find((o) => o.status === "discuss")!.status = "observation_only")],

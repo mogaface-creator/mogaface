@@ -19,7 +19,7 @@
  * validateInterpretation and applies to every string regardless.
  */
 
-import type { MogaFaceReport, ReportStatement } from "./types.ts";
+import type { MogaReport, ReportStatement } from "./types.ts";
 
 /** The only sections a model is shown and may reword. Everything else is questionnaire description, kept verbatim. */
 export const AI_EDITABLE_SECTIONS = ["facialStructure", "eyeArea", "expression", "skin"] as const;
@@ -77,7 +77,7 @@ function checkStatement(draft: ReportStatement, candidate: unknown, where: strin
 }
 
 /** Every reason `candidate` is not an allowed rewording of `draft`. Empty means it is. Never throws. */
-export function findAiReportViolations(draft: MogaFaceReport, candidate: unknown): string[] {
+export function findAiReportViolations(draft: MogaReport, candidate: unknown): string[] {
   const out: string[] = [];
   if (!isObj(candidate)) return ["report is missing or malformed"];
   for (const key of Object.keys(candidate)) if (!REPORT_KEYS.includes(key)) out.push(`unexpected field "${key}"`);

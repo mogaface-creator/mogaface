@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { evaluateTreatmentOpportunities, buildEvaluationContext } from "../../lib/treatment-opportunities/evaluate.ts";
 import { TREATMENT_OPPORTUNITY_ENGINE_VERSION } from "../../lib/treatment-opportunities/versions.ts";
 import { validateOpportunity } from "../../lib/treatment-opportunities/validate.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
 import { analysisWithFront, assessmentWithGoals, visualFeature } from "./fixtures.ts";
 
@@ -62,7 +62,7 @@ test("insufficient evidence: goal but no photo analysis → not_available, no ca
 });
 
 test("insufficient evidence: analysis with no measured observations is treated as no analysis", () => {
-  const empty = buildMogaFaceAnalysis(assessmentWithGoals([], ["jawDefinition"]), null);
+  const empty = buildMogaAnalysis(assessmentWithGoals([], ["jawDefinition"]), null);
   const out = evaluateTreatmentOpportunities({ assessment: assessmentWithGoals([], ["jawDefinition"]), analysis: empty });
   assert.equal(out[0].status, "not_available");
 });

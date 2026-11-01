@@ -1,7 +1,7 @@
 /**
  * Structural language safety for everything a consumer can read.
  *
- * MogaFace never diagnoses, never says a person needs or is suitable for a
+ * Moga never diagnoses, never says a person needs or is suitable for a
  * treatment, never scores a face, and never predicts a result. Those rules
  * are enforced HERE, in code, on every string the interpretation and
  * visualization layers produce — including anything an AI provider returns —

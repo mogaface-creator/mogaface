@@ -1,7 +1,7 @@
 /**
  * The authorization and rate-limit BOUNDARY for the interpretation endpoint.
  *
- * MogaFace has no authentication system yet, so nothing here invents one:
+ * Moga has no authentication system yet, so nothing here invents one:
  *  - An Authenticator is a function a future auth module will supply. In
  *    production, with none supplied, every request is refused — the endpoint is
  *    never an open proxy to a paid API.

@@ -1,10 +1,10 @@
-# ClinicNextFace / MogaFace: System Vision, Goals & Aesthetic Simulation Manifesto
+# ClinicNextFace / Moga: System Vision, Goals & Aesthetic Simulation Manifesto
 
 ## 1. Executive Summary & Core Mission
 
 **ClinicNextFace** is an aesthetic medicine clinic specializing in non-surgical facial rejuvenation, dermatological health, facial contouring, and hair restoration.
 
-**MogaFace** is the proprietary AI-powered digital consultation engine built for the clinic. Its primary objectives are:
+**Moga** is the proprietary AI-powered digital consultation engine built for the clinic. Its primary objectives are:
 1. **Frictionless Lead Capture**: Prospective patients upload their diagnostic portrait photos (and optional video) from mobile or desktop.
 2. **Clinical-Grade Facial Assessment**: Automated anatomical analysis identifying specific concerns (acne, hyperpigmentation, double chin / submental fullness, tear troughs, forehead lines, scalp density).
 3. **Medically Plausible "After" Simulation**: Generate a photorealistic visual demonstration of what realistic non-surgical treatments would achieve on *their exact face*.
@@ -59,7 +59,7 @@ The visual changes must strictly reflect what modern aesthetic medicine can achi
 To completely eliminate identity drift and ensure surgical accuracy, we have two proven technical architectures:
 
 ### Pathway A: Landmark-Guided Inpainting Mask (Recommended)
-* Use **MediaPipe Face Mesh** (already built into MogaFace) to create a protective binary mask:
+* Use **MediaPipe Face Mesh** (already built into Moga) to create a protective binary mask:
   * **Protected Zone (Untouchable)**: Eyes, nose, mouth/lips, skull shape, and scalp/hair are locked 100% pixel-perfect.
   * **Active Inpainting Zones**: Only the skin blemish areas (for acne/hyperpigmentation clearance) and the lower jawline/chin boundary (for double-chin reduction) are modified.
 * **Advantage**: The patient's core features physically *cannot* change because those pixels are directly copied from the original photo.

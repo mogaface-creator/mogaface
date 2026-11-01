@@ -1,5 +1,5 @@
 /**
- * The consumer presentation model. A MogaFaceResult is turned into plain,
+ * The consumer presentation model. A MogaResult is turned into plain,
  * human-readable copy — and NOTHING else: no evidence ids, landmark numbers,
  * symmetry values, thresholds, calibration flags, methodology versions or
  * debug output ever reach this shape. Every string is re-scanned for
@@ -9,7 +9,7 @@
 
 import { findForbiddenLanguage } from "../safety/language.ts";
 import { VISUALIZATION_DISCLAIMER } from "../visualization/types.ts";
-import type { MogaFaceResult } from "./types.ts";
+import type { MogaResult } from "./types.ts";
 
 export interface ConsumerArea {
   title: string;
@@ -53,7 +53,7 @@ export const safe = (s: string) => findForbiddenLanguage(s, ALLOW).length === 0;
 export const keepSafe = (list: string[]) => [...new Set(list.filter(safe))];
 
 /** The before / illustrative-after state, shared by the summary view and the report view. */
-export function consumerVisualization(result: MogaFaceResult, beforeUrl: string | null, hasAreas: boolean): ConsumerVisualization {
+export function consumerVisualization(result: MogaResult, beforeUrl: string | null, hasAreas: boolean): ConsumerVisualization {
   const v = result.visualization;
   const plan = result.visualizationPlan;
   const planned = plan.status === "planned";
@@ -99,7 +99,7 @@ export function consumerVisualization(result: MogaFaceResult, beforeUrl: string 
   };
 }
 
-export function toConsumerView(result: MogaFaceResult, beforeUrl: string | null): ConsumerResultView {
+export function toConsumerView(result: MogaResult, beforeUrl: string | null): ConsumerResultView {
   const i = result.interpretation;
 
   const areas = i.opportunities.filter((o) => o.status !== "insufficient_evidence").map((o) => ({ title: o.title, body: o.statement })).filter((a) => safe(a.title) && safe(a.body));
@@ -112,7 +112,7 @@ export function toConsumerView(result: MogaFaceResult, beforeUrl: string | null)
   const visualization = consumerVisualization(result, beforeUrl, areas.length > 0);
 
   return {
-    headline: "Your MogaFace assessment",
+    headline: "Your Moga assessment",
     intro: "Here's what your assessment highlighted.",
     summary: safe(i.summary.statement) ? i.summary.statement : "Your assessment is ready.",
     priorities: keepSafe(i.priorities.map((p) => p.label)),
