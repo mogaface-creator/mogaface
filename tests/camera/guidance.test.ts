@@ -4,7 +4,7 @@ import { LANDMARK } from "../../lib/facial-analysis/landmarkMapping.ts";
 import { TURNED_SPAN_RATIO } from "../../lib/facial-analysis/contour.ts";
 import { MAX_BRIGHTNESS, MAX_ROLL_DEGREES, MAX_YAW_RATIO, MIN_BRIGHTNESS } from "../../lib/facial-analysis/quality.ts";
 import {
-  CENTER_TOLERANCE_X, DEFAULT_STABILITY_MS, INITIAL_STABILITY, MESSAGES, STILLNESS_TOLERANCE, VIEW_TARGET, evaluateGuidance, faceCenter, profileIsManual, stepStability,
+  CENTER_TOLERANCE_X, DEFAULT_STABILITY_MS, PITCH_NATURAL_DEGREES, INITIAL_STABILITY, MESSAGES, STILLNESS_TOLERANCE, VIEW_TARGET, evaluateGuidance, faceCenter, profileIsManual, stepStability,
   type GuidanceInput,
 } from "../../lib/camera-capture/guidance.ts";
 import { GUIDANCE_STATES } from "../../lib/camera-capture/types.ts";
@@ -204,10 +204,11 @@ test("lock: the face must fill the oval, a front view must be straight in depth,
 
 test("lock: a head tipped down or up (chin tucked, eyes lowered) never locks, front or 45°", () => {
   const dy = Math.abs(buildSymmetricFace()[LANDMARK.chin].y - buildSymmetricFace()[LANDMARK.foreheadTop].y) * (480 / 640);
-  const tipped = (deg: number, base = buildSymmetricFace()) => { const lm = base.slice(); lm[LANDMARK.foreheadTop] = { ...lm[LANDMARK.foreheadTop], z: -Math.tan((deg * Math.PI) / 180) * dy }; return lm; };
-  assert.equal(g({ landmarks: tipped(5) }).frameOk, true, "a few degrees is natural");
-  const down = g({ landmarks: tipped(30) });
+  const tipped = (deg: number, base = buildSymmetricFace()) => { const lm = base.slice(); lm[LANDMARK.foreheadTop] = { ...lm[LANDMARK.foreheadTop], z: Math.tan(((PITCH_NATURAL_DEGREES + deg) * Math.PI) / 180) * dy }; return lm; };
+  assert.equal(g({ landmarks: tipped(0) }).frameOk, true, "a level head locks");
+  assert.equal(g({ landmarks: tipped(6) }).frameOk, true, "a few degrees is natural");
+  const down = g({ landmarks: tipped(20) });
   assert.deepEqual([down.frameOk, down.message], [false, "Look straight into the camera"]);
-  assert.equal(g({ landmarks: tipped(-30) }).frameOk, false);
-  assert.equal(g({ target: "leftFortyFive", landmarks: tipped(30, nose(0.35)) }).frameOk, false);
+  assert.equal(g({ landmarks: tipped(-20) }).frameOk, false);
+  assert.equal(g({ target: "leftFortyFive", landmarks: tipped(20, nose(0.35)) }).frameOk, false);
 });

@@ -67,5 +67,10 @@ export function portraitRegionWeights(x:number,y:number,g:PortraitGeometry,regio
   const jaw=regions.contour
     ? face*(1-protectedFeatureWeight)*smoothstep(.52,.86,normalizedY)*smoothstep(.48,.88,normalizedX)
     : 0;
-  return {hair,skin,jaw,underEye,forehead,combined:Math.max(hair,skin,jaw,underEye,forehead)};
+  // Soft fullness under the chin sits just below the face oval; without this area a double chin can never be edited.
+  const underChin=regions.contour
+    ? ellipseWeight(x,y,{cx:g.face.cx,cy:g.face.cy+g.face.ry*.98,rx:g.face.rx*.72,ry:g.face.ry*.3})*(1-protectedFeatureWeight)
+    : 0;
+  const jawArea=Math.max(jaw,underChin);
+  return {hair,skin,jaw:jawArea,underEye,forehead,combined:Math.max(hair,skin,jawArea,underEye,forehead)};
 }

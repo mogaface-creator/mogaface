@@ -47,6 +47,10 @@ export const MOVEMENT_METRIC: Record<ActiveExpressionState, string> = {
 export const NEUTRAL_WINDOW_FRAMES = 3;
 /** Max (max−min)/median spread of any feature across baseline frames for the face to count as at rest. */
 export const BASELINE_STABILITY = 0.08;
+/** A frame whose eye opening is below this fraction of the opening frames' median is a blink, not a facial expression. */
+export const BLINK_FRACTION = 0.55;
+/** Frames examined from the start of the video when looking for a resting face (blinks are skipped, not counted). */
+export const BASELINE_SEARCH_FRAMES = 7;
 /** A frame is NEUTRAL only if every state's movement is below this fraction of its threshold. */
 export const NEUTRAL_FRACTION = 0.5;
 /** The strongest state must beat the runner-up by this factor, or the frame is AMBIGUOUS. */
@@ -115,7 +119,11 @@ export interface BaselineResult {
  */
 export function establishBaseline(usable: { index: number; features: ExpressionFeatures }[]): BaselineResult {
   if (usable.length === 0) return { baseline: null, note: "No usable frame was available to establish a neutral baseline." };
-  const window = usable.slice(0, NEUTRAL_WINDOW_FRAMES);
+  // A blink in the opening frames is not movement: skip those frames rather than call the whole face "not at rest".
+  const early = usable.slice(0, BASELINE_SEARCH_FRAMES);
+  const openingMedian = median(early.map((u) => u.features.eyeOpening));
+  const notBlinks = early.filter((u) => u.features.eyeOpening >= BLINK_FRACTION * openingMedian);
+  const window = (notBlinks.length ? notBlinks : early).slice(0, NEUTRAL_WINDOW_FRAMES);
   const keys = Object.keys(window[0].features) as (keyof ExpressionFeatures)[];
   const med = Object.fromEntries(keys.map((k) => [k, median(window.map((w) => w.features[k]))])) as unknown as ExpressionFeatures;
   if (Object.values(med).some((v) => v <= 0)) return { baseline: null, note: "The neutral frames produced unusable measurements." };

@@ -14,6 +14,16 @@ const PATTERN_EXPRESSIONS: Record<LinePatternKind, ActiveExpressionState[]> = {
 const validFrames = (frames: unknown): frames is number[] => Array.isArray(frames) && frames.length > 0 &&
   frames.every(frame => Number.isInteger(frame) && frame >= 0);
 
+/** The first analysis note in plain words, so the report says why a clip gave no comparison. */
+function reasonFor(notes: string[] | undefined): string {
+  const note = notes?.[0];
+  if (!note) return "";
+  if (/steady neutral face|still, relaxed/i.test(note)) return " The clip did not open with a still, relaxed face, so there was no resting face to compare against.";
+  if (/single, clear, front-facing/i.test(note)) return " No frame of the clip showed one clear, front-facing face.";
+  if (/too long to load|could not read/i.test(note)) return " The clip could not be read in the browser.";
+  return ` ${note.replace(/\s+/g, " ").trim()}`;
+}
+
 /** Bounded, traceable descriptions only; thresholds are not clinically calibrated. */
 export function expressionContext(analysis?: ExpressionAnalysis | null) {
   const supplied = !!analysis && analysis.status !== "not_provided";
@@ -48,7 +58,7 @@ export function expressionContext(analysis?: ExpressionAnalysis | null) {
   const status = !supplied ? "not_provided" : usable && observedCount ? "usable" : "inconclusive";
   return {status, movements, patterns,
     summary: status === "not_provided" ? "No expression video was supplied. No movement findings are inferred from still photographs."
-      : status === "inconclusive" ? "A video was supplied, but usable neutral-to-expression movement comparisons could not be established."
+      : status === "inconclusive" ? `A video was supplied, but usable neutral-to-expression movement comparisons could not be established.${reasonFor(analysis?.notes)}`
       : `${observedCount} of 4 expression comparisons had usable movement evidence. Missing expressions remain unassessed.`,
   };
 }

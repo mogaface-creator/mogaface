@@ -296,6 +296,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
           for (const it of g.items) {
             pg.drawText(clean(it.label), { x: x + 10, y: y - 15 * sc, font: bold, size: 8.4 * sc, color: C.ink });
             for (const [cx, pr] of [[c1, it.budget], [c2, it.premium]] as const) {
+              if (!pr) { pg.drawText("-", { x: cx, y: y - 15 * sc, font, size: 8.4 * sc, color: C.muted }); continue; }
               const nameLines = wrap(pr.name, bold, 8.4 * sc, cw).slice(0, 2); nameLines.forEach((l, n) => pg.drawText(l, { x: cx, y: y - 15 * sc - n * 10 * sc, font: bold, size: 8.4 * sc, color: C.ink }));
               pg.drawText(clean(`INR ${pr.priceInr.toLocaleString("en-IN")}`), { x: cx, y: y - 15 * sc - nameLines.length * 10 * sc, font, size: 8 * sc, color: C.muted });
             }

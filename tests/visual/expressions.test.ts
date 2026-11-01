@@ -93,3 +93,11 @@ test("classify: two competing expressions are AMBIGUOUS (smile with a strong squ
 test("thresholds are documented as positive numbers for every active state", () => {
   for (const v of Object.values(MOVEMENT_THRESHOLD_PCT)) assert.ok(v > 0);
 });
+
+test("baseline: a blink among the opening frames is skipped, not mistaken for movement", () => {
+  const blink = { ...feat(), eyeOpening: feat().eyeOpening * 0.1 };
+  const u = [feat(), blink, feat(), feat(), feat()].map((features, index) => ({ index, features }));
+  const { baseline: b } = establishBaseline(u);
+  assert.equal(b?.stable, true);
+  assert.deepEqual(b?.frames, [0, 2, 3], "the blink frame (index 1) is left out of the baseline");
+});
