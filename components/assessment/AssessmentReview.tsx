@@ -365,17 +365,19 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         <p className="mt-2 text-sm text-muted">
           A short video (under 60 seconds) that starts with a still, relaxed face, then raises the eyebrows, frowns, smiles and squints. The video file stays on this device; its expression observations are saved with your assessment and used in the report.
         </p>
-        <input
-          type="file"
-          accept="video/*"
-          aria-label="Expression video"
-          disabled={isRunning}
-          onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
-          className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"
-        />
+        {!videoFile && (
+          <input
+            type="file"
+            accept="video/*"
+            aria-label="Expression video"
+            disabled={isRunning}
+            onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
+            className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"
+          />
+        )}
         {videoFile && (
           <p className="mt-2 break-words text-xs text-muted [overflow-wrap:anywhere]">
-            {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`}{" "}
+            {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`} Remove it to choose a different video.{" "}
             <button type="button" onClick={() => onVideoFileChange(null)} className="min-h-11 px-2 underline">
               Remove
             </button>
