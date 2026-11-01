@@ -16,7 +16,7 @@ const face = {
   eyes: { features: [{ label: "Eye shape", value: "almond" }], assessment: "Mild under-eye shadow.", care: [t("Serum"), t("Sleep")], summary: "Summary.", browNow: "straight", browTarget: "soft arch", browWhat: "Soften the tail.", browSteps: [t("Tidy"), t("Trim")], glassesWhy: "Structure helps.", frames: [{ style: "rectangle", text: "Rectangular." }, { style: "wayfarer", text: "Wayfarer." }, { style: "browline", text: "Browline." }] },
   jaw: { structure: "Soft and rounded.", fatFluid: "Some fullness.", methods: [t("Hydration"), t("Body fat"), t("Posture"), t("Sleep")], summary: "Summary." },
   facialHair: null,
-  skin: { routine: { am: "Cleanser, sunscreen.", pm: "Cleanser, moisturiser." }, condition: "Even tone.", bullets: ["Pores on the nose"], type: "Combination - Type IV", concerns: [{ title: "Pores", seen: "Visible on nose.", action: "2% salicylic acid, 3 nights a week." }], summary: "Summary." },
+  skin: { routine: { am: ["Cleanser", "Sunscreen"], pm: "1. Cleanser 2. Moisturiser", weeks: [{ title: "Week 1", text: "Start salicylic acid." }] }, condition: "Even tone.", bullets: ["Pores on the nose"], type: "Combination - Type IV", concerns: [{ title: "Pores", seen: "Visible on nose.", action: "2% salicylic acid, 3 nights a week." }], summary: "Summary." },
   clinic: [{ area: "Skin", option: "chemical peel", why: "Texture.", downtime: "2 to 3 days" }],
   strengths: [t("Jaw")], weaknesses: [{ title: "changeable weakness", text: "Pores on the nose are changeable." }], priorities: [t("Skin")], potential: "Solid gains.",
 };
@@ -77,4 +77,13 @@ test("embedJpeg accepts a view into a larger buffer and re-encodes a non-JPEG; f
   assert.ok(await embedJpeg(doc, padded.subarray(64), "offset-view"));
   assert.ok(await embedJpeg(doc, png, "png"));
   await assert.rejects(embedJpeg(doc, new Uint8Array([1, 2, 3]), "junk"), /embed_failed:junk/);
+});
+
+test("the toolkit is built from the catalog and lists only products the report mentions", async () => {
+  const { toolkitFor } = await import("../../lib/submissions/productCatalog.ts");
+  const groups = toolkitFor("Use a cleanser, then sunscreen. Retinol twice a week.");
+  assert.deepEqual(groups.map(g => g.category), ["Cleansing and moisturiser", "Targeted skincare", "Sunscreen"]);
+  assert.equal(toolkitFor("nothing relevant here").length, 0);
+  const r = parseFace(face)!;
+  assert.deepEqual(r.skin.routine.pm, ["Cleanser", "Moisturiser"], "a numbered string is split into steps");
 });

@@ -9,6 +9,7 @@ import type { GeneratePdfReportInput } from "./pdfReport.ts";
 import type { AuthoredReport, BrowShape, GlassesStyle, HairlineStage } from "./reportAuthor.ts";
 import { bodyTargets } from "./reportAuthor.ts";
 import { REPORT_ILLUSTRATIONS, type ReportIllustration } from "./reportAssets.ts";
+import { toolkitFor } from "./productCatalog.ts";
 import { buildProtocolPages } from "./protocolContent.ts";
 import { W, H, C, clean, wrap, jpeg, hex, embedJpeg, type CropRegion } from "./pdfKit.ts";
 
@@ -241,11 +242,11 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   // 13 facial hair
   if (f.facialHair) add({ id: "facialhair", chapter: "Facial Hair", title: "Facial Hair", blocks: [
     k.cols([k.heading("Where you are now"), k.para(f.facialHair.now)], await (async () => { const a = await addPhoto("fh-now", "now", "jaw", 170, 108); return k.photo(a, 170, 108, "GROWTH PATTERN"); })(), 170),
-    k.heading("Your plan"), k.para(f.facialHair.plan), k.heading("How to keep it"), ...f.facialHair.steps.map(c => k.sub(c.title, c.text)), k.gap(6), k.box("Facial hair summary", f.facialHair.summary),
+    k.heading("Your plan"), k.para(f.facialHair.plan), ...(f.facialHair.option ? [k.heading("Another option"), k.para(f.facialHair.option)] : []), k.heading("How to keep it"), ...f.facialHair.steps.map(c => k.sub(c.title, c.text)), k.gap(6), k.box("Facial hair summary", f.facialHair.summary),
   ] });
   // 14 skin
   add({ id: "skin", chapter: "Skin", title: "Skin", blocks: [
-    k.cols([k.heading("Condition"), k.para(f.skin.condition)], await (async () => { const a = await addPhoto("skin-now", "now", "skin", 170, 170); return k.photo(a, 170, 170, "SKIN CLOSE-UP"); })(), 170),
+    k.cols([k.heading("Condition"), k.para(f.skin.condition)], await (async () => { const a = await addPhoto("skin-now", "now", "skin", 170, 170); return k.photo(a, 170, 170, "SKIN AREAS REVIEWED"); })(), 170),
     ...f.skin.bullets.map(b => k.bullet(b)), k.bullet(f.skin.type), k.gap(6), k.heading("Rules that protect the results"),
     ...["Always patch-test a new product on a small area of skin before using it on your whole face.", "Introduce one new active ingredient at a time, and wait two weeks before adding another.", "Avoid over-exfoliating; reduce the frequency if you feel irritation, redness or dryness.", "Consistency matters more than intensity: regular, gentle use beats sporadic, aggressive use.", "Wear broad-spectrum sunscreen of SPF 30 or higher every morning; it protects every other step."].map(r => k.dash(r)),
     k.gap(8), k.box("Skin summary", f.skin.summary),
@@ -255,10 +256,10 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     k.custom(24, (p, x, top) => p.drawText(clean(c.title), { x, y: top - 17, font: bold, size: 13, color: C.ink })),
     ...(c.seen ? [k.quote(c.seen)] : []),
     k.para(c.action), k.gap(8), k.custom(6, (p, x, top, w) => p.drawLine({ start: { x, y: top - 2 }, end: { x: x + w, y: top - 2 }, thickness: 0.4, color: C.line })), k.gap(8),
-  ]), ...(f.skin.routine.am || f.skin.routine.pm ? [k.heading("Your routine"), k.grid([k.sub("Morning", f.skin.routine.am), k.sub("Evening", f.skin.routine.pm)], 2)] : [])] });
+  ]), ...(f.skin.routine.am.length || f.skin.routine.pm.length ? [k.heading("Your routine"), k.grid([k.col([k.sub("Morning", ""), ...f.skin.routine.am.map((t, i) => k.bullet(`${i + 1}. ${t}`))]), k.col([k.sub("Evening", ""), ...f.skin.routine.pm.map((t, i) => k.bullet(`${i + 1}. ${t}`))])], 2)] : []), ...(f.skin.routine.weeks.length ? [k.gap(4), k.heading("Week by week"), ...f.skin.routine.weeks.map(w => k.sub(w.title, w.text))] : [])] });
   // 16 clinic options (ours)
   if (f.clinic.length) add({ id: "clinic", chapter: "Clinic Options", title: "Clinic Options", subtitle: "For discussion with a qualified clinician", blocks: [
-    ...f.clinic.map((c, i) => k.numbered(i + 1, `${c.area}: ${c.option}`, `${c.why}${c.downtime ? ` Typical downtime: ${c.downtime}.` : ""}`)), k.gap(8),
+    ...f.clinic.map((c, i) => k.numbered(i + 1, `${c.area}: ${c.option}`, `${/[.!?]$/.test(c.why.trim()) ? c.why.trim() : `${c.why.trim()}.`}${c.downtime ? ` Typical downtime: ${c.downtime}.` : ""}`)), k.gap(8),
     k.box("Before any procedure", "A clinician must assess your history, medication, allergies and skin. These are categories to discuss, not a prescription, and doing nothing is always an option. No doses or device settings are given in this report."),
   ] });
   // exercise pages need body content
@@ -273,7 +274,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     const stats = targets ? [["HEIGHT", `${targets.heightCm} cm`, ""], ["WEIGHT", `${targets.weightKg} kg`, ""], ["BMI", String(targets.bmi), ""], ...(targets.maintenanceKcal ? [["MAINTENANCE", `${targets.maintenanceKcal} kcal`, "Daily energy at your activity level"], ["TARGET INTAKE", `${targets.targetKcal} kcal`, targets.targetKcal! < targets.maintenanceKcal ? "A slight deficit" : "At maintenance"]] : []), ["PROTEIN", `${targets.proteinG} g`, "Per day"], ["WATER", `${targets.waterMl} ml`, "Per day, minimum"]] : [];
     const nc = stats.length > 4 ? Math.ceil(stats.length / 2) : Math.max(1, stats.length);
     const statGrid: Blk[] = stats.length ? [k.custom(Math.ceil(stats.length / nc) * 64, (p, x, top, w) => { const gw = (w - 8 * (nc - 1)) / nc; stats.forEach(([l, v, sb], i) => { const gx = x + (i % nc) * (gw + 8), gy = top - Math.floor(i / nc) * 64; p.drawSvgPath(k.roundRect(gw, 56, 5), { x: gx, y: gy, color: C.white, borderColor: C.line, borderWidth: 0.8 }); p.drawText(l, { x: gx + 9, y: gy - 14, font, size: 6.4, color: C.muted }); p.drawText(clean(v), { x: gx + 9, y: gy - 31, font: bold, size: 12.5, color: MID }); if (sb) p.drawText(clean(sb).slice(0, 44), { x: gx + 9, y: gy - 46, font, size: 5.6, color: C.muted }); }); }), k.gap(8)] : [];
-    add({ id: "nutrition", chapter: "Nutrition & Diet", title: "Nutrition & Diet", blocks: [...statGrid, k.heading("Your approach"), k.para(body.nutrition.approach), k.heading("Dietary goals"), ...body.nutrition.goals.map((g, i) => k.numbered(i + 1, g.title, g.text)), ...(body.nutrition.sampleDay ? [k.heading("A sample day"), k.para(body.nutrition.sampleDay)] : []), ...(body.supplements.length ? [] : [k.gap(6), k.box("Nutrition summary", body.nutrition.summary)])] });
+    add({ id: "nutrition", chapter: "Nutrition & Diet", title: "Nutrition & Diet", blocks: [...statGrid, k.heading("Your approach"), k.para(body.nutrition.approach), k.heading("Dietary goals"), ...body.nutrition.goals.map((g, i) => k.numbered(i + 1, g.title, g.text)), ...(body.nutrition.sampleDay ? [k.heading("A sample day"), k.rows(body.nutrition.sampleDay.split(/(?=\b(?:Breakfast|Lunch|Snack|Dinner|Total)\s*:)/).map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf(":"); return i > 0 && i < 12 ? { label: x.slice(0, i), value: x.slice(i + 1).trim() } : { label: "Day", value: x }; }))] : []), ...(body.supplements.length ? [] : [k.gap(6), k.box("Nutrition summary", body.nutrition.summary)])] });
     if (body.supplements.length) add({ id: "supplements", chapter: "Nutrition & Diet", title: "Supplements", blocks: [
       (() => { const cx = [0, 0.4, 0.7], cwf = [0.36, 0.27, 0.27], cell = (t: string, i: number, w: number, sz: number) => wrap(t, font, sz, w * cwf[i]); const rowH = (sp: { name: string; dose: string; when: string }, w: number) => Math.max(...[sp.name, sp.dose, sp.when].map((t, i) => cell(t, i, w, 9.4).length)) * 12 + 14; return ({ h: (w: number) => 26 + body.supplements.reduce((a, sp) => a + rowH(sp, w), 0), draw: (p: PDFPage, x: number, top: number, w: number) => { ["COMPOUND", "DOSE", "WHEN"].forEach((h, i) => p.drawText(h, { x: x + cx[i] * w, y: top - 10, font, size: 7.2, color: C.muted })); p.drawLine({ start: { x, y: top - 18 }, end: { x: x + w, y: top - 18 }, thickness: 0.6, color: C.ink }); let y = top - 18; for (const sp of body.supplements) { const rh = rowH(sp, w); [sp.name, sp.dose, sp.when].forEach((t, i) => cell(t, i, w, 9.4).forEach((l, n) => p.drawText(l, { x: x + cx[i] * w, y: y - 16 - n * 12, font, size: 9.4, color: C.ink }))); y -= rh; p.drawLine({ start: { x, y }, end: { x: x + w, y }, thickness: 0.4, color: C.line }); } } } as Blk); })(),
       k.gap(6), k.heading("Why each one"), ...body.supplements.map(sp => k.sub(sp.name, sp.why)), k.gap(4), k.para("Check with a doctor first if you take medication, are pregnant or have a medical condition. Doses are typical over-the-counter label ranges, not a prescription.", { size: 8.6, color: C.muted }), k.gap(6), k.box("Nutrition summary", body.nutrition.summary),
@@ -283,7 +284,26 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
       k.heading("Colour palette"), k.para(body.style.palette), k.gap(6),
       k.grid([k.box("Casual Wardrobe", `${body.style.casual.title}: ${body.style.casual.text}`, hex("#3e2a5c")), k.box("Professional Attire", `${body.style.professional.title}: ${body.style.professional.text}`, hex("#3e2a5c"))], 2, 14), k.gap(6), k.box("Style summary", body.style.summary),
     ] });
-    if (body.toolkit.length) add({ id: "toolkit", chapter: "Toolkit", title: "Toolkit", subtitle: "A starter kit matched to this protocol (indicative prices)", blocks: [k.custom(body.toolkit.length * (20 + 2 * 46), (p, x, top, w) => { let y = top; for (const t of body.toolkit) { p.drawRectangle({ x, y: y - 20, width: w, height: 20, color: C.pale }); p.drawText(clean(t.category.toUpperCase()), { x: x + 10, y: y - 14, font: bold, size: 7.6, color: C.ink }); y -= 20; for (const [lab, pr] of [["BUDGET", t.budget], ["PREMIUM", t.premium]] as const) { if (!pr.name) continue; p.drawText(lab, { x: x + 10, y: y - 15, font: bold, size: 6.8, color: MID }); p.drawText(clean(pr.name).slice(0, 62), { x: x + 98, y: y - 15, font: bold, size: 9.4, color: C.ink }); p.drawText(clean([pr.priceInr ? `INR ${pr.priceInr.toLocaleString("en-IN")}` : "", pr.note].filter(Boolean).join(". ")).slice(0, 96), { x: x + 98, y: y - 29, font, size: 8.6, color: C.muted }); p.drawLine({ start: { x, y: y - 40 }, end: { x: x + w, y: y - 40 }, thickness: 0.4, color: C.line }); y -= 46; } } })] });
+    const kitText = JSON.stringify({ face: f, body: { ...body, toolkit: [] } }), kitGroups = toolkitFor(kitText);
+    if (kitGroups.length) add({ id: "toolkit", chapter: "Toolkit", title: "Toolkit", subtitle: "Every product named in this protocol (indicative prices)", blocks: [{
+      h: (_w, sc) => 20 * sc + kitGroups.reduce((a, g) => a + 22 * sc + g.items.length * 40 * sc, 0),
+      draw: (pg, x, top, w, sc) => {
+        const c1 = x + 120 * sc, c2 = x + 120 * sc + (w - 120 * sc) / 2, cw = (w - 120 * sc) / 2 - 10;
+        pg.drawText("BUDGET", { x: c1, y: top - 10 * sc, font: bold, size: 6.8 * sc, color: MID }); pg.drawText("PREMIUM", { x: c2, y: top - 10 * sc, font: bold, size: 6.8 * sc, color: MID });
+        let y = top - 20 * sc;
+        for (const g of kitGroups) {
+          pg.drawRectangle({ x, y: y - 20 * sc, width: w, height: 20 * sc, color: C.pale }); pg.drawText(clean(g.category.toUpperCase()), { x: x + 10, y: y - 14 * sc, font: bold, size: 7.6 * sc, color: C.ink }); y -= 22 * sc;
+          for (const it of g.items) {
+            pg.drawText(clean(it.label), { x: x + 10, y: y - 15 * sc, font: bold, size: 8.4 * sc, color: C.ink });
+            for (const [cx, pr] of [[c1, it.budget], [c2, it.premium]] as const) {
+              const nameLines = wrap(pr.name, bold, 8.4 * sc, cw).slice(0, 2); nameLines.forEach((l, n) => pg.drawText(l, { x: cx, y: y - 15 * sc - n * 10 * sc, font: bold, size: 8.4 * sc, color: C.ink }));
+              pg.drawText(clean(`INR ${pr.priceInr.toLocaleString("en-IN")}`), { x: cx, y: y - 15 * sc - nameLines.length * 10 * sc, font, size: 8 * sc, color: C.muted });
+            }
+            pg.drawLine({ start: { x, y: y - 38 * sc }, end: { x: x + w, y: y - 38 * sc }, thickness: 0.4, color: C.line }); y -= 40 * sc;
+          }
+        }
+      },
+    }] });
   }
   // summary + focus
   add({ id: "summary", chapter: "Summary", title: "Summary", blocks: [

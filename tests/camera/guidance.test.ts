@@ -201,3 +201,13 @@ test("lock: the face must fill the oval, a front view must be straight in depth,
   const profileish = g({ target: "leftFortyFive", landmarks: turned(75) });
   assert.deepEqual([profileish.frameOk, profileish.message], [false, "Turn back a little to your left"]);
 });
+
+test("lock: a head tipped down or up (chin tucked, eyes lowered) never locks, front or 45°", () => {
+  const dy = Math.abs(buildSymmetricFace()[LANDMARK.chin].y - buildSymmetricFace()[LANDMARK.foreheadTop].y) * (480 / 640);
+  const tipped = (deg: number, base = buildSymmetricFace()) => { const lm = base.slice(); lm[LANDMARK.foreheadTop] = { ...lm[LANDMARK.foreheadTop], z: -Math.tan((deg * Math.PI) / 180) * dy }; return lm; };
+  assert.equal(g({ landmarks: tipped(5) }).frameOk, true, "a few degrees is natural");
+  const down = g({ landmarks: tipped(30) });
+  assert.deepEqual([down.frameOk, down.message], [false, "Look straight into the camera"]);
+  assert.equal(g({ landmarks: tipped(-30) }).frameOk, false);
+  assert.equal(g({ target: "leftFortyFive", landmarks: tipped(30, nose(0.35)) }).frameOk, false);
+});

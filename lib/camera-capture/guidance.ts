@@ -45,6 +45,8 @@ export const FACE_HEIGHT_RANGE = { min: 0.4, max: 0.82 };
 export const LOCK_MAX_ROLL_DEGREES = 7;
 export const LOCK_MAX_YAW_RATIO = 1.35;
 export const LOCK_FRONT_MAX_YAW_DEGREES = 12;
+/** Chin up/down: a front or 45° photo with the head tipped this far reads as looking down or up, which distorts every crop. */
+export const LOCK_MAX_PITCH_DEGREES = 20;
 /** A 45° view must measure between these angles (from the depth of the two face edges), not just be turned a little. */
 export const LOCK_ANGLE_WINDOW = { min: 30, max: 60 };
 /** How far the face may drift between samples (fraction of the frame) and still count as "still". */
@@ -71,6 +73,7 @@ export const MESSAGES = {
   MOVE_DOWN: "Move slightly down",
   LOOK_STRAIGHT: "Look straight ahead",
   HEAD_TOO_TILTED: "Keep your head level",
+  LOOK_AT_CAMERA: "Look straight into the camera",
   LIGHT_TOO_DARK: "Find a brighter spot",
   LIGHT_TOO_BRIGHT: "That's very bright — try softer light",
   HOLD_STILL: "Perfect — hold still",
@@ -102,6 +105,18 @@ export function estimateYawDegrees(lm: LandmarkList): number | null {
   if (!a || !b) return null;
   const dz = Math.abs((a.z ?? 0) - (b.z ?? 0)), dx = Math.abs(a.x - b.x);
   return dz === 0 ? null : (Math.atan2(dz, dx) * 180) / Math.PI;
+}
+
+/**
+ * Head pitch in degrees from the depth difference between forehead and chin (MediaPipe z shares x's scale, so the
+ * vertical distance is expressed in width units). Null when no depth is present.
+ */
+export function estimatePitchDegrees(lm: LandmarkList, frameWidth: number, frameHeight: number): number | null {
+  const top = lm[LANDMARK.foreheadTop], chin = lm[LANDMARK.chin];
+  if (!top || !chin || !frameWidth) return null;
+  const dz = (top.z ?? 0) - (chin.z ?? 0);
+  if (dz === 0) return null;
+  return (Math.atan2(dz, (Math.abs(chin.y - top.y) * frameHeight) / frameWidth) * 180) / Math.PI;
 }
 
 /** The side with the larger nose-to-face-edge span (i.e. toward the camera), or null if they are equal. */
@@ -174,6 +189,8 @@ export function evaluateGuidance(input: GuidanceInput): GuidanceResult {
       const near = raw_near_side(lm);
       return turn(near ? backTowardCamera(near) : "LEFT", MESSAGES.LOOK_STRAIGHT);
     }
+    const pitch = estimatePitchDegrees(lm, input.frameWidth, input.frameHeight);
+    if (pitch !== null && Math.abs(pitch) > LOCK_MAX_PITCH_DEGREES) return result("HEAD_TOO_TILTED", MESSAGES.LOOK_AT_CAMERA);
   } else if (target === "leftFortyFive" || target === "rightFortyFive") {
     const want = VIEW_TARGET[target]!;
     const near = nearSideOf(lm); // null until turned enough (TURNED_SPAN_RATIO)
@@ -186,6 +203,8 @@ export function evaluateGuidance(input: GuidanceInput): GuidanceResult {
     const angle = estimateYawDegrees(lm);
     if (angle !== null && angle < LOCK_ANGLE_WINDOW.min) return turn(want.headTurn, `Turn a little more to your ${side(want.headTurn)}`);
     if (angle !== null && angle > LOCK_ANGLE_WINDOW.max) return turn(opposite(want.headTurn), `Turn back a little to your ${side(opposite(want.headTurn))}`);
+    const pitch = estimatePitchDegrees(lm, input.frameWidth, input.frameHeight);
+    if (pitch !== null && Math.abs(pitch) > LOCK_MAX_PITCH_DEGREES) return result("HEAD_TOO_TILTED", MESSAGES.LOOK_AT_CAMERA);
   } else {
     // Profiles: the face mesh is not reliable side-on and no profile rule exists, so profiles are captured manually
     // (see profileIsManual). Guidance only checks that a face is visible and lit.

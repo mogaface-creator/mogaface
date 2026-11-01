@@ -18,7 +18,7 @@ function cropBox(region:CropRegion|undefined,g:PortraitGeometry|null|undefined):
  const {face:f,hair:hr}=g;const span=(cx:number,rx:number,cy:number,top:number,bottom:number):Box=>[cx-rx,cy+top,2*rx,bottom-top];
  if(region==="portrait")return [f.cx-f.rx*1.9,f.cy-f.ry*1.9,f.rx*3.8,f.ry*3.8];
  if(region==="hair")return [hr.cx-hr.rx,hr.cy-hr.ry,2*hr.rx,(f.cy-f.ry*0.5)-(hr.cy-hr.ry)];
- if(region==="eyes")return span(f.cx,f.rx*1.05,f.cy,-f.ry*0.6,f.ry*0.2);
+ if(region==="eyes")return span(f.cx,f.rx*1.05,f.cy,-f.ry*0.78,f.ry*0.12);
  if(region==="skin")return span(f.cx,f.rx*0.95,f.cy,-f.ry*0.45,f.ry*0.5);
  return span(f.cx,f.rx*1.05,f.cy,f.ry*0.1,f.ry*1.15);
 }
