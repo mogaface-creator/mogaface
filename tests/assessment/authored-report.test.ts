@@ -16,16 +16,15 @@ const face = {
   eyes: { features: [{ label: "Eye shape", value: "almond" }], assessment: "Mild under-eye shadow.", care: [t("Serum"), t("Sleep")], summary: "Summary.", browNow: "straight", browTarget: "soft arch", browWhat: "Soften the tail.", browSteps: [t("Tidy"), t("Trim")], glassesWhy: "Structure helps.", frames: [{ style: "rectangle", text: "Rectangular." }, { style: "wayfarer", text: "Wayfarer." }, { style: "browline", text: "Browline." }] },
   jaw: { structure: "Soft and rounded.", fatFluid: "Some fullness.", methods: [t("Hydration"), t("Body fat"), t("Posture"), t("Sleep")], summary: "Summary." },
   facialHair: null,
-  skin: { condition: "Even tone.", bullets: ["Pores on the nose"], type: "Combination - Type IV", concerns: [{ title: "Pores", seen: "Visible on nose.", action: "2% salicylic acid, 3 nights a week." }], summary: "Summary." },
+  skin: { routine: { am: "Cleanser, sunscreen.", pm: "Cleanser, moisturiser." }, condition: "Even tone.", bullets: ["Pores on the nose"], type: "Combination - Type IV", concerns: [{ title: "Pores", seen: "Visible on nose.", action: "2% salicylic acid, 3 nights a week." }], summary: "Summary." },
   clinic: [{ area: "Skin", option: "chemical peel", why: "Texture.", downtime: "2 to 3 days" }],
-  strengths: [t("Jaw")], weaknesses: [t("Pores")], priorities: [t("Skin")], potential: "Solid gains.",
+  strengths: [t("Jaw")], weaknesses: [{ title: "changeable weakness", text: "Pores on the nose are changeable." }], priorities: [t("Skin")], potential: "Solid gains.",
 };
 const body = {
   exercise: { intro: "Training changes your frame.", weights: "Lift 3 times a week.", cardio: "Walk daily.", bullets: ["30 minutes"], expert: "Progressive overload.", summary: "Summary." },
-  training: [{ title: "Upper back", text: "Rows 3x12.", image: "upper_back" }, { title: "Shoulders", text: "Press 3x10.", image: "shoulders" }, { title: "Neck", text: "Chin tucks.", image: "neck" }],
+  training: [{ title: "Upper back", text: "Rows 3x12.", image: "upper_back" }, { title: "Shoulders", text: "Press 3x10.", image: "shoulders" }, { title: "Fat loss", text: "Overall fat loss sharpens the jaw line.", image: "none" }],
   facialExercises: [{ title: "Tongue posture", text: "Rest the tongue up.", image: "tongue" }],
-  nutrition: { approach: "Protein at each meal.", goals: [t("Protein"), t("Water")], summary: "Summary." },
-  supplements: [{ name: "Omega-3", dose: "500-1000 mg", when: "With a meal", why: "Skin barrier." }],
+  nutrition: { approach: "Protein at each meal.", goals: [t("Protein"), t("Water")], sampleDay: "Breakfast: poha with eggs.", summary: "Summary." },
   style: { fit: "Tailored.", bodyType: "Average", palette: "Navy.", casual: t("Polo"), professional: t("Blazer"), summary: "Summary." },
   toolkit: [{ category: "Sunscreen", budget: { name: "Re'equil SPF 50", priceInr: 695, note: "Daily" }, premium: { name: "ISDIN Fusion Water", priceInr: 1950, note: "Light" } }],
 };
@@ -48,8 +47,8 @@ test("authored report renders the iMorph-structure PDF: facial-hair page dropped
   const photo = await sharp({ create: { width: 600, height: 800, channels: 3, background: "#777777" } }).jpeg().toBuffer();
   const bytes = await generateProtocolPdf({ clientName: "Asha", referenceId: "TEST", beforeImageBytes: photo, afterImageBytes: photo, previewStatus: "quality_checked", assessment: createEmptyAssessment(), author, reportSummary: "", detectedAreas: [] });
   const pages = (await PDFDocument.load(bytes)).getPageCount();
-  // cover, disclaimer, index, protocol, hair x3, eye x3, jaw x2, skin x2, clinic, exercises x3, nutrition, supplements, style, toolkit, summary, focus, closing
-  assert.equal(pages, 25, "no facial-hair page and no expression-video page for this person");
+  // cover, disclaimer, index, protocol, hair x3, eye x3, jaw x2, skin x2, clinic, exercises x3, nutrition, style, toolkit, summary, focus, closing
+  assert.equal(pages, 24, "no facial-hair page and no expression-video page for this person");
   const noBody = await generateProtocolPdf({ clientName: "Asha", referenceId: "TEST", beforeImageBytes: photo, assessment: createEmptyAssessment(), author: { face: author.face, body: null }, reportSummary: "", detectedAreas: [] });
   assert.ok((await PDFDocument.load(noBody)).getPageCount() < pages, "a failed body part only omits its own pages");
 });
@@ -59,4 +58,11 @@ test("a processing row with no write for 10 minutes is recoverable; a fresh one 
   assert.equal(isStaleProcessing({ status: "processing", updated_at: new Date(now - 11 * 60_000).toISOString() }, now), true);
   assert.equal(isStaleProcessing({ status: "processing", updated_at: new Date(now - 60_000).toISOString() }, now), false);
   assert.equal(isStaleProcessing({ status: "pending", updated_at: new Date(now - 99 * 60_000).toISOString() }, now), false);
+});
+
+test("placeholder weakness titles are replaced; clean keeps accents and spaces em dashes", async () => {
+  assert.equal(parseFace(face)!.weaknesses[0].title, "Pores on the nose are");
+  const { clean } = await import("../../lib/submissions/pdfKit.ts");
+  assert.equal(clean("K\u00e9rastase"), "K\u00e9rastase");
+  assert.equal(clean("key\u2014track"), "key - track");
 });

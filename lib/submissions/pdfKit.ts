@@ -6,7 +6,7 @@ export type CropRegion="portrait"|"hair"|"eyes"|"jaw"|"skin";
 export const W=595.28,H=841.89,M=45,CW=W-2*M;
 export const hex=(s:string)=>rgb(parseInt(s.slice(1,3),16)/255,parseInt(s.slice(3,5),16)/255,parseInt(s.slice(5,7),16)/255);
 export const C={ink:hex("#29212f"),plum:hex("#39244f"),accent:hex("#987748"),muted:hex("#766e7a"),line:hex("#e3dce7"),pale:hex("#f4f0f5"),paleText:hex("#cfc5d9"),white:rgb(1,1,1)};
-export const clean=(s:string)=>s.replace(/[\u2010-\u2015]/g,"-").replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[^\x20-\x7e\n]/g," ");
+export const clean=(s:string)=>s.replace(/[\u2010-\u2013]/g,"-").replace(/[\u2014\u2015]/g," - ").replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[^\x20-\x7e\xc0-\xff\n]/g," ").replace(/ {2,}/g," ");
 export function wrap(text:string,font:PDFFont,size:number,width:number):string[]{
  return clean(text).split("\n").flatMap(part=>{const lines:string[]=[];let line="";for(const word of part.split(/\s+/).filter(Boolean)){if(font.widthOfTextAtSize((line?line+" ":"")+word,size)>width && line){lines.push(line);line="";} if(font.widthOfTextAtSize(word,size)>width){if(line){lines.push(line);line="";}let chunk="";for(const ch of word){if(font.widthOfTextAtSize(chunk+ch,size)>width){lines.push(chunk);chunk="";}chunk+=ch;}line=chunk;}else line+=(line?" ":"")+word;}if(line)lines.push(line);return lines.length?lines:[""];});
 }
