@@ -67,3 +67,14 @@ test("placeholder weakness titles are replaced; clean keeps accents and spaces e
   assert.equal(clean("K\u00e9rastase"), "K\u00e9rastase");
   assert.equal(clean("key\u2014track"), "key - track");
 });
+
+test("embedJpeg accepts a view into a larger buffer and re-encodes a non-JPEG; failures name the image", async () => {
+  const { embedJpeg } = await import("../../lib/submissions/pdfKit.ts");
+  const jpg = await sharp({ create: { width: 40, height: 40, channels: 3, background: "#777" } }).jpeg().toBuffer();
+  const png = await sharp({ create: { width: 40, height: 40, channels: 3, background: "#777" } }).png().toBuffer();
+  const padded = new Uint8Array(jpg.length + 64); padded.set(jpg, 64);
+  const doc = await PDFDocument.create();
+  assert.ok(await embedJpeg(doc, padded.subarray(64), "offset-view"));
+  assert.ok(await embedJpeg(doc, png, "png"));
+  await assert.rejects(embedJpeg(doc, new Uint8Array([1, 2, 3]), "junk"), /embed_failed:junk/);
+});

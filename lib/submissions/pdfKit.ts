@@ -1,4 +1,4 @@
-import { rgb, type PDFFont } from "pdf-lib";
+import { rgb, type PDFDocument, type PDFFont } from "pdf-lib";
 import sharp from "sharp";
 import type { PortraitGeometry } from "../image-generation/portraitGeometry.ts";
 /** Shared PDF helpers: page metrics, palette, text wrapping and face-following photo crops. */
@@ -35,4 +35,17 @@ export async function jpeg(bytes:Buffer|Uint8Array,targetAspect:number,region?:C
  }
  const width=1400,height=Math.max(1,Math.round(width/targetAspect));
  return image.resize({width,height,fit:"cover",position:geometry?"centre":"attention"}).jpeg({quality:88}).toBuffer();
+}
+
+/**
+ * pdf-lib reads JPEG bytes through `new DataView(bytes.buffer)`, ignoring the view's offset, so any Buffer that is a
+ * slice of a larger ArrayBuffer, or any non-JPEG, fails with "SOI not found in JPEG". Always embed a fresh,
+ * offset-zero copy, re-encode anything that is not a JPEG, and name the image when it still cannot be embedded.
+ */
+export async function embedJpeg(doc:PDFDocument,bytes:Uint8Array,label:string){
+ let data=new Uint8Array(bytes.length);data.set(bytes);
+ try{
+  if(data[0]!==0xff||data[1]!==0xd8)data=new Uint8Array(await sharp(Buffer.from(data)).jpeg({quality:88}).toBuffer());
+  return await doc.embedJpg(data);
+ }catch(error){throw new Error(`embed_failed:${label}:${error instanceof Error?error.message:"unknown"}`);}
 }

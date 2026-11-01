@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, PDFString, type PDFPage } from "pdf-lib";
 import type { GeneratePdfReportInput } from "./pdfReport.ts";
 import { buildProtocolPages, PROTOCOL_SOURCES, type ProtocolPage } from "./protocolContent.ts";
-import { W,H,M,CW,C,clean,wrap,jpeg } from "./pdfKit.ts";
+import { W,H,M,CW,C,clean,wrap,jpeg,embedJpeg } from "./pdfKit.ts";
 import { generateReportPdf } from "./reportPdf.ts";
 export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<Uint8Array>{
  if(input.author)return generateReportPdf({...input,author:input.author});
@@ -14,7 +14,7 @@ export async function generateProtocolPdf(input:GeneratePdfReportInput):Promise<
   for(const [index,text] of comparisons.entries()) pages.push({id:`observed-comparison-${index}`,title:"Observed preview comparison",subtitle:"ORIGINAL AND FINAL IMAGE REVIEW",blocks:[{title:text.split(":")[0].toUpperCase(),text:text.replace(/\s*\[PREVIEW_STATUS:[^\]]+\]/,"")}],takeaway:"Automated visual comparison can be mistaken. No diagnosis, measured improvement or achievable treatment outcome is established."});
  }
  const assets=new Map<string,Awaited<ReturnType<typeof doc.embedJpg>>>();
- const embed=async(key:string,bytes:Buffer|Uint8Array,aspect:number,region?:ProtocolPage["region"])=>assets.set(key,await doc.embedJpg(await jpeg(bytes,aspect,region,input.portraitGeometry)));
+ const embed=async(key:string,bytes:Buffer|Uint8Array,aspect:number,region?:ProtocolPage["region"])=>assets.set(key,await embedJpeg(doc,await jpeg(bytes,aspect,region,input.portraitGeometry),key));
  const heroAspect=((CW-12)/2)/197,coverAspect=225/250,coverPairAspect=((225-8)/2)/250,overviewAspect=((CW-12)/2)/235,pairAspect=((CW-14)/2)/154,detailAspect=CW/154,trioAspect=((CW-16)/3)/154;
  await embed("cover-single",input.beforeImageBytes,coverAspect,"portrait");await embed("cover-pair",input.beforeImageBytes,coverPairAspect,"portrait");await embed("overview",input.beforeImageBytes,overviewAspect,"portrait");await embed("hero",input.beforeImageBytes,heroAspect,"portrait");
  if(approved){await embed("cover-pair-after",input.afterImageBytes!,coverPairAspect,"portrait");await embed("overview-after",input.afterImageBytes!,overviewAspect,"portrait");await embed("hero-after",input.afterImageBytes!,heroAspect,"portrait");}

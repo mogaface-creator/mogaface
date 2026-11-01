@@ -10,7 +10,7 @@ import type { AuthoredReport, BrowShape, GlassesStyle, HairlineStage } from "./r
 import { bodyTargets } from "./reportAuthor.ts";
 import { REPORT_ILLUSTRATIONS, type ReportIllustration } from "./reportAssets.ts";
 import { buildProtocolPages } from "./protocolContent.ts";
-import { W, H, C, clean, wrap, jpeg, hex, type CropRegion } from "./pdfKit.ts";
+import { W, H, C, clean, wrap, jpeg, hex, embedJpeg, type CropRegion } from "./pdfKit.ts";
 
 const MX = 56, CWD = W - 2 * MX, BOTTOM = 84;
 const DEEP = hex("#2a1740"), MID = hex("#6b4f8c"), SOFT = hex("#b9a6d2"), MIST = hex("#e8e0f0");
@@ -148,8 +148,8 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
   const approved = (input.previewApproved === true || input.previewStatus === "quality_checked") && !!input.afterImageBytes;
   const date = input.dateStr || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "long", year: "numeric" }).toUpperCase();
   const imgs = new Map<string, PDFImage>();
-  const addPhoto = async (key: string, which: "now" | "after", region: CropRegion, w: number, h: number) => { imgs.set(key, await doc.embedJpg(await jpeg(which === "now" ? input.beforeImageBytes : input.afterImageBytes!, w / h, region, input.portraitGeometry))); return key; };
-  const illu = async (k: ReportIllustration) => { const key = `ill-${k}`; if (!imgs.has(key)) imgs.set(key, await doc.embedJpg(Buffer.from(REPORT_ILLUSTRATIONS[k], "base64"))); return key; };
+  const addPhoto = async (key: string, which: "now" | "after", region: CropRegion, w: number, h: number) => { imgs.set(key, await embedJpeg(doc, await jpeg(which === "now" ? input.beforeImageBytes : input.afterImageBytes!, w / h, region, input.portraitGeometry), key)); return key; };
+  const illu = async (k: ReportIllustration) => { const key = `ill-${k}`; if (!imgs.has(key)) imgs.set(key, await embedJpeg(doc, Buffer.from(REPORT_ILLUSTRATIONS[k], "base64"), key)); return key; };
   const k = kit(font, bold, imgs);
   const targets = bodyTargets(input.assessment);
   const video = buildProtocolPages({ name, assessment: input.assessment, analysis: input.analysis }).find(pg => pg.id === "facial-exercises");
