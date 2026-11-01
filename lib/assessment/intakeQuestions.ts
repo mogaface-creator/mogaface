@@ -32,6 +32,8 @@ export interface NumberedAsk {
 }
 
 export const IMAGE_PLACE_OPTIONS: AskOption[] = [
+  { "value": "FACIAL_VOLUME", "label": "Lip fullness" },
+  { "value": "FACIAL_LIFTING", "label": "Brow framing" },
   {
     "value": "FACIAL_LINES",
     "label": "Expression lines"
@@ -107,6 +109,8 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
         "kind": "places",
         "max": 3,
         "options": [
+          { "value": "FACIAL_VOLUME", "label": "Lip fullness" },
+          { "value": "FACIAL_LIFTING", "label": "Brow framing" },
           {
             "value": "FACIAL_LINES",
             "label": "Expression lines"
@@ -147,6 +151,11 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   {
     "section": "report",
     "n": 4,
+    "asks": [{ "id": "where", "prompt": "Which details would you like the preview to explore?", "kind": "details", "hint": "Optional preferences only. Choose the specific changes you want; other features stay protected." }]
+  },
+  {
+    "section": "report",
+    "n": 5,
     "asks": [
       {
         "id": "protocolHairTexture",
@@ -183,7 +192,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 5,
+    "n": 6,
     "asks": [
       {
         "id": "protocolHairGoal",
@@ -216,7 +225,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 6,
+    "n": 7,
     "asks": [
       {
         "id": "protocolSkinConcerns",
@@ -253,7 +262,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 7,
+    "n": 8,
     "asks": [
       {
         "id": "protocolSensitivity",
@@ -278,7 +287,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 8,
+    "n": 9,
     "asks": [
       {
         "id": "protocolBeardGoal",
@@ -311,7 +320,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 9,
+    "n": 10,
     "asks": [
       {
         "id": "protocolBudget",
@@ -340,7 +349,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 10,
+    "n": 11,
     "asks": [
       {
         "id": "maxWilling",
@@ -365,7 +374,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 11,
+    "n": 12,
     "asks": [
       {
         "id": "wantAfterPhoto",
@@ -377,7 +386,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 12,
+    "n": 13,
     "asks": [
       {
         "id": "protocolHeight",
@@ -395,7 +404,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 13,
+    "n": 14,
     "asks": [
       {
         "id": "protocolDiet",
@@ -413,7 +422,7 @@ export const INTAKE_QUESTIONS: NumberedAsk[] = [
   },
   {
     "section": "report",
-    "n": 14,
+    "n": 15,
     "asks": [
       {
         "id": "protocolActivity",

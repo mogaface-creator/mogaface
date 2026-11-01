@@ -1,6 +1,6 @@
 /**
  * One screen per question. A follow-up appears only after the answer that needs it.
- * Fourteen short question steps, followed by photos and separate processing consent.
+ * Core questions plus an optional regional-detail follow-up, followed by photos and separate processing consent.
  */
 
 import { detailsOfConcern, isAppearanceConcernId } from "./appearanceConcerns.ts";
@@ -34,6 +34,7 @@ export const PREVIEW_SCREENS: PreviewScreen[] = [
       "places"
     ]
   },
+  { "id": "where", "askIds": ["where"] },
   {
     "id": "protocolHairTexture",
     "askIds": [
@@ -120,7 +121,7 @@ export function asksOn(screen: PreviewScreen): Ask[] {
 export function whereGroups(intake: ClinicIntake) {
   return intake.places.flatMap((place) => {
     if (place === "HAIR" || !isAppearanceConcernId(place)) return [];
-    const details = detailsOfConcern(place).filter((detail) => !detail.id.endsWith("NOT_SURE"));
+    const details = detailsOfConcern(place).filter((detail) => !detail.id.endsWith("NOT_SURE") && (place !== "FACIAL_VOLUME" || detail.id === "LIP_FULLNESS") && (place !== "FACIAL_LIFTING" || detail.id === "BROW_OPENING"));
     return details.length > 0 ? [{ place, details }] : [];
   });
 }

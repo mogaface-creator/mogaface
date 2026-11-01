@@ -158,11 +158,11 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
 
   // Photo pairs: with an approved after image show NOW and PROJECTED; otherwise one original.
   const pair = async (region: CropRegion, id: string, w: number, h: number): Promise<Blk> => {
-    if (approved) { const gw = (w - 14) / 2, a = await addPhoto(`${id}-now`, "now", region, gw, h), b = await addPhoto(`${id}-after`, "after", region, gw, h); return k.custom(h + 22, (p, x, top) => { k.photo(a, gw, h, "NOW").draw(p, x, top, gw, 1); k.photo(b, gw, h, "PROJECTED").draw(p, x + gw + 14, top, gw, 1); }); }
+    if (approved) { const gw = (w - 14) / 2, a = await addPhoto(`${id}-now`, "now", region, gw, h), b = await addPhoto(`${id}-after`, "after", region, gw, h); return k.custom(h + 22, (p, x, top) => { k.photo(a, gw, h, "NOW").draw(p, x, top, gw, 1); k.photo(b, gw, h, "AI CONCEPT").draw(p, x + gw + 14, top, gw, 1); }); }
     const a = await addPhoto(`${id}-now`, "now", region, w, h); return k.photo(a, w, h, "ORIGINAL PHOTO");
   };
   const stack = async (region: CropRegion, id: string, w: number, h: number): Promise<Blk> => {
-    if (approved) { const a = await addPhoto(`${id}-now`, "now", region, w, h), b = await addPhoto(`${id}-after`, "after", region, w, h); return k.custom(2 * (h + 22), (p, x, top) => { k.photo(a, w, h, "NOW").draw(p, x, top, w, 1); k.photo(b, w, h, "PROJECTED").draw(p, x, top - h - 22, w, 1); }); }
+    if (approved) { const a = await addPhoto(`${id}-now`, "now", region, w, h), b = await addPhoto(`${id}-after`, "after", region, w, h); return k.custom(2 * (h + 22), (p, x, top) => { k.photo(a, w, h, "NOW").draw(p, x, top, w, 1); k.photo(b, w, h, "AI CONCEPT").draw(p, x, top - h - 22, w, 1); }); }
     const a = await addPhoto(`${id}-now`, "now", region, w, h * 1.6); return k.photo(a, w, h * 1.6, "ORIGINAL PHOTO");
   };
   const illustrated = async (img: ReportIllustration, caption: string, size = 118) => k.photo(await illu(img), size, size, caption);
@@ -192,7 +192,7 @@ export async function generateReportPdf(input: GeneratePdfReportInput & { author
     narrow(k.para(`What follows is a personalised assessment of your appearance, based on the photographs${hasVideo ? ", expression video" : ""} and questionnaire you submitted, together with grooming, skincare, training, nutrition and styling guidance that follows from it. Everything recommended here is something you can do yourself.`)), k.gap(8),
     narrow(k.para("It is not a medical or dermatological consultation. We do not diagnose conditions. The clinic options page lists categories of treatment only so you can discuss them with a qualified clinician, who must assess your history, medication, allergies and skin; no doses or device settings are given. If you have a skin, hair, joint or dietary condition, or take prescription medication, speak to a qualified professional before changing your routine.")), k.gap(8),
     narrow(k.para("Your photographs are read by an AI system. Lighting, camera angle and expression all affect what can be seen, and anything the photographs cannot show has been left unstated rather than guessed at. Treat the observations as a considered reading of your photographs, not a measurement of your face.")), k.gap(8),
-    narrow(k.para("Projected images, scores and visual ages illustrate a realistic direction of change from consistent effort. They are not a promise of outcome. Results vary with genetics, consistency, age and starting point, and features that cannot change without surgery are identified as such throughout.")), k.gap(8),
+    narrow(k.para("AI concept images illustrate selected appearance preferences. They are not real outcomes or predictions of what a treatment will achieve, and generation may alter small details. Only original photos and usable video evidence inform observations; no aesthetic score or visual-age improvement is established.")), k.gap(8),
     narrow(k.para("Product and supplement suggestions are based on your stated budget and the concerns found in your assessment; prices are indicative. We are not responsible for third-party products, and you should always patch-test anything new on a small area of skin first.")),
   ] });
   // 3 index placeholder (filled after page numbers are known)
