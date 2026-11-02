@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function SubmittedView() {
   const searchParams = useSearchParams();
+  const router=useRouter();
   const submissionId = searchParams.get("id");
 
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -28,7 +29,7 @@ export function SubmittedView() {
         if (data.status === "done") {
           setStatus("done");
           setPreviewMessage(data.previewMessage || "");
-          setStatusMessage(data.deliveryWarning ? "Your report is ready to download, but email delivery was unsuccessful. Please use the download button." : "Your report is ready. Check your email if you supplied an address.");
+          setStatusMessage(data.deliveryWarning ? "Your review is available. Open it below and create a report link." : "Your preview is ready. Open the detailed review and create your report link.");
         } else if (data.status === "failed") {
           setStatus("error");setStatusMessage("We could not complete your report. Please contact the clinic with your submission reference.");
         } else if (data.status === "processing") {
@@ -65,12 +66,7 @@ export function SubmittedView() {
     }
   };
 
-  const downloadReport = async () => {
-    if(!submissionId)return;
-    const token=sessionStorage.getItem(`mogaface:report:${submissionId}`);
-    if(!token){setStatusMessage("Open the emailed PDF, or download from the same browser session used to submit.");return;}
-    try{const response=await fetch(`/api/submission-report?id=${encodeURIComponent(submissionId)}`,{headers:{Authorization:`Bearer ${token}`}});if(!response.ok)throw new Error();const url=URL.createObjectURL(await response.blob());const a=document.createElement("a");a.href=url;a.download="Next-Face-Protocol.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{setStatusMessage("The report could not be downloaded. Please use the emailed attachment or contact the clinic.");}
-  };
+  const downloadReport = () => {if(submissionId)router.push(`/review?id=${encodeURIComponent(submissionId)}`);};
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-20 sm:py-28">
@@ -115,11 +111,11 @@ export function SubmittedView() {
 
         {status === "done" ? (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            Your personalized <strong>Next Face appearance protocol</strong> is ready. Check the note below to see whether an illustrative after photo was included. Check your email if an address was supplied.
+            Your personalized <strong>Next Face appearance protocol</strong> is ready. Check the note below to see whether an illustrative after photo was included. Open the detailed workspace below to create your report link.
           </p>
         ) : (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            We&apos;re reviewing your photos and building your personalised report. You&apos;ll receive it by email when processing finishes.
+            We&apos;re reviewing your photos and building your personalised report. You can open the detailed review below while the optional preview is prepared.
           </p>
         )}
       </div>
@@ -178,7 +174,7 @@ export function SubmittedView() {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
-                  View / Download PDF Report
+                  Open detailed web report
                 </button>
               </div>
             </div>
@@ -188,10 +184,10 @@ export function SubmittedView() {
 
       {status === "error" && <p role="alert" className="mt-6 text-center text-sm">{statusMessage}</p>}
       {status === "done" && <p className="mt-4 text-center text-sm">{statusMessage}</p>}
-      {submissionId && <div className="mt-8 rounded-2xl border border-accent/30 bg-surface-warm p-7 text-center"><p className="eyebrow text-xs">Your interactive review</p><h2 className="mt-3 font-serif text-2xl">Review and refine your result.</h2><p className="mt-3 text-sm leading-6 text-body-text">Open your original photos, build the detailed assessment, review the after concept and direct targeted refinement rounds. Accept only the versions you want in your updated report.</p><Link href={`/review?id=${encodeURIComponent(submissionId)}`} className="mt-5 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-white">Open report & refinement workspace</Link><p className="mt-3 text-xs text-muted">Available in the browser session used for submission. You can begin the review while the emailed PDF is being prepared.</p></div>}
+      {submissionId && <div className="mt-8 rounded-2xl border border-accent/30 bg-surface-warm p-7 text-center"><p className="eyebrow text-xs">Your interactive review</p><h2 className="mt-3 font-serif text-2xl">Review and refine your result.</h2><p className="mt-3 text-sm leading-6 text-body-text">Open your original photos, build the detailed assessment, review the after concept and direct targeted refinement rounds. Accept only the versions you want in your updated report.</p><Link href={`/review?id=${encodeURIComponent(submissionId)}`} className="mt-5 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-white">Open report & refinement workspace</Link><p className="mt-3 text-xs text-muted">Available in the browser session used for submission. Create a saved report link after reviewing your results.</p></div>}
       {/* What's in your report */}
       <div className="mt-12 rounded-2xl border border-border bg-surface p-8">
-        <p className="eyebrow text-[11px]">What&apos;s in your email report</p>
+        <p className="eyebrow text-[11px]">What&apos;s in your web report</p>
         <ul className="mt-6 space-y-4">
           {[
             "An illustrative comparison when requested and quality-screened",
@@ -210,7 +206,7 @@ export function SubmittedView() {
 
       {/* Reassurance */}
       <p className="mt-8 text-center text-sm text-muted">
-        Didn&apos;t get the email? Check your spam folder, or{" "}
+        Need a fresh review? You can{" "}
         <Link href="/assessment?new=1" className="underline decoration-accent underline-offset-4 hover:text-accent">
           start a new assessment
         </Link>

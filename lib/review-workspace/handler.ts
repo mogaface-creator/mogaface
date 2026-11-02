@@ -6,12 +6,14 @@ import {validateSourcePhoto} from "../image-generation/output.ts";
 import {expressionContext} from "../observation/expressionContext.ts";
 import {assessOriginals,generateRevision} from "./generate.server.ts";
 import {signReviewImage,verifyReviewImage} from "./receipt.ts";
-import {parseTargets} from "./types.ts";
+import {exportReviewHtml,type ExportVersion} from "./export.ts";
+import {savePublishedReport} from "./published.ts";
+import {parseDetailedReview,parseTargets} from "./types.ts";
 const headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer"};
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers});
 export const MAX_REVIEW_REQUEST_BYTES=4_000_000;
-interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string}
-const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
+interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string;saveReport:typeof savePublishedReport}
+const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,saveReport:savePublishedReport,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw new Error("invalid_request");
  const chunks:Uint8Array[]=[];let size=0;
@@ -43,6 +45,21 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
   if(body.action==="assess"){
    if(!await deps.persistUse(record.id,record))return json({error:"session_limit"},429);
    return json({review:await deps.assess(sub,record)});
+  }
+  if(body.action==="publish"){
+   const review=parseDetailedReview(body.review,record.videoPreviewContextConsent==="granted"&&expressionContext(record.analysis.expression).status==="usable");
+   if(!review||!Array.isArray(body.versions)||body.versions.length>8||!Number.isInteger(body.active)||body.active < -1||body.active>=body.versions.length)return json({error:"invalid_request"},400);
+   const versions:ExportVersion[]=[];
+   for(const v of body.versions){
+    if(!v||typeof v.label!=="string"||v.label.length>100||typeof v.notes!=="string"||v.notes.length>600||!Array.isArray(v.targets)||v.targets.length>9||v.targets.some((t:unknown)=>typeof t!=="string"||t.length>100))return json({error:"invalid_request"},400);
+    const image=v.image;
+    if(!image||typeof image.base64!=="string"||typeof image.mime!=="string"||!/^[A-Za-z0-9+/]+={0,2}$/.test(image.base64)||!verifyReviewImage(Buffer.from(image.base64,"base64"),id,image.receipt,deps.secret))return json({error:"unapproved_source"},400);
+    versions.push({label:v.label,image,notes:v.notes,targets:v.targets});
+   }
+   const sidePhotos=record.reportPhotos?[{label:"Left oblique — original",...record.reportPhotos.leftFortyFive},{label:"Right oblique — original",...record.reportPhotos.rightFortyFive}]:[];
+   const html=exportReviewHtml(record.contact?.name||"Your appearance review",original,review,versions,body.active,{sidePhotos,videoSummary:expressionContext(record.analysis.expression).summary});
+   const key=await deps.saveReport(html);
+   return json({url:`${new URL(request.url).origin}/reports/${key}.html`});
   }
   if(body.action!=="refine")return json({error:"invalid_action"},400);
   const targets=parseTargets(body.targets);

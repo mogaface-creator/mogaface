@@ -33,8 +33,8 @@ test("revision notes cannot unlock unrelated regions",()=>{
 test("report export includes original evidence, selected accepted version and all entries without credentials",()=>{
  const image={mime:"image/png",base64:"aGVsbG8=",receipt:"PRIVATE_RECEIPT"};
  const html=exportReviewHtml('<script>alert(1)</script>',image,null,[{label:"Accepted 1",image,targets:["lip_vermilion"],notes:"<img onerror=bad>"}],0);
- assert.match(html,/169-item review/);assert.match(html,/Accepted 1/);assert.match(html,/Not assessed/);
- assert.doesNotMatch(html,/PRIVATE_RECEIPT|<script>|<img onerror/);assert.match(html,/&lt;script&gt;/);
+ assert.match(html,/169 aesthetic assessments/);assert.match(html,/Accepted 1/);assert.match(html,/Not assessed/);
+ assert.doesNotMatch(html,/PRIVATE_RECEIPT|<script>alert|<img onerror/);assert.match(html,/&lt;script&gt;/);
  assert.throws(()=>exportReviewHtml("Test",{...image,mime:'image/png" onerror="bad'},null,[],-1));
 });
 function fixture(){
@@ -75,4 +75,28 @@ test("refinement chain uses the signed selected source, rejects tampering and ne
  const response=await handleReviewWorkspace(f.request(body),deps);assert.equal(response.status,200);assert.equal(calls,1);
  const result=await response.json();assert.equal(verifyReviewImage(output,"submission",result.draft.receipt,"test-secret"),true);
  assert.equal(f.sub.after_image_base64,null);assert.equal(f.sub.before_image_base64,source.toString("base64"));
+});
+
+test("published HTML uses private durable storage and unguessable view keys",async()=>{
+ const {savePublishedReport,readPublishedReport,REPORT_HEADERS}=await import("../../lib/review-workspace/published.ts");
+ const calls:{url:string;init:RequestInit}[]=[];
+ const env={NEXT_PUBLIC_SUPABASE_URL:"https://example.supabase.co",SUPABASE_SERVICE_ROLE_KEY:"test-secret"};
+ const fetchImpl=(async(url:unknown,init:RequestInit={})=>{calls.push({url:String(url),init});return new Response(String(url).includes("authenticated")?"<html>saved</html>":"{}",{status:200});}) as typeof fetch;
+ const key=await savePublishedReport("<html>saved</html>",{env,fetchImpl});assert.match(key,/^[a-f0-9]{64}$/);
+ assert.equal(JSON.parse(String(calls[0].init.body)).public,false);assert.equal(calls[1].init.body,"<html>saved</html>");
+ assert.equal(await readPublishedReport(key,{env,fetchImpl}),"<html>saved</html>");assert.equal(await readPublishedReport("../secret",{env,fetchImpl}),null);
+ assert.match(REPORT_HEADERS["Content-Security-Policy"],/sandbox allow-scripts/);assert.match(REPORT_HEADERS["X-Robots-Tag"],/noindex/);
+ await assert.rejects(savePublishedReport("x",{env,fetchImpl:(async()=>new Response("{}",{status:403})) as typeof fetch}));
+});
+test("publishing validates the detailed review and excludes arbitrary image bytes",async()=>{
+ const {sub,deps}=fixture();let saved="";
+ const reviewed={summary:"Visible original evidence.",priorities:[],findings:[]};
+ const request=(versions:unknown[],active=-1)=>new Request("https://moga.test/api/review-workspace?id=submission",{method:"POST",headers:{origin:"https://moga.test",authorization:"Bearer token"},body:JSON.stringify({action:"publish",review:reviewed,versions,active})});
+ const response=await handleReviewWorkspace(request([]),{...deps,saveReport:async html=>{saved=html;return "a".repeat(64);}});
+ assert.equal(response.status,200);assert.match((await response.json()).url,/\/reports\/[a-f0-9]{64}\.html$/);assert.match(saved,/169 aesthetic assessments/);
+ const bad=await handleReviewWorkspace(request([{label:"Injected",notes:"",targets:[],image:{base64:"aGVsbG8=",mime:"image/png",receipt:"forged"}}],0),deps);assert.equal(bad.status,400);
+});
+test("active delivery prepares web reports without PDF rendering or attachments",async()=>{
+ const {readFile}=await import("node:fs/promises");
+ for(const path of ["../../lib/submissions/processOne.ts","../../app/api/submission-report/route.ts"]){const source=await readFile(new URL(path,import.meta.url),"utf8");assert.doesNotMatch(source,/generatePdfReport|sendReportEmail|application\/pdf/);}
 });

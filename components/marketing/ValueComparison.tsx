@@ -6,7 +6,7 @@ const INCLUDED_BENEFITS = [
   "Personalized non-surgical facial improvement protocol",
   "Biometric scores: symmetry index & golden ratio facial harmony",
   "Optional illustrative before-and-after preview, subject to quality review",
-  "25-page Personal Appearance Protocol (PDF)",
+  "Detailed Personal Appearance Review (web link)",
   "Access to our care team whenever you need advice",
   "Encrypted & confidential: photos never shared publicly",
 ];

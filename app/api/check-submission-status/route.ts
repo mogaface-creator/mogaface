@@ -9,7 +9,7 @@
 
 import type { NextRequest } from "next/server";
 import { getSubmission, isStaleProcessing, updateSubmission } from "@/lib/submissions/store";
-import { processOne } from "@/app/api/process-submissions/route";
+import { processOne } from "@/lib/submissions/processOne";
 
 export const maxDuration = 180;
 
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         ...(updated ? {hasAfterImage:!!updated.after_image_base64,previewMessage:previewStatusMessage(updated.report_summary||"",!!updated.after_image_base64)} : {}),
         message:
           outcome.outcome === "done"
-            ? "Report successfully compiled and dispatched to your email."
+            ? "Your optional preview is ready. Open the review workspace to build and save your web report."
             : outcome.reason,
       });
     }

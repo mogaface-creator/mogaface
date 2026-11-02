@@ -21,7 +21,7 @@ export function DossierPreview() {
             <div aria-hidden className="mt-4 sm:mt-6 h-1 w-12 bg-violet-600 rounded-full" />
             <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-slate-600">
               We don&apos;t just flash a temporary screen. In 60 seconds, our system compiles an executive medical-grade report
-              formatted in accordance with luxury aesthetic clinic standards and delivers it straight to your email and on-screen.
+              formatted in accordance with luxury aesthetic clinic standards and presents it as a detailed report you can open and share by link.
             </p>
 
             <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
@@ -62,7 +62,7 @@ export function DossierPreview() {
             </div>
           </div>
 
-          {/* Right Column: Visual 2-Page PDF Presentation */}
+          {/* Right Column: Detailed web report preview */}
           <div className="relative flex flex-col items-center justify-center py-4 sm:py-6">
             {/* Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 sm:h-96 w-72 sm:w-96 rounded-full bg-violet-400/10 blur-3xl pointer-events-none" />
