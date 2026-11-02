@@ -188,6 +188,7 @@ export function SubmittedView() {
 
       {status === "error" && <p role="alert" className="mt-6 text-center text-sm">{statusMessage}</p>}
       {status === "done" && <p className="mt-4 text-center text-sm">{statusMessage}</p>}
+      {submissionId && <div className="mt-8 rounded-2xl border border-accent/30 bg-surface-warm p-7 text-center"><p className="eyebrow text-xs">Your interactive review</p><h2 className="mt-3 font-serif text-2xl">Review and refine your result.</h2><p className="mt-3 text-sm leading-6 text-body-text">Open your original photos, build the detailed assessment, review the after concept and direct targeted refinement rounds. Accept only the versions you want in your updated report.</p><Link href={`/review?id=${encodeURIComponent(submissionId)}`} className="mt-5 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-white">Open report & refinement workspace</Link><p className="mt-3 text-xs text-muted">Available in the browser session used for submission. You can begin the review while the emailed PDF is being prepared.</p></div>}
       {/* What's in your report */}
       <div className="mt-12 rounded-2xl border border-border bg-surface p-8">
         <p className="eyebrow text-[11px]">What&apos;s in your email report</p>

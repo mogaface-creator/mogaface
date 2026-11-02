@@ -228,7 +228,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
   /**
    * Sends the front photo to /api/submit-assessment, which schedules the
-   * async PDF + email job. Then navigates to /submitted.
+   * async PDF + email job. Then opens the private interactive report workspace.
    * Called right after the analysis session is created (or fails — we still
    * create a submission so the lead is not lost).
    */
@@ -267,10 +267,11 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     }
     clearAssessment();
     void clearAllMedia();
-    const targetUrl =
-      result.ok && result.submissionId
-        ? `/submitted?id=${encodeURIComponent(result.submissionId)}`
-        : "/submitted";
+    let workspaceAvailable=false;
+    try { workspaceAvailable=!!sessionStorage.getItem(`mogaface:report:${result.submissionId}`); } catch { /* The queued email remains available without session storage. */ }
+    const targetUrl = result.submissionId
+      ? `/${workspaceAvailable ? "review" : "submitted"}?id=${encodeURIComponent(result.submissionId)}`
+      : "/submitted";
     router.push(targetUrl);
   };
 

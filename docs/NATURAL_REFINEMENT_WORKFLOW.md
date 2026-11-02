@@ -10,7 +10,7 @@ The intake now exposes an optional detail screen after selecting areas. Brow fra
 - Lip fullness: slightly more visible vermilion body with a clear natural border. Preserve mouth width, corners, cutaneous lip, philtrum, fine lines and expression. “Open the pink part” does not mean opening the mouth.
 - Lower-face slimming: a modest taper at the lower lateral contour, preserving cheek volume and neck dimensions. A contour difference does not diagnose a masseter condition, and uncertain mirroring does not authorize unilateral correction.
 - Mentolabial transition: soften the visible lower-lip–chin groove and shadow while retaining a natural transition. Do not inflate a shelf or flatten all detail.
-- Chin projection: a modest appearance direction only where the source profile supports it. Frontal photographs cannot establish projection; preserve when unsupported.
+- Chin contour/projection: a modest explicitly selected appearance concept. Frontal photographs cannot establish real projection; do not label the concept a measured projection change, and preserve an obscured chin.
 
 Lower-face, chin and mentolabial preferences sit under Facial contour, so they can be combined with Brow framing and Lip fullness within the existing three-area limit. General lifting, fullness and overall goals do not enable the new local feature edits. A skin-only request cannot unlock them.
 
@@ -35,3 +35,8 @@ For supervised image iterations, keep the previous approved version and list onl
 ## Validation
 
 Tests cover explicit parent-backed preferences, independent masks, no generic-goal feature unlock, preserved eye/nose regions, source pixels outside a lip-only edit, missing geometry rejection, and all 169 catalog entries. Full-suite failures are compared with an unmodified baseline rather than hidden or disabled. No database changes are needed.
+
+
+## Interactive workflow
+
+The subsequent `/review` workspace implements explicit detailed review, accepted-version selection, local refinement rounds and updated HTML report export. See `INTERACTIVE_REVIEW_WORKSPACE.md` for the trust boundaries and the current in-memory-history limitation.

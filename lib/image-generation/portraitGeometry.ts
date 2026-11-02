@@ -3,7 +3,7 @@ import { LANDMARK } from "../facial-analysis/landmarkMapping.ts";
 import type { LandmarkList } from "../facial-analysis/types.ts";
 export interface Ellipse { cx: number; cy: number; rx: number; ry: number }
 export interface PortraitGeometry { face: Ellipse; hair: Ellipse; protected: Ellipse[]; refinements?: Record<NaturalRefinementKey, Ellipse[]> }
-export type PortraitEditRegions = { hair: boolean; skin: boolean; contour: boolean; underEye: boolean; forehead: boolean } & Partial<Record<NaturalRefinementKey, boolean>>;
+export type PortraitEditRegions = { hair: boolean; skin: boolean; contour: boolean; underEye: boolean; forehead: boolean; beard?:boolean } & Partial<Record<NaturalRefinementKey, boolean>>;
 export const ALL_PORTRAIT_EDIT_REGIONS: PortraitEditRegions = { hair: true, skin: true, contour: true, underEye: true, forehead: true };
 export function validPortraitGeometry(value: unknown): value is PortraitGeometry {
   if (!value || typeof value !== "object") return false;
@@ -87,6 +87,7 @@ export function portraitRegionWeights(x:number,y:number,g:PortraitGeometry,regio
     ? ellipseWeight(x,y,{cx:g.face.cx,cy:g.face.cy+g.face.ry*.98,rx:g.face.rx*.72,ry:g.face.ry*.3})*(1-protectedFeatureWeight)
     : 0;
   const jawArea=Math.max(jaw,underChin);
+  const beard=regions.beard ? Math.max(face*smoothstep(.46,.62,normalizedY),ellipseWeight(x,y,{cx:g.face.cx,cy:g.face.cy+g.face.ry*.98,rx:g.face.rx*.72,ry:g.face.ry*.3}))*(1-protectedFeatureWeight) : 0;
   const selected=(key:NaturalRefinementKey)=>regions[key] && g.refinements ? Math.max(...g.refinements[key].map(e=>ellipseWeight(x,y,e))) : 0;
   // Every added target is separate. Brow patches never open the globe/lid region;
   // other new patches preserve nose and both eye/brow guards.
@@ -98,6 +99,6 @@ export function portraitRegionWeights(x:number,y:number,g:PortraitGeometry,regio
   const mentolabial=selected("mentolabial")*(1-guards)*(1-ellipseWeight(x,y,g.protected[3]));
   const chinProjection=selected("chin_projection")*(1-protectedFeatureWeight);
   const lowerFaceBalance=selected("lower_face_balance")*(1-protectedFeatureWeight);
-  return {hair,skin,jaw:jawArea,underEye,forehead,browOpening,lipVermilion,mentolabial,chinProjection,lowerFaceBalance,
-    combined:Math.max(hair,skin,jawArea,underEye,forehead,browOpening,lipVermilion,mentolabial,chinProjection,lowerFaceBalance)};
+  return {hair,skin,jaw:jawArea,underEye,forehead,browOpening,lipVermilion,mentolabial,chinProjection,lowerFaceBalance,beard,
+    combined:Math.max(hair,skin,jawArea,underEye,forehead,browOpening,lipVermilion,mentolabial,chinProjection,lowerFaceBalance,beard)};
 }

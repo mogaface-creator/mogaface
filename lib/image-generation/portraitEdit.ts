@@ -24,7 +24,7 @@ export async function compositePortraitEdit(prepared:Awaited<ReturnType<typeof p
   const {width,height,geometry,regions}=prepared;
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
     const weights=portraitRegionWeights((x+.5)/width,(y+.5)/height,geometry,regions);
-    const alpha=Math.max(weights.hair*.88,weights.skin*.38,weights.jaw*.42,weights.underEye*.32,weights.forehead*.35,weights.browOpening*.45,weights.lipVermilion*.5,weights.mentolabial*.4,weights.chinProjection*.4,weights.lowerFaceBalance*.42);
+    const alpha=Math.max(weights.hair*.88,weights.skin*.38,weights.jaw*.42,weights.underEye*.32,weights.forehead*.35,weights.browOpening*.45,weights.lipVermilion*.5,weights.mentolabial*.4,weights.chinProjection*.4,weights.lowerFaceBalance*.42,weights.beard*.6);
     if(alpha<.005)continue;
     const i=(y*width+x)*3;
     for(let c=0;c<3;c++)result[i+c]=Math.round(original[i+c]*(1-alpha)+generated[i+c]*alpha);

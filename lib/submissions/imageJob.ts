@@ -23,6 +23,8 @@ export type ImageJobResult =
 
 export interface ImageJobInput {
   debugPreview?: boolean;
+  /** Original identity reference for supervised revisions; never used as the editable source. */
+  identityReference?: {bytes:Buffer;mime:ImageMime};
   beforeBytes: Buffer;
   beforeMime: ImageMime;
   record?: AnalysisRecord | null;
@@ -209,7 +211,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     // answer for this two-face comparison, so the reviewer defaults to gpt-4.1 (IMAGE_REVIEW_MODEL to override)
     // and an unusable reply is retried once.
     const reviewModel = env.IMAGE_REVIEW_MODEL?.trim() || "gpt-4.1";
-    const reviewInput = { apiKey, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt };
+    const reviewInput = { apiKey, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt, ...(input.identityReference?{identityReference:`data:${input.identityReference.mime};base64,${input.identityReference.bytes.toString("base64")}`}:{}) };
     let review = await reviewAfterImage(reviewInput);
     if (review.status === "unavailable" && review.code === "review_invalid_response") review = await reviewAfterImage(reviewInput);
 
