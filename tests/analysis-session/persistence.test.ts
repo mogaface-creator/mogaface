@@ -23,17 +23,17 @@ import { createAnalysisRecord, getAnalysisRecord } from "../../lib/analysis-sess
 import type { AnalysisSessionStoreDeps } from "../../lib/analysis-session/store.ts";
 import type { AnalysisRecord } from "../../lib/analysis-session/types.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 
 const FAKE_ENV = { NEXT_PUBLIC_SUPABASE_URL: "https://fake-project.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "fake-service-role-key-not-real" };
 
-function realExpressionLinesInput(): { assessment: Assessment; analysis: MogaFaceAnalysis } {
+function realExpressionLinesInput(): { assessment: Assessment; analysis: MogaAnalysis } {
   const assessment = createEmptyAssessment();
   assessment.appearanceConcerns = { ...assessment.appearanceConcerns, selected: ["FACIAL_LINES"], details: ["FOREHEAD_LINES"], priorities: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   analysis.observations.push(
     measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }),
     measuredObservation({ id: "expression.visibleForeheadLinePattern", domain: "expression", label: "Visible forehead line pattern", value: true, source: "video_frame_0" }),

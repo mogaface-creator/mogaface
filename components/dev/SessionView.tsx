@@ -266,14 +266,14 @@ export function SessionView({ session, onChange }: { session: CalibrationSession
 
       {/* comparison */}
       <section data-testid="comparison-table">
-        <h3 className="text-sm font-semibold">Expected vs MogaFace</h3>
+        <h3 className="text-sm font-semibold">Expected vs Moga</h3>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="text-muted">
               <tr>
                 <th className="pr-4 py-1">Domain</th>
                 <th className="pr-4">Expected</th>
-                <th className="pr-4">MogaFace</th>
+                <th className="pr-4">Moga</th>
                 <th className="pr-4">Result</th>
                 <th>Why</th>
               </tr>

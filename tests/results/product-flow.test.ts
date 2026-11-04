@@ -3,7 +3,7 @@
  * AssessmentReview.tsx's one "Analyze My Face" click (analyzeMyFace →
  * finalizeAndGoToResults) into ResultsExperience.tsx (the default, non-demo,
  * non-devPreview render). The underlying pipeline functions
- * (buildMogaFaceAnalysis, evaluateTreatmentOpportunities, runResultPipeline,
+ * (buildMogaAnalysis, evaluateTreatmentOpportunities, runResultPipeline,
  * decideIllustrationEligibility) already have their own extensive coverage
  * (tests/results/real-data.test.ts, tests/image-generation/illustration.test.ts,
  * tests/assessment/mediaStore.test.ts, tests/results/frontPhotoStore.test.ts)
@@ -28,13 +28,13 @@ const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
 // AssessmentReview.tsx: "Analyze My Face" runs the REAL pipeline, never a fixture
 // ===========================================================================
 
-test("AssessmentReview.analyzeMyFace calls the real per-photo analyzer, the real video analyzer, buildMogaFaceAnalysis and evaluateTreatmentOpportunities — never a demo/fixture module", () => {
+test("AssessmentReview.analyzeMyFace calls the real per-photo analyzer, the real video analyzer, buildMogaAnalysis and evaluateTreatmentOpportunities — never a demo/fixture module", () => {
   const src = read("components/assessment/AssessmentReview.tsx");
   assert.match(src, /analyzeSinglePhoto\(slot, file\)/);
   assert.match(src, /buildMultiPhotoAnalysis\(assessment\.id, nextRecords\)/);
   assert.match(src, /analyzeVideoFile\(videoFile,/);
-  assert.match(src, /buildMogaFaceAnalysis\(assessment, nextAnalysis, nextVideo\)/);
-  assert.match(src, /evaluateTreatmentOpportunities\(\{ assessment, analysis: nextMogaFaceAnalysis \}\)/);
+  assert.match(src, /buildMogaAnalysis\(assessment, nextAnalysis, nextVideo\)/);
+  assert.match(src, /evaluateTreatmentOpportunities\(\{ assessment, analysis: nextMogaAnalysis \}\)/);
   assert.doesNotMatch(src, /results\/demo\.ts|buildDemoSnapshot|devIllustrationFixture/);
 });
 
@@ -74,7 +74,7 @@ test("the inline consent screen uses the SAME shared sentence as IllustrationPan
 
 test("consent is granted or declined ONLY by an explicit click on the inline consent screen — a not-eligible/failed session finalizes with 'pending' (nothing was asked) and no session reference, never 'granted'", () => {
   const src = read("components/assessment/AssessmentReview.tsx");
-  assert.match(src, /finalizeAndGoToResults\(nextMogaFaceAnalysis, nextTreatmentOpportunities, nextRecords, "pending", null\)/);
+  assert.match(src, /finalizeAndGoToResults\(nextMogaAnalysis, nextTreatmentOpportunities, nextRecords, "pending", null\)/);
 });
 
 test("only an eligible + granted result (with a real session reference) navigates with ?autogenerate=1 — a declined, sessionless, or not-eligible result navigates to a plain /results", () => {

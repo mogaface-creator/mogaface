@@ -1,11 +1,11 @@
 # Facial Analysis Methodology
 
-This document describes exactly what MogaFace measures and how, so nothing
+This document describes exactly what Moga measures and how, so nothing
 here is a black box. It does not establish scientific or clinical validity
 for any ratio — these are the same kinds of measurable geometric quantities
 used in classical facial-proportion references, reported as plain numbers.
 
-**MogaFace draws a hard line between measurement and interpretation.** A
+**Moga draws a hard line between measurement and interpretation.** A
 measurement like "face width / face height = 0.71" is a geometric
 observation. Nothing in this codebase translates a measurement into
 "beautiful," "ugly," "ideal," or a medical diagnosis. See the "What this is
@@ -50,7 +50,7 @@ audited against the map directly.
 ## 4. Normalization
 
 Raw landmark distances are fractions of image dimensions, which change with
-crop and camera distance. Every ratio MogaFace reports is normalized against
+crop and camera distance. Every ratio Moga reports is normalized against
 a facial reference dimension instead of shown as a raw standalone number:
 
 | Ratio | Formula |

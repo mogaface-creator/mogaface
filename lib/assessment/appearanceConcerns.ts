@@ -64,6 +64,9 @@ export const APPEARANCE_CONCERN_CATALOG = [
     details: [
       { id: "JAW_DEFINITION", label: "Jaw definition", signal: "user_reports_jaw_definition_goal" },
       { id: "CHEEK_DEFINITION", label: "Cheek definition", signal: "user_reports_cheek_definition_goal" },
+      { id: "MENTOLABIAL_TRANSITION", label: "A softer transition between my lower lip and chin", signal: "user_reports_mentolabial_transition_goal" },
+      { id: "LOWER_FACE_SLIMMING", label: "A subtly slimmer lower-face outline", signal: "user_reports_lower_face_slimming_goal" },
+      { id: "CHIN_PROJECTION", label: "A little more chin projection", signal: "user_reports_chin_projection_goal" },
       { id: "LOWER_FACE_DEFINITION", label: "Lower-face definition", signal: "user_reports_lower_face_definition_goal" },
       { id: "OVERALL_CONTOUR", label: "Overall facial contour", signal: "user_reports_overall_contour_goal" },
       { id: "CONTOUR_BALANCE", label: "Balance within my facial contour", signal: "user_reports_contour_balance_goal" },
@@ -96,6 +99,7 @@ export const APPEARANCE_CONCERN_CATALOG = [
     group: "lifting",
     signal: "user_reports_facial_lifting_goal",
     details: [
+      { id: "BROW_OPENING", label: "A subtly more open brow frame", signal: "user_reports_brow_opening_goal" },
       { id: "FACIAL_FIRMNESS", label: "A firmer look", signal: "user_reports_facial_firmness_goal" },
       { id: "LOWER_FACE_LIFTING", label: "A more lifted lower face", signal: "user_reports_lower_face_lifting_goal" },
       { id: "JAWLINE_LIFTING", label: "A more lifted jawline", signal: "user_reports_jawline_lifting_goal" },

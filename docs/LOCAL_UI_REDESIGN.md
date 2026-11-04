@@ -144,3 +144,7 @@ Replaced tabbed process layout with three reference-inspired cards. Preserved or
 ## Saved local checkpoint — 2026-11-03
 All current UI work is saved in D:/Moga/mogaface-audit. Current changes remain local and uncommitted. No GitHub push or Vercel deployment performed. Resume from this working directory; preserve current modifications and new files.
 
+
+## Production release preparation — 2026-11-04
+User authorized deployment. Merged origin/main (133af5c) to preserve the team's updated assessment and HTML report delivery. Kept removal of public testing/instant simulation flows and routed plan CTAs to /assessment. Preserved marketing redesign and interactive sections. Bundled the same six Google Font families and OFL licenses locally to resolve next/font Google URL loader failure. No environment secrets included.
+

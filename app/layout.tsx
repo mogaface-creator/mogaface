@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Cormorant_Garamond, Playfair_Display, Cinzel, DM_Sans, Josefin_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./moga-workflow.css";
 import "./palette-2.css";
@@ -7,48 +7,15 @@ import "./palette-3.css";
 import "./qoves-reference.css";
 import palette from "@/config/palette.json";
 
-// Brand System v1.0 (Clinic Next Face brand guide, applied to MogaFace) — five
+// Brand System v1.0 (Clinic Next Face brand guide, applied to Moga) — five
 // intentional typographic roles, never one font everywhere. See globals.css's
 // @theme block for how each maps to a --font-* token / Tailwind utility.
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-/** Title role: hero statements, wordmark, campaign covers — light weight, large. */
-const cormorantGaramond = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  style: ["normal", "italic"],
-});
-
-/** Heading / Subheading role: page-level headings, card and service titles. */
-const playfairDisplay = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["700", "900"],
-});
-
-/** Section Header role: uppercase eyebrows, nav items, section dividers. */
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
-  subsets: ["latin"],
-  weight: ["500"],
-});
-
-/** Body role: all long-form and UI copy. */
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-});
-
-/** Small role: metadata, timestamps, footnotes. */
-const josefinSans = Josefin_Sans({
-  variable: "--font-josefin",
-  subsets: ["latin"],
-  weight: ["300", "400"],
-});
+const geistMono = localFont({src:"../public/fonts/geist-mono.ttf",variable:"--font-geist-mono",display:"swap"});
+const cormorantGaramond = localFont({src:[{path:"../public/fonts/cormorant.ttf",style:"normal"},{path:"../public/fonts/cormorant-italic.ttf",style:"italic"}],variable:"--font-cormorant",display:"swap"});
+const playfairDisplay = localFont({src:"../public/fonts/playfair.ttf",variable:"--font-playfair",display:"swap"});
+const cinzel = localFont({src:"../public/fonts/cinzel.ttf",variable:"--font-cinzel",display:"swap"});
+const dmSans = localFont({src:"../public/fonts/dm-sans.ttf",variable:"--font-dm-sans",display:"swap"});
+const josefinSans = localFont({src:"../public/fonts/josefin.ttf",variable:"--font-josefin",display:"swap"});
 
 export const metadata: Metadata = {
   title: "MOGA — Improve Your Looks Without Surgery",

@@ -16,7 +16,7 @@
 
 import { createEmptyAssessment } from "../assessment/defaults.ts";
 import { evaluateTreatmentOpportunities } from "../treatment-opportunities/evaluate.ts";
-import { buildMogaFaceAnalysis } from "../observation/build.ts";
+import { buildMogaAnalysis } from "../observation/build.ts";
 import { measuredObservation } from "../observation/helpers.ts";
 import type { AssessmentSnapshot } from "./types.ts";
 import { SNAPSHOT_VERSION } from "./types.ts";
@@ -54,7 +54,7 @@ export function buildDemoSnapshot(): AssessmentSnapshot {
   assessment.lifestyle = { sleepHours: "5to6", exerciseFrequency: "3to4PerWeek", trainingTypes: ["strength", "cardio"], dailyActivity: "moderatelyActive", waterIntake: "1to2L" };
   assessment.style = { currentStyle: "smartCasual", styleGoals: ["clean", "confident"], monthlySpend: null };
 
-  const analysis = buildMogaFaceAnalysis(assessment, null);
+  const analysis = buildMogaAnalysis(assessment, null);
   const obs = (id: string, domain: "facial-structure" | "eye-area" | "expression", label: string, value: number | boolean, source: string) =>
     measuredObservation({ id, domain, label, value, source });
   analysis.observations.push(

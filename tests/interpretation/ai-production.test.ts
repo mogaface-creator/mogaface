@@ -21,7 +21,7 @@ import { createOpenAiCompletion } from "../../lib/interpretation/openai.ts";
 import { isThirdPartyInterpretationEnabled, selectInterpretationProvider } from "../../lib/interpretation/select.ts";
 import { buildDemoSnapshot } from "../../lib/results/demo.ts";
 import { buildInterpretationInput } from "../../lib/interpretation/build.ts";
-import type { InterpretationInput, MogaFaceReport } from "../../lib/interpretation/types.ts";
+import type { InterpretationInput, MogaReport } from "../../lib/interpretation/types.ts";
 import { assessmentWith, inputFor } from "../results/fixtures.ts";
 
 const CAL = { calibrated: true };
@@ -47,7 +47,7 @@ const demoInput = (): InterpretationInput => {
 
 interface Sent { url: string; headers: Record<string, string>; body: { model: string; instructions: string; input: string; text: unknown; store: boolean } }
 interface StubOptions { status?: number; raw?: string; refusal?: boolean; incomplete?: "max_output_tokens" | "content_filter" }
-function stubModel(edit: (draft: MogaFaceReport) => void = () => {}, opts: StubOptions = {}) {
+function stubModel(edit: (draft: MogaReport) => void = () => {}, opts: StubOptions = {}) {
   const sent: Sent[] = [];
   const fetchImpl: typeof fetch = async (url, init) => {
     const body = JSON.parse(String(init!.body));
@@ -56,7 +56,7 @@ function stubModel(edit: (draft: MogaFaceReport) => void = () => {}, opts: StubO
     if (opts.incomplete) return new Response(JSON.stringify({ status: "incomplete", incomplete_details: { reason: opts.incomplete }, output: [] }), { status: 200 });
     if (opts.refusal) return new Response(JSON.stringify({ status: "completed", output: [{ type: "message", content: [{ type: "refusal", refusal: "I can't help with that." }] }] }), { status: 200 });
     const user: string = body.input;
-    const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaFaceReport;
+    const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaReport;
     edit(draft);
     const text = opts.raw ?? JSON.stringify(draft);
     return new Response(JSON.stringify({ status: "completed", output: [{ type: "reasoning" }, { type: "message", content: [{ type: "output_text", text }] }] }), { status: 200 });
@@ -197,7 +197,7 @@ test("6 + 16. A successful provider response with valid wording is used — and 
   assert.match(outcome.result.report.overview.text, /^Facial definition is one of the priorities you selected\./);
   assert.deepEqual(validateInterpretation(outcome.result, input, CAL), []);
   // everything except that wording is exactly the deterministic report
-  const strip = (r: MogaFaceReport) => JSON.stringify({ ...r, overview: { ...r.overview, text: "" }, priorities: r.priorities.map((p) => ({ ...p, evidence: { ...p.evidence, text: "" } })), sections: { ...r.sections, facialStructure: null } });
+  const strip = (r: MogaReport) => JSON.stringify({ ...r, overview: { ...r.overview, text: "" }, priorities: r.priorities.map((p) => ({ ...p, evidence: { ...p.evidence, text: "" } })), sections: { ...r.sections, facialStructure: null } });
   assert.equal(strip(outcome.result.report), strip(draft.report));
   assert.deepEqual(outcome.result.report.sections.hair, draft.report.sections.hair);
   assert.deepEqual(outcome.result.report.limitations, draft.report.limitations);
@@ -261,7 +261,7 @@ test("8. A model that never answers is cut off by the server-side timeout, and t
 
 // ---- 10–15: validation and immutability ----
 
-const withDraft = (edit: (r: MogaFaceReport) => void) => async () => {
+const withDraft = (edit: (r: MogaReport) => void) => async () => {
   const input = demoInput();
   const model = stubModel(edit);
   const provider = createAiInterpretationProvider({ id: "openai", options: CAL, complete: completeVia(model) });
@@ -269,7 +269,7 @@ const withDraft = (edit: (r: MogaFaceReport) => void) => async () => {
   return { input, outcome, draft: buildInterpretation(input, CAL) };
 };
 
-const REJECTED: [string, (r: MogaFaceReport) => void, "invalid_output" | "changed_facts"][] = [
+const REJECTED: [string, (r: MogaReport) => void, "invalid_output" | "changed_facts"][] = [
   // evidence
   ["adds an evidence reference", (r) => r.priorities[0].why.evidenceRefs.push({ sourceType: "questionnaire", sourceId: "user_reports_facial_lines_concern" }), "changed_facts"],
   ["removes an evidence reference", (r) => r.sections.facialStructure!.statements[0].evidenceRefs.pop(), "changed_facts"],
@@ -334,7 +334,7 @@ test("10–15. Every attempt to change evidence, opportunities, confidence, trea
 });
 
 test("allowed rewording passes: the brief's example, cautious phrasing, and words the draft itself used", async () => {
-  const ok: ((r: MogaFaceReport) => void)[] = [
+  const ok: ((r: MogaReport) => void)[] = [
     (r) => (r.priorities[0].evidence.text = "Your available facial measurements provide some structural context for exploring this goal."),
     (r) => (r.overview.text = "Your analysis shows a focus on facial definition, and the areas below may be worth discussing with your clinician."),
     (r) => (r.opportunities.find((o) => o.status === "discuss")!.why.text = "Your goal and the available measurements point here. This may be worth discussing with your clinician."),

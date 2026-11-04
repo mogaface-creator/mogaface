@@ -1,7 +1,7 @@
 import {after} from "next/server";
 import {handleSubmitAssessment} from "@/lib/submissions/submitHandler";
 import {getSubmission} from "@/lib/submissions/store";
-import {processOne} from "@/app/api/process-submissions/route";
+import {processOne} from "@/lib/submissions/processOne";
 export const runtime="nodejs";
 export const maxDuration=180;
 export async function POST(request:Request){

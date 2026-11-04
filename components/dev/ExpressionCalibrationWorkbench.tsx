@@ -280,13 +280,13 @@ export function ExpressionCalibrationWorkbench() {
 
           {selected.videoSample && (
             <section>
-              <h2 className="text-sm font-semibold">4 · Expected vs MogaFace (expression domains only)</h2>
+              <h2 className="text-sm font-semibold">4 · Expected vs Moga (expression domains only)</h2>
               <table className="mt-3 w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-border text-muted">
                     <th className="py-1.5 pr-3 font-medium">Domain</th>
                     <th className="py-1.5 pr-3 font-medium">Expected</th>
-                    <th className="py-1.5 pr-3 font-medium">MogaFace</th>
+                    <th className="py-1.5 pr-3 font-medium">Moga</th>
                     <th className="py-1.5 pr-3 font-medium">Result</th>
                   </tr>
                 </thead>

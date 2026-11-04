@@ -8,7 +8,7 @@ import { sanitizeAssessment } from "../../lib/assessment/schema.ts";
 import { buildPredictionPlan } from "../../lib/visualization/predict.ts";
 import { buildPredictionIllustrationPrompt } from "../../lib/image-generation/predictionPrompt.ts";
 import { validateIllustrationPrompt } from "../../lib/visualization/safety.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 
 test("an older assessment without clinicIntake still loads, with an empty intake", () => {
   const older: Record<string, unknown> = JSON.parse(JSON.stringify(createEmptyAssessment()));
@@ -37,21 +37,21 @@ test("height and weight copy onto the profile only inside a usable range", () =>
 
 test("the core intake and grouped protocol questions are all reachable", () => {
   const asks = allAsks();
-  assert.equal(PREVIEW_SCREENS.length === 10, true);
+  assert.equal(PREVIEW_SCREENS.length === 15, true);
   const asked = new Set(PREVIEW_SCREENS.flatMap((screen) => screen.askIds));
   assert.deepEqual(asks.map((ask) => ask.id).filter((id) => !asked.has(id)), []);
   const prompts = asks.flatMap((ask) => [ask.prompt, ask.hint ?? "", ask.placeholder ?? "", ...(ask.options ?? []).map((option) => option.label)]).join("\n");
   for (const phrase of ["What is your natural hair type?", "What is your monthly care budget?"]) {
     assert.equal(prompts.includes(phrase), true, phrase);
   }
-  for (const id of ["directWordsOk","reportWant","dislikeDuration","lookDirections","hadPriorWork","hasEvent","event","protocolSkinType","sleepHours","protocolDiet","protocolActivity"]) assert.equal(asks.some(ask=>ask.id===id),false,id);
+  for (const id of ["directWordsOk","reportWant","dislikeDuration","lookDirections","hadPriorWork","hasEvent","event","protocolSkinType","sleepHours"]) assert.equal(asks.some(ask=>ask.id===id),false,id);
   assert.equal(asks.find(ask=>ask.id==="maxWilling")?.options?.some(option=>option.value==="surgery"),false);
   assert.equal(new Set(asks.map(ask=>ask.id)).size,asks.length);
-  assert.equal(asks.length, 10);
-  assert.equal(asks.some(ask => ["text","height","weight","dislikes","details"].includes(ask.kind)),false);
+  assert.equal(asks.length, 16);
+  assert.equal(asks.some(ask => ["text","dislikes"].includes(ask.kind)),false);
   const look = asks.find((ask) => ask.id === "lookDirections");
   assert.equal(look, undefined);
-  const blocked = ["FACIAL_VOLUME", "FACIAL_LIFTING", "FACIAL_BALANCE", "OVERALL_APPEARANCE", "NOT_SURE"];
+  const blocked = ["FACIAL_BALANCE", "OVERALL_APPEARANCE", "NOT_SURE"];
   assert.equal(blocked.some((id) => IMAGE_PLACE_OPTIONS.some((option) => option.value === id)), false);
 });
 
@@ -66,7 +66,7 @@ test("follow-up screens appear only after the answer that needs them", () => {
   const hairOnly = projectPlaces(createEmptyAssessment(), ["HAIR"]).clinicIntake;
   assert.equal(visibleScreens(hairOnly).some((screen) => screen.id === "where"), false);
   const lines = projectPlaces(createEmptyAssessment(), ["FACIAL_LINES"]).clinicIntake;
-  assert.equal(visibleScreens(lines).some((screen) => screen.id === "where"), false);
+  assert.equal(visibleScreens(lines).some((screen) => screen.id === "where"), true);
 
 
 });
@@ -84,7 +84,7 @@ test("treatment words and look directions stay out of the image prompt", () => {
   };
   const plan = buildPredictionPlan({
     assessment,
-    analysis: buildMogaFaceAnalysis(assessment, null),
+    analysis: buildMogaAnalysis(assessment, null),
     frontPhoto: { ref: "front", qualityValid: true },
   });
   assert.equal(plan.status, "planned");
@@ -98,7 +98,7 @@ test("treatment words and look directions stay out of the image prompt", () => {
   const withHair = projectPlaces(createEmptyAssessment(), ["HAIR"]);
   const hairPlan = buildPredictionPlan({
     assessment: withHair,
-    analysis: buildMogaFaceAnalysis(withHair, null),
+    analysis: buildMogaAnalysis(withHair, null),
     frontPhoto: { ref: "front", qualityValid: true },
   });
   assert.equal(hairPlan.status, "planned");

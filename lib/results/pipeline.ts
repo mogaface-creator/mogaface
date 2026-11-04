@@ -1,6 +1,6 @@
 /**
  * The results pipeline: existing evidence → interpretation → visualization
- * plan → (optionally) an illustrative image → MogaFaceResult.
+ * plan → (optionally) an illustrative image → MogaResult.
  *
  * It builds on the existing analysis and treatment-opportunity output and
  * never recomputes either. An image failure never fails the result: the
@@ -16,7 +16,7 @@ import type { InterpretationProvider } from "../interpretation/types.ts";
 import { buildVisualizationPlan } from "../visualization/build.ts";
 import { decideIllustrationEligibility } from "../visualization/eligibility.ts";
 import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
-import type { AssessmentSnapshot, MogaFaceResult, ResultStage } from "./types.ts";
+import type { AssessmentSnapshot, MogaResult, ResultStage } from "./types.ts";
 
 export interface PipelineOptions {
   /** Null → no image provider: the visualization is "unavailable". */
@@ -38,7 +38,7 @@ function newId(): string {
 }
 
 /** Throws only if interpretation itself cannot be produced (a bug) — the caller shows a generic error. */
-export async function runResultPipeline(snapshot: AssessmentSnapshot, options: PipelineOptions): Promise<MogaFaceResult> {
+export async function runResultPipeline(snapshot: AssessmentSnapshot, options: PipelineOptions): Promise<MogaResult> {
   options.onStage?.("interpreting");
   await tick();
   const input = buildInterpretationInput(snapshot.assessment, snapshot.analysis, snapshot.opportunities);

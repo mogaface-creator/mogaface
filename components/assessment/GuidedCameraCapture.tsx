@@ -18,7 +18,7 @@ import { FaceGuideOverlay } from "./FaceGuideOverlay";
 import { useCameraStream } from "./useCameraStream";
 
 /** After this long without a good frame, offer a manual "Take photo now" (the photo is still checked before it can be used). */
-const MANUAL_FALLBACK_MS = 10_000;
+const MANUAL_FALLBACK_MS = 20_000;
 /** The preview is shown mirrored, so movement cues are given in what the person sees. */
 const MIRRORED = true;
 

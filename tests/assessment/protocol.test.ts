@@ -13,7 +13,7 @@ test("hair, sensitivity, budget and diet answers materially change the relevant 
  let a=createEmptyAssessment();const base=a;
  for(const [id,value]of Object.entries({protocolHairTexture:"curly",protocolSkinType:"dry",protocolSensitivity:"yes",protocolBudget:"under1000",protocolDiet:"vegan"}))a=setAnswer(a,id,value);
  const stored=sanitizeClinicIntake(JSON.parse(JSON.stringify(a.clinicIntake)));assert.equal(stored.reply.protocolBudget,"under1000");
- assert.notEqual(text(a,"haircut"),text(base,"haircut"));assert.match(text(a,"routine"),/no exfoliating acid/);assert.match(text(a,"toolkit"),/under INR 1,000/);assert.match(text(a,"nutrition"),/For a vegan pattern/);
+ assert.notEqual(text(a,"haircut"),text(base,"haircut"));assert.match(text(a,"skin-concerns"),/hold optional treatment products/);assert.match(text(a,"toolkit"),/under INR 1,000/);assert.match(text(a,"nutrition"),/For a vegan pattern/);
 });
 test("every mapped question exists, and procedure discussion respects the stated preference",()=>{
  const ids=new Set(allAsks().map(q=>q.id));for(const list of Object.values(PROTOCOL_QUESTION_MAP))for(const id of list)assert.ok(ids.has(id),id);

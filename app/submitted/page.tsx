@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SubmittedView } from "@/components/submitted/SubmittedView";
 
 export const metadata = {
-  title: "We're preparing your results — MogaFace",
+  title: "We're preparing your results — Moga",
   description: "Your personalized before & after report is being prepared and will be emailed to you shortly.",
 };
 

@@ -17,8 +17,8 @@ import { normalizeAppearanceConcerns } from "@/lib/assessment/appearanceConcerns
 import { MultiPhotoDevResults } from "@/components/facial-analysis/MultiPhotoDevResults";
 import { analyzeSinglePhoto, buildMultiPhotoAnalysis } from "@/lib/facial-analysis/multiPhoto/coordinator.ts";
 import type { MultiPhotoFacialAnalysis, PhotoAnalysisRecord, PhotoSlot } from "@/lib/facial-analysis/multiPhoto/types.ts";
-import { buildMogaFaceAnalysis } from "@/lib/observation/build.ts";
-import type { MogaFaceAnalysis } from "@/lib/observation/types.ts";
+import { buildMogaAnalysis } from "@/lib/observation/build.ts";
+import type { MogaAnalysis } from "@/lib/observation/types.ts";
 import { analyzeVideoFile } from "@/lib/facial-analysis/video/capture.ts";
 import type { VideoExpressionAnalysis } from "@/lib/facial-analysis/video/types.ts";
 import { evaluateTreatmentOpportunities } from "@/lib/treatment-opportunities/evaluate.ts";
@@ -123,7 +123,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
   const [records, setRecords] = useState<PhotoAnalysisRecord[]>([]);
   const [analysis, setAnalysis] = useState<MultiPhotoFacialAnalysis | null>(null);
-  const [mogaFaceAnalysis, setMogaFaceAnalysis] = useState<MogaFaceAnalysis | null>(null);
+  const [mogaFaceAnalysis, setMogaAnalysis] = useState<MogaAnalysis | null>(null);
   // The optional expression video lives in memory only, like the photo files — never persisted.
   const [videoAnalysis, setVideoAnalysis] = useState<VideoExpressionAnalysis | null>(null);
   const [videoProgress, setVideoProgress] = useState<{ done: number; total: number } | null>(null);
@@ -191,9 +191,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     if (!videoFile) analyzedVideoRef.current = null;
     setVideoAnalysis(nextVideo);
 
-    const nextMogaFaceAnalysis = buildMogaFaceAnalysis(assessment, nextAnalysis, nextVideo);
-    const nextTreatmentOpportunities = evaluateTreatmentOpportunities({ assessment, analysis: nextMogaFaceAnalysis });
-    setMogaFaceAnalysis(nextMogaFaceAnalysis);
+    const nextMogaAnalysis = buildMogaAnalysis(assessment, nextAnalysis, nextVideo);
+    const nextTreatmentOpportunities = evaluateTreatmentOpportunities({ assessment, analysis: nextMogaAnalysis });
+    setMogaAnalysis(nextMogaAnalysis);
     setTreatmentOpportunities(nextTreatmentOpportunities);
     setProgress(null);
     setIsRunning(false);
@@ -204,12 +204,17 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     // /submitted — the background job handles image generation + PDF + email.
     const frontRecord = nextRecords.find((r) => r.slot === "front");
     const safePortraitGeometry=frontRecord?.landmarks ? buildPortraitGeometry(frontRecord.landmarks) : null;
+    if (photoConsent === "granted" && assessment.clinicIntake.wantAfterPhoto !== "no" && !safePortraitGeometry) {
+      setSubmitError("We could not locate your face clearly enough to prepare the after photo. Please replace the front photo with a clear, level portrait and try again, or choose a report without an after photo.");
+      return;
+    }
     setCreatingSession(true);
     const session = await createAnalysisSession({
       assessment,
-      analysis: nextMogaFaceAnalysis,
+      analysis: nextMogaAnalysis,
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
       portraitGeometry:safePortraitGeometry,
+      videoPreviewContextConsent: photoConsent === "granted" && !!videoFile ? "granted" : "declined",
       hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
       hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
       ...(lead ? { contact: lead } : {}),
@@ -223,7 +228,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
   /**
    * Sends the front photo to /api/submit-assessment, which schedules the
-   * async PDF + email job. Then navigates to /submitted.
+   * async PDF + email job. Then opens the private interactive report workspace.
    * Called right after the analysis session is created (or fails — we still
    * create a submission so the lead is not lost).
    */
@@ -262,10 +267,11 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     }
     clearAssessment();
     void clearAllMedia();
-    const targetUrl =
-      result.ok && result.submissionId
-        ? `/submitted?id=${encodeURIComponent(result.submissionId)}`
-        : "/submitted";
+    let workspaceAvailable=false;
+    try { workspaceAvailable=!!sessionStorage.getItem(`mogaface:report:${result.submissionId}`); } catch { /* The queued email remains available without session storage. */ }
+    const targetUrl = result.submissionId
+      ? `/${workspaceAvailable ? "review" : "submitted"}?id=${encodeURIComponent(result.submissionId)}`
+      : "/submitted";
     router.push(targetUrl);
   };
 
@@ -280,8 +286,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
             <dl className="mt-4 space-y-2">
               {section.rows.map((row) => (
                 <div key={row.label} className={section.stack ? "block" : "flex items-baseline justify-between gap-4"}>
-                  <dt className="text-sm text-muted">{row.label}</dt>
-                  <dd className={section.stack ? "mt-1 text-sm leading-6 whitespace-pre-wrap" : "text-right text-sm"}>{row.value}</dd>
+                  <dt className="min-w-0 flex-1 text-sm text-muted">{row.label}</dt>
+                  <dd className={section.stack ? "mt-1 break-words text-sm leading-6 whitespace-pre-wrap" : "min-w-0 max-w-[60%] break-words text-right text-sm"}>{row.value}</dd>
                 </div>
               ))}
               {section.title === "Photos" && (
@@ -360,18 +366,20 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
         <p className="mt-2 text-sm text-muted">
           A short video (under 60 seconds) that starts with a still, relaxed face, then raises the eyebrows, frowns, smiles and squints. The video file stays on this device; its expression observations are saved with your assessment and used in the report.
         </p>
-        <input
-          type="file"
-          accept="video/*"
-          aria-label="Expression video"
-          disabled={isRunning}
-          onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
-          className="mt-3 block text-sm"
-        />
+        {!videoFile && (
+          <input
+            type="file"
+            accept="video/*"
+            aria-label="Expression video"
+            disabled={isRunning}
+            onChange={(e) => onVideoFileChange(e.target.files?.[0] ?? null)}
+            className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"
+          />
+        )}
         {videoFile && (
-          <p className="mt-2 text-xs text-muted">
-            {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`}{" "}
-            <button type="button" onClick={() => onVideoFileChange(null)} className="underline">
+          <p className="mt-2 break-words text-xs text-muted [overflow-wrap:anywhere]">
+            {videoFile.name.startsWith("expression.") ? "Expression video recorded with your camera." : `Selected: ${videoFile.name}`} Remove it to choose a different video.{" "}
+            <button type="button" onClick={() => onVideoFileChange(null)} className="min-h-11 px-2 underline">
               Remove
             </button>
           </p>
@@ -404,7 +412,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
                 placeholder={placeholder}
                 value={contact[key]}
                 onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
-                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </label>
           ))}
@@ -414,9 +422,9 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
       <fieldset className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <legend className="px-2 text-sm font-medium">Optional illustrative after photo</legend>
-        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo is sent to OpenAI. An after image is an illustration, not a prediction of treatment results.</p>
-        <label className="block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI photo processing and an illustrative after photo.</label>
-        <label className="mt-3 block text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo to AI.</label>
+        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo and, if supplied and usable, a short summary of video expression observations are sent to OpenAI. Your video file and frames stay on this device. An after image is an illustration, not a prediction of treatment results.</p>
+        <label className="flex min-h-12 cursor-pointer items-start gap-3 py-3 text-sm"><input className="mt-0.5 h-5 w-5 shrink-0" type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI processing of my front photo and usable video-expression summary for an illustrative after photo.</label>
+        <label className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo or video-expression summary to AI.</label>
       </fieldset>
       {submitError && <p role="alert" className="mt-4 text-sm">{submitError}</p>}
       <StepNav

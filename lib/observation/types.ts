@@ -135,7 +135,7 @@ export interface StyleAnalysis {
   userReported: Observation<string | string[]>[];
 }
 
-export interface MogaFaceAnalysisVersions {
+export interface MogaAnalysisVersions {
   facialAnalysisMethodologyVersion: string;
   observationEngineVersion: string;
   analysisVersion: string;
@@ -145,7 +145,7 @@ export interface MogaFaceAnalysisVersions {
   assessmentVersion: string;
 }
 
-export interface MogaFaceAnalysis {
+export interface MogaAnalysis {
   assessmentId: string;
   assessmentCreatedAt: string;
   createdAt: string;
@@ -162,5 +162,5 @@ export interface MogaFaceAnalysis {
   /** Every Observation across every domain, flattened, for easy iteration (dev view, future export). */
   observations: Observation<unknown>[];
   limitations: string[];
-  versions: MogaFaceAnalysisVersions;
+  versions: MogaAnalysisVersions;
 }

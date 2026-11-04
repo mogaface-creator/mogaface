@@ -1,5 +1,5 @@
 /**
- * The presentation model of the MogaFace report. Like toConsumerView it
+ * The presentation model of the Moga report. Like toConsumerView it
  * outputs plain copy ONLY — no evidence ids, landmark numbers, thresholds,
  * calibration state, versions or debug data — and re-scans every string for
  * forbidden language on the way out: an offending string is dropped, never
@@ -11,7 +11,7 @@ import { safe, keepSafe } from "./consumer.ts";
 import { ILLUSTRATION_FAILED_MESSAGE, ILLUSTRATION_UNAVAILABLE_MESSAGE } from "../visualization/eligibility.ts";
 import { visualizedAreaFor } from "../visualization/present.ts";
 import type { VisualizedArea } from "../visualization/present.ts";
-import type { MogaFaceResult } from "./types.ts";
+import type { MogaResult } from "./types.ts";
 
 export type StatementKind = "observed" | "reported" | "limitation";
 
@@ -79,7 +79,7 @@ const SECTION_TITLES: Record<ReportSectionView["key"], string> = {
   style: "Style and overall appearance",
 };
 const BASIS_LABEL: Record<SectionBasis, string> = {
-  observed: "MogaFace observed",
+  observed: "Moga observed",
   user_reported: "From your assessment",
   not_assessed: "Not assessed",
 };
@@ -93,7 +93,7 @@ const NO_EVIDENCE = "No reliable visual evidence was available for this area.";
 
 export const REPORT_FOOTER = {
   tagline: "AI-assisted appearance analysis for consultation preparation.",
-  disclaimer: "MogaFace does not provide medical advice. This report should be reviewed by a qualified clinician.",
+  disclaimer: "Moga does not provide medical advice. This report should be reviewed by a qualified clinician.",
 };
 
 export function formatReportDate(iso: string | undefined): string | null {
@@ -109,7 +109,7 @@ const INELIGIBLE_DETAIL: Record<string, string> = {
   no_supported_change: "The available evidence doesn't support an illustration yet.",
 };
 
-function reportVisualization(result: MogaFaceResult, beforeUrl: string | null): ReportVisualization {
+function reportVisualization(result: MogaResult, beforeUrl: string | null): ReportVisualization {
   const v = result.visualization;
   const d = result.illustration;
   // Re-scanned here too, per-area: an area whose description somehow fails the
@@ -123,7 +123,7 @@ function reportVisualization(result: MogaFaceResult, beforeUrl: string | null): 
   return { state: "not_eligible", title: "Illustrative visualization", body: ILLUSTRATION_UNAVAILABLE_MESSAGE, detail: INELIGIBLE_DETAIL[reason] ?? null, beforeUrl };
 }
 
-export function toReportView(result: MogaFaceResult, beforeUrl: string | null): ReportView {
+export function toReportView(result: MogaResult, beforeUrl: string | null): ReportView {
   const report = result.interpretation.report;
 
   const sectionView = (key: ReportSectionView["key"], s: ReportSection): ReportSectionView => {
@@ -160,7 +160,7 @@ export function toReportView(result: MogaFaceResult, beforeUrl: string | null): 
       statusLabel: PRIORITY_STATUS_LABEL[p.status],
     }));
 
-  const areaOk = (o: MogaFaceResult["interpretation"]["report"]["opportunities"][number]) => safe(o.title) && safe(o.why.text) && safe(o.clinicianCanEvaluate);
+  const areaOk = (o: MogaResult["interpretation"]["report"]["opportunities"][number]) => safe(o.title) && safe(o.why.text) && safe(o.clinicianCanEvaluate);
   const areas: ReportAreaView[] = report.opportunities
     .filter((o) => o.status !== "insufficient_evidence" && areaOk(o))
     .map((o) => ({
@@ -175,10 +175,10 @@ export function toReportView(result: MogaFaceResult, beforeUrl: string | null): 
 
   return {
     cover: {
-      eyebrow: "MogaFace",
+      eyebrow: "Moga",
       title: "Your Personalized Appearance Analysis",
       intro:
-        "MogaFace analyzed the information and visual evidence you provided to identify observable features, personal priorities, and areas you may want to discuss with your clinician.",
+        "Moga analyzed the information and visual evidence you provided to identify observable features, personal priorities, and areas you may want to discuss with your clinician.",
       dateLabel: formatReportDate(result.assessmentCreatedAt),
       badge: "AI-assisted analysis",
     },

@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
 import type { AppearanceConcernDetailId, AppearanceConcernId } from "../../lib/assessment/appearanceConcerns.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import { illustrationPromptFor } from "../../lib/image-generation/provider.ts";
 import { buildPredictionPlan } from "../../lib/visualization/predict.ts";
@@ -26,7 +26,7 @@ function assessment(selected: AppearanceConcernId[], details: AppearanceConcernD
 
 test("a selected place is named in the prompt, and a different place in that area is not", () => {
   const a = assessment(["FACIAL_LINES"], ["FOREHEAD_LINES"]);
-  const analysis = buildMogaFaceAnalysis(a, null);
+  const analysis = buildMogaAnalysis(a, null);
   analysis.observations.push(measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }));
   const plan = buildPredictionPlan({ assessment: a, analysis, frontPhoto: FRONT });
   assert.equal(plan.status, "planned");
@@ -40,7 +40,7 @@ test("a selected place is named in the prompt, and a different place in that are
 
 test("skin with no chosen place uses the category default, not another person's detail", () => {
   const a = assessment(["SKIN_TONE"]);
-  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaFaceAnalysis(a, null), frontPhoto: FRONT });
+  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaAnalysis(a, null), frontPhoto: FRONT });
   assert.equal(plan.status, "planned");
   assert.deepEqual(plan.focus, []);
   const prompt = illustrationPromptFor(plan);
@@ -51,7 +51,7 @@ test("skin with no chosen place uses the category default, not another person's 
 
 test("dull-looking skin is the focus when that is what the person selected", () => {
   const a = assessment(["SKIN_TONE"], ["DULL_LOOKING_SKIN"]);
-  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaFaceAnalysis(a, null), frontPhoto: FRONT });
+  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaAnalysis(a, null), frontPhoto: FRONT });
   const prompt = illustrationPromptFor(plan);
   assert.match(prompt, /skin that looks dull/);
   assert.doesNotMatch(prompt, /dark spots/);
@@ -61,7 +61,7 @@ test("dull-looking skin is the focus when that is what the person selected", () 
 test("hair thinning names coverage on this photo and does not diagnose hair loss", () => {
   const a = createEmptyAssessment();
   a.hair = { ...a.hair, concerns: ["thinning"] };
-  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaFaceAnalysis(a, null), frontPhoto: FRONT });
+  const plan = buildPredictionPlan({ assessment: a, analysis: buildMogaAnalysis(a, null), frontPhoto: FRONT });
   assert.equal(plan.status, "planned");
   const prompt = illustrationPromptFor(plan);
   assert.match(prompt, /where the scalp shows through the hair/);

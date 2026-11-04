@@ -1,7 +1,7 @@
 import type { Assessment } from "../assessment/types.ts";
 import { generateProtocolPdf } from "./protocolPdf.ts";
 /**
- * MogaFace Branded PDF Report Generator
+ * Moga Branded PDF Report Generator
  *
  * Generates an executive, luxury aesthetic consultation report (2-page A4)
  * conforming to the Clinic Next Face Brand Identity System v1.0.
@@ -19,7 +19,7 @@ import type { ClinicalTreatmentPillar } from "./clinicalVision";
 
 export interface GeneratePdfReportInput {
   assessment?: Assessment | null;
-  analysis?: import("../observation/types.ts").MogaFaceAnalysis | null;
+  analysis?: import("../observation/types.ts").MogaAnalysis | null;
   leftImageBytes?: Buffer | Uint8Array | null;
   rightImageBytes?: Buffer | Uint8Array | null;
   previewStatus?: "quality_checked";
@@ -41,6 +41,13 @@ export interface GeneratePdfReportInput {
   symmetryIndex?: number;
   /** Additional scope note for local/demo reports that do not include the full intake. */
   reportScopeNote?: string;
+  /** User-facing reason an illustrative preview was included or omitted. */
+  previewMessage?: string;
+  /** Person-specific content written from the photos; the fixed template is used when absent. */
+  author?: import("./reportAuthor.ts").AuthoredReport | null;
+  /** Normalised face/hair ellipses from the browser; used to crop close-ups onto the right region. */
+  portraitGeometry?: import("../image-generation/portraitGeometry.ts").PortraitGeometry | null;
+  realAge?: number | null;
 }
 
 // Brand Color Palette (Clinic Next Face Brand Identity v1.0)
@@ -897,7 +904,7 @@ function drawFooter(
     color: C.antiqueGold,
   });
 
-  page.drawText("MOGAFACE CLINICAL AESTHETICS • CONFIDENTIAL MEDICAL DOSSIER", {
+  page.drawText("MOGA CLINICAL AESTHETICS • CONFIDENTIAL MEDICAL DOSSIER", {
     x: marginX,
     y: footerY,
     size: 6.5,

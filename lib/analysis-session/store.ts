@@ -13,7 +13,7 @@
  * a client, on this call or any later one that references this record.
  *
  * What this does NOT guarantee: that the raw `analysis.observations` values
- * were genuinely measured from a real photo/video. MogaFace's face-landmark
+ * were genuinely measured from a real photo/video. Moga's face-landmark
  * engine (@mediapipe/tasks-vision, GPU-delegate WASM) is a browser-only
  * package — it explicitly guards `typeof window === "undefined"` (see
  * lib/facial-analysis/faceLandmarker.ts) and has no supported Node.js
@@ -60,7 +60,7 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypt
 import { sanitizeAssessment } from "../assessment/schema.ts";
 import { parseLeadContact } from "../leads/contact.ts";
 import { isValidObservation } from "../observation/validate.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import { FACIAL_ANALYSIS_METHODOLOGY_VERSION } from "../observation/versions.ts";
 import { evaluateTreatmentOpportunities } from "../treatment-opportunities/evaluate.ts";
 import { TREATMENT_OPPORTUNITY_ENGINE_VERSION } from "../treatment-opportunities/versions.ts";
@@ -125,7 +125,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * are individually well-formed (see lib/observation/validate.ts). This does
  * NOT prove any observation was genuinely measured — see the module comment.
  */
-function isPlausibleAnalysis(value: unknown): value is MogaFaceAnalysis {
+function isPlausibleAnalysis(value: unknown): value is MogaAnalysis {
   if (!isPlainObject(value)) return false;
   const observations = value.observations;
   if (!Array.isArray(observations)) return false;
@@ -184,7 +184,7 @@ async function logSupabaseFailure(operation: string, res: Response | null, err?:
  * Map — when production persistence is unavailable (see the module comment).
  */
 export async function createAnalysisRecord(
-  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown; portraitGeometry?: unknown },
+  input: { assessment: unknown; analysis: unknown; photoQualityValid?: unknown; hasLeftFortyFive?: unknown; hasRightFortyFive?: unknown; contact?: unknown; portraitGeometry?: unknown; videoPreviewContextConsent?: unknown },
   deps: AnalysisSessionStoreDeps = {},
 ): Promise<AnalysisSessionHandle | null> {
   const { env, fetchImpl } = resolveDeps(deps);
@@ -227,6 +227,7 @@ export async function createAnalysisRecord(
     version: ANALYSIS_RECORD_VERSION,
     methodologyVersion: { analysis: FACIAL_ANALYSIS_METHODOLOGY_VERSION, treatmentOpportunities: TREATMENT_OPPORTUNITY_ENGINE_VERSION },
     assessment,
+    videoPreviewContextConsent: input.videoPreviewContextConsent === "granted" ? "granted" : "declined",
     analysis,
     opportunities,
     predictionPlan,

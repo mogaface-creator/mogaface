@@ -4,7 +4,7 @@ import { LANDMARK } from "../../lib/facial-analysis/landmarkMapping.ts";
 import { TURNED_SPAN_RATIO } from "../../lib/facial-analysis/contour.ts";
 import { MAX_BRIGHTNESS, MAX_ROLL_DEGREES, MAX_YAW_RATIO, MIN_BRIGHTNESS } from "../../lib/facial-analysis/quality.ts";
 import {
-  CENTER_TOLERANCE_X, DEFAULT_STABILITY_MS, INITIAL_STABILITY, MESSAGES, STILLNESS_TOLERANCE, VIEW_TARGET, evaluateGuidance, faceCenter, profileIsManual, stepStability,
+  CENTER_TOLERANCE_X, DEFAULT_STABILITY_MS, PITCH_NATURAL_DEGREES, INITIAL_STABILITY, MESSAGES, STILLNESS_TOLERANCE, VIEW_TARGET, evaluateGuidance, faceCenter, profileIsManual, stepStability,
   type GuidanceInput,
 } from "../../lib/camera-capture/guidance.ts";
 import { GUIDANCE_STATES } from "../../lib/camera-capture/types.ts";
@@ -155,26 +155,26 @@ test("stability: a single passing frame can never trigger a capture", () => {
 });
 
 test("stability: capture only after a CONTINUOUS good run of the required time", () => {
-  const steps = run([0, 200, 400, 600, 799, 800].map((t) => ({ ok: true, t })));
+  const steps = run([0, 300, 600, 900, DEFAULT_STABILITY_MS - 1, DEFAULT_STABILITY_MS].map((t) => ({ ok: true, t })));
   assert.deepEqual(steps.map((s) => s.stable), [false, false, false, false, false, true]);
   assert.ok(steps[3].progress > 0.5 && steps[3].progress < 1);
   assert.equal(steps[5].progress, 1);
-  assert.equal(DEFAULT_STABILITY_MS, 800);
+  assert.equal(DEFAULT_STABILITY_MS, 1200);
 });
 
 test("stability: one bad frame restarts the hold (no accumulating across gaps)", () => {
-  const steps = run([{ ok: true, t: 0 }, { ok: true, t: 500 }, { ok: false, t: 600 }, { ok: true, t: 700 }, { ok: true, t: 1300 }, { ok: true, t: 1500 }]);
+  const steps = run([{ ok: true, t: 0 }, { ok: true, t: 500 }, { ok: false, t: 600 }, { ok: true, t: 700 }, { ok: true, t: 1300 }, { ok: true, t: 700 + DEFAULT_STABILITY_MS }]);
   assert.equal(steps[1].stable, false);
   assert.equal(steps[2].progress, 0);
   assert.equal(steps[4].stable, false, "only 600ms since the restart at 700");
-  assert.equal(steps[5].stable, true, "800ms since the restart");
+  assert.equal(steps[5].stable, true, "a full hold since the restart");
 });
 
 test("stability: moving the face more than the stillness tolerance restarts the hold; small drift does not", () => {
-  const moved = run([{ ok: true, t: 0 }, { ok: true, t: 500 }, { ok: true, t: 900, x: 0.5 + STILLNESS_TOLERANCE + 0.05 }, { ok: true, t: 1300, x: 0.5 + STILLNESS_TOLERANCE + 0.05 }]);
+  const moved = run([{ ok: true, t: 0 }, { ok: true, t: 500 }, { ok: true, t: 900, x: 0.5 + STILLNESS_TOLERANCE + 0.05 }, { ok: true, t: 900 + DEFAULT_STABILITY_MS - 100, x: 0.5 + STILLNESS_TOLERANCE + 0.05 }]);
   assert.equal(moved[2].stable, false, "the jump restarts the run at t=900");
   assert.equal(moved[3].stable, false);
-  const drift = run([{ ok: true, t: 0 }, { ok: true, t: 400, x: 0.51 }, { ok: true, t: 800, x: 0.52 }]);
+  const drift = run([{ ok: true, t: 0 }, { ok: true, t: 600, x: 0.51 }, { ok: true, t: DEFAULT_STABILITY_MS, x: 0.52 }]);
   assert.equal(drift[2].stable, true);
 });
 
@@ -186,4 +186,29 @@ test("stability: the required time is configurable, and no centre means not ok",
   assert.equal(stepStability(INITIAL_STABILITY, { ok: true, center: null, timeMs: 0 }).progress, 0);
   assert.deepEqual(faceCenter(buildSymmetricFace()), { x: 0.5, y: 0.5 });
   assert.equal(faceCenter(null), null);
+});
+
+test("lock: the face must fill the oval, a front view must be straight in depth, and a 45° view must measure about 45°", () => {
+  assert.equal(g({ landmarks: scale(buildSymmetricFace(), 0.55) }).frameOk, false, "a small face floating in the frame never locks");
+  const withDepth = (dz: number) => { const lm = buildSymmetricFace(); lm[LANDMARK.faceLeftEdge] = { ...lm[LANDMARK.faceLeftEdge], z: dz }; return lm; };
+  const dx = Math.abs(buildSymmetricFace()[LANDMARK.faceLeftEdge].x - buildSymmetricFace()[LANDMARK.faceRightEdge].x);
+  assert.equal(g({ landmarks: withDepth(0.02) }).frameOk, true, "a few degrees of depth difference is still straight");
+  assert.equal(g({ landmarks: withDepth(dx * 0.4) }).frameOk, false, "about 22 degrees in depth is not a front photo");
+  const turned = (deg: number) => { const lm = nose(0.35); lm[LANDMARK.faceLeftEdge] = { ...lm[LANDMARK.faceLeftEdge], z: Math.tan((deg * Math.PI) / 180) * dx }; return lm; };
+  assert.equal(g({ target: "leftFortyFive", landmarks: turned(45) }).frameOk, true);
+  const slight = g({ target: "leftFortyFive", landmarks: turned(15) });
+  assert.deepEqual([slight.frameOk, slight.message], [false, "Turn a little more to your right"]);
+  const profileish = g({ target: "leftFortyFive", landmarks: turned(75) });
+  assert.deepEqual([profileish.frameOk, profileish.message], [false, "Turn back a little to your left"]);
+});
+
+test("lock: a head tipped down or up (chin tucked, eyes lowered) never locks, front or 45°", () => {
+  const dy = Math.abs(buildSymmetricFace()[LANDMARK.chin].y - buildSymmetricFace()[LANDMARK.foreheadTop].y) * (480 / 640);
+  const tipped = (deg: number, base = buildSymmetricFace()) => { const lm = base.slice(); lm[LANDMARK.foreheadTop] = { ...lm[LANDMARK.foreheadTop], z: Math.tan(((PITCH_NATURAL_DEGREES + deg) * Math.PI) / 180) * dy }; return lm; };
+  assert.equal(g({ landmarks: tipped(0) }).frameOk, true, "a level head locks");
+  assert.equal(g({ landmarks: tipped(6) }).frameOk, true, "a few degrees is natural");
+  const down = g({ landmarks: tipped(20) });
+  assert.deepEqual([down.frameOk, down.message], [false, "Look straight into the camera"]);
+  assert.equal(g({ landmarks: tipped(-20) }).frameOk, false);
+  assert.equal(g({ target: "leftFortyFive", landmarks: tipped(20, nose(0.35)) }).frameOk, false);
 });

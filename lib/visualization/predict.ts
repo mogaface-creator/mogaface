@@ -1,5 +1,5 @@
 /**
- * The MogaFace Prediction Engine — the goal-driven illustrative-visualization
+ * The Moga Prediction Engine — the goal-driven illustrative-visualization
  * pathway that sits ALONGSIDE, and never replaces, the calibration-gated
  * treatment-opportunity pathway (lib/treatment-opportunities/, this
  * directory's build.ts + eligibility.ts).
@@ -36,7 +36,7 @@
 
 import type { AppearanceConcernId } from "../assessment/appearanceConcerns.ts";
 import type { Assessment } from "../assessment/types.ts";
-import type { MogaFaceAnalysis, Observation } from "../observation/types.ts";
+import type { MogaAnalysis, Observation } from "../observation/types.ts";
 import {
   buildConcernSignals,
   deriveConfidence,
@@ -262,7 +262,7 @@ function notEligible(reason: VisualizationPlan["ineligibleReason"], sourcePhoto:
 
 export interface PredictionPlanInput {
   assessment: Assessment;
-  analysis: MogaFaceAnalysis;
+  analysis: MogaAnalysis;
   frontPhoto: FrontPhotoRef | null;
 }
 

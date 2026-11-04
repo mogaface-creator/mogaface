@@ -38,12 +38,12 @@ export function Header({ immersive = false }: { immersive?: boolean }) {
           {LINKS.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}
         </nav>
         <div className="flex items-center gap-5">
-          <Link href="/test-lab" className={immersive ? "moga-testing-link" : "hidden sm:inline text-xs"}>Testing Lab</Link>
-          <Link href="/#portal" className={immersive ? "moga-pill moga-nav-cta" : "rounded-full bg-[#182327] px-5 py-3 text-xs text-white"} onClick={() => setMenuOpen(false)}>Start my plan</Link>
+          
+          <Link href="/assessment" className={immersive ? "moga-pill moga-nav-cta" : "rounded-full bg-[#182327] px-5 py-3 text-xs text-white"} onClick={() => setMenuOpen(false)}>Start my plan</Link>
           <button type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="moga-mobile-menu" className={immersive ? "moga-menu-button" : "lg:hidden p-2"} onClick={() => setMenuOpen(!menuOpen)}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">{menuOpen ? <path d="M6 6l12 12M6 18L18 6" /> : <path d="M4 8h16M4 16h16" />}</svg></button>
         </div>
       </div>
-      {menuOpen && <nav id="moga-mobile-menu" aria-label="Mobile navigation" className={immersive ? "moga-mobile-menu" : "flex flex-col gap-5 bg-white p-6 text-sm lg:hidden"}>{LINKS.map(link => <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}<span aria-hidden="true">↗</span></Link>)}<Link href="/test-lab" onClick={() => setMenuOpen(false)}>Testing Lab<span aria-hidden="true">↗</span></Link></nav>}
+      {menuOpen && <nav id="moga-mobile-menu" aria-label="Mobile navigation" className={immersive ? "moga-mobile-menu" : "flex flex-col gap-5 bg-white p-6 text-sm lg:hidden"}>{LINKS.map(link => <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}<span aria-hidden="true">↗</span></Link>)}</nav>}
     </header>
   );
 }

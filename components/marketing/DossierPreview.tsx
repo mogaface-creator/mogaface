@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export function DossierPreview() {
@@ -22,7 +21,7 @@ export function DossierPreview() {
             <div aria-hidden className="mt-4 sm:mt-6 h-1 w-12 bg-violet-600 rounded-full" />
             <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-slate-600">
               We don&apos;t just flash a temporary screen. In 60 seconds, our system compiles an executive medical-grade report
-              formatted in accordance with luxury aesthetic clinic standards and delivers it straight to your email and on-screen.
+              formatted in accordance with luxury aesthetic clinic standards and presents it as a detailed report you can open and share by link.
             </p>
 
             <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
@@ -57,21 +56,13 @@ export function DossierPreview() {
             </div>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
-              <a href="#portal" className="w-full sm:w-auto">
+              <a href="/assessment" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto shadow-elevated">Get Your Free Dossier</Button>
-              </a>
-              <a
-                href="/api/test-pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-semibold tracking-wide text-violet-700 underline decoration-violet-300 decoration-2 underline-offset-4 hover:text-violet-900 text-center sm:text-left"
-              >
-                View Sample PDF Report ↗
               </a>
             </div>
           </div>
 
-          {/* Right Column: Visual 2-Page PDF Presentation */}
+          {/* Right Column: Detailed web report preview */}
           <div className="relative flex flex-col items-center justify-center py-4 sm:py-6">
             {/* Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 sm:h-96 w-72 sm:w-96 rounded-full bg-violet-400/10 blur-3xl pointer-events-none" />
@@ -102,7 +93,7 @@ export function DossierPreview() {
               <div className="relative w-full max-w-[280px] aspect-[1/1.414] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white">
                 <Image
                   src={mobilePage === 1 ? "/images/dossier/dossier_page_1.png" : "/images/dossier/dossier_page_2.png"}
-                  alt={`MogaFace Clinical Dossier Page ${mobilePage}`}
+                  alt={`Moga Clinical Dossier Page ${mobilePage}`}
                   fill
                   className="object-cover object-top"
                   sizes="280px"
@@ -120,7 +111,7 @@ export function DossierPreview() {
               <div className="relative w-64 sm:w-72 aspect-[1/1.414] -rotate-6 translate-x-6 sm:translate-x-8 rounded-2xl overflow-hidden shadow-lg border border-slate-200 bg-white transition-transform hover:scale-105 hover:z-20">
                 <Image
                   src="/images/dossier/dossier_page_2.png"
-                  alt="MogaFace Clinical Dossier Page 2"
+                  alt="Moga Clinical Dossier Page 2"
                   fill
                   className="object-cover object-top"
                   sizes="300px"
@@ -134,7 +125,7 @@ export function DossierPreview() {
               <div className="relative w-64 sm:w-72 aspect-[1/1.414] rotate-3 -translate-x-4 sm:-translate-x-6 z-10 rounded-2xl overflow-hidden shadow-2xl border border-violet-200 bg-white transition-transform hover:scale-105 hover:z-30">
                 <Image
                   src="/images/dossier/dossier_page_1.png"
-                  alt="MogaFace Clinical Dossier Page 1"
+                  alt="Moga Clinical Dossier Page 1"
                   fill
                   className="object-cover object-top"
                   sizes="300px"

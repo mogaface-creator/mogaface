@@ -23,6 +23,8 @@ export type ImageJobResult =
 
 export interface ImageJobInput {
   debugPreview?: boolean;
+  /** Original identity reference for supervised revisions; never used as the editable source. */
+  identityReference?: {bytes:Buffer;mime:ImageMime};
   beforeBytes: Buffer;
   beforeMime: ImageMime;
   record?: AnalysisRecord | null;
@@ -78,7 +80,10 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   }
 
   const rawModel = env.IMAGE_GENERATION_MODEL?.trim();
-  const model = rawModel || DEFAULT_IMAGE_MODEL;
+  // Treat an accidentally copied env-var name as unset. Vercel was passing the
+  // literal "IMAGE_GENERATION_MODEL" and forcing every request through a 400
+  // fallback with the wrong portrait size.
+  const model = !rawModel || rawModel === "IMAGE_GENERATION_MODEL" ? DEFAULT_IMAGE_MODEL : rawModel;
 
   const timeoutMs = Number(env.IMAGE_GENERATION_TIMEOUT_MS) > 0
     ? Math.min(120_000, Math.max(10_000, Number(env.IMAGE_GENERATION_TIMEOUT_MS)))
@@ -90,7 +95,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
   let editRegions=input.editRegions ?? ALL_PORTRAIT_EDIT_REGIONS;
   let appearancePlan:ReturnType<typeof appearancePlanFromAssessment>|null=null;
   if(input.record?.assessment){
-    appearancePlan=appearancePlanFromAssessment(input.record.assessment);
+    appearancePlan=appearancePlanFromAssessment(input.record.assessment,input.record.videoPreviewContextConsent === "granted" ? input.record.analysis.expression : undefined,{improveAll:true});
     // Production preferences always determine the prompt; callers cannot replace them.
     prompt=appearancePlan.prompt;
     editRegions=appearancePlan.editRegions;
@@ -152,7 +157,10 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     if (!response.ok && response.status === 400 && model !== DEFAULT_IMAGE_MODEL) {
       console.warn(`[imageJob] Retrying with default model ${DEFAULT_IMAGE_MODEL}...`);
       usedModel = DEFAULT_IMAGE_MODEL;
-      response = await postEdit(DEFAULT_IMAGE_MODEL);
+      // Recompute size for the fallback model. Reusing the invalid model's
+      // default 1024x1536 request caused a portrait aspect mismatch at compose.
+      const fallbackSize = aspectMatchedImageSize(editBytes, DEFAULT_IMAGE_MODEL);
+      response = await postEdit(DEFAULT_IMAGE_MODEL, fallbackSize);
     }
 
     if (!response.ok) {
@@ -199,18 +207,22 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     const finalBase64=Buffer.from(finalBytes).toString("base64");
     if(!validateGeneratedImage(finalBase64,bytes).ok)return {ok:false,reason:"invalid_composited_image"};
 
-    // Automated quality & identity preservation triage
-    const review = await reviewAfterImage({
-      apiKey,
-      model: env.CLINICAL_VISION_MODEL?.trim() || "gpt-4o",
-      before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`,
-      after: `data:${finalMime};base64,${finalBase64}`,
-      prompt,
-    });
+    // Automated quality & identity preservation triage. gpt-4o intermittently returns an unusable
+    // answer for this two-face comparison, so the reviewer defaults to gpt-4.1 (IMAGE_REVIEW_MODEL to override)
+    // and an unusable reply is retried once.
+    const reviewModel = env.IMAGE_REVIEW_MODEL?.trim() || "gpt-4.1";
+    const reviewInput = { apiKey, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt, ...(input.identityReference?{identityReference:`data:${input.identityReference.mime};base64,${input.identityReference.bytes.toString("base64")}`}:{}) };
+    let review = await reviewAfterImage(reviewInput);
+    if (review.status === "unavailable" && review.code === "review_invalid_response") review = await reviewAfterImage(reviewInput);
 
     console.log("[imageJob] Image review outcome:", review.status);
 
     if (review.status !== "approved") {
+      if (review.status === "unavailable") {
+        console.warn(
+          `[imageJob] Image review unavailable (${review.code}${review.httpStatus ? `; HTTP ${review.httpStatus}` : ""}; model ${reviewModel}).`,
+        );
+      }
       return {ok:false,reason:review.status === "rejected" ? "image_quality_review_failed" : "image_review_unavailable",review,...(input.debugPreview ? {debugPreview:{base64:finalBase64,mime:finalMime}} : {})};
     }
 

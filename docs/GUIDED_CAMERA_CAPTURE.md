@@ -15,7 +15,7 @@ Nothing here changes what is measured. Thresholds are unchanged and `VISUAL_OBSE
 | Analysing the video | `analyzeVideoFile` |
 | Slots | `PHOTO_SLOTS`, `photoMetadataFor` |
 
-New constants are framing aids only (`CENTER_TOLERANCE_*`, `STILLNESS_TOLERANCE`, `DEFAULT_STABILITY_MS = 800`).
+New constants are framing aids only (`CENTER_TOLERANCE_*`, `STILLNESS_TOLERANCE`, `DEFAULT_STABILITY_MS = 1200`).
 
 ## Layout
 

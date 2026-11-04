@@ -17,7 +17,7 @@ import { normalizeAppearanceConcerns } from "../assessment/appearanceConcerns.ts
 import type { AppearanceConcernId } from "../assessment/appearanceConcerns.ts";
 import type { Assessment, GoalArea, GoalPriority } from "../assessment/types.ts";
 import { isConsumerReady } from "../facial-analysis/calibration/status.ts";
-import type { MogaFaceAnalysis, Observation } from "../observation/types.ts";
+import type { MogaAnalysis, Observation } from "../observation/types.ts";
 import { validateObservation } from "../observation/validate.ts";
 import type { TreatmentCategory, TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import type {
@@ -94,7 +94,7 @@ const LEGACY_AREA: Partial<Record<GoalArea, { area: InterpretationArea; label: s
  */
 export function buildInterpretationInput(
   assessment: Assessment,
-  analysis: MogaFaceAnalysis | null,
+  analysis: MogaAnalysis | null,
   opportunities: TreatmentOpportunity[],
 ): InterpretationInput {
   const goals: UserGoal[] = [];

@@ -4,7 +4,7 @@ Engine version: `TREATMENT_OPPORTUNITY_ENGINE_VERSION = "0.1.0"` (`lib/treatment
 
 ## Purpose
 
-Turns what MogaFace can actually evidence into a short list of **appearance-related concerns that may be worth discussing with a qualified clinician**, each mapped to a possible treatment *category*.
+Turns what Moga can actually evidence into a short list of **appearance-related concerns that may be worth discussing with a qualified clinician**, each mapped to a possible treatment *category*.
 
 It is not a diagnosis, not a recommendation, and not a suitability check. The chain is:
 
@@ -25,7 +25,7 @@ Language is always "may be worth discussing with your clinician" — never "you 
 ```
 Assessment ─────────────┐
                         ├─→ buildEvaluationContext ─→ rules A–D ─→ validate ─→ dedupe ─→ TreatmentOpportunity[]
-MogaFaceAnalysis ───────┤                                            (evaluate.ts)
+MogaAnalysis ───────┤                                            (evaluate.ts)
 (observation layer)     │
 VideoObservation[] ─────┘  (input contract only; no video pipeline exists yet)
 ```
@@ -40,9 +40,9 @@ VideoObservation[] ─────┘  (input contract only; no video pipeline e
 | `validate.ts` | `validateOpportunity(unknown): string[]` — never throws |
 | `versions.ts` | Engine version |
 
-The layer is **pure** (only `createdAt` timestamps vary), reads `lib/assessment/` and `lib/observation/` without modifying them, and adds no dependencies. It sits *above* the observation layer, so `MogaFaceAnalysis` itself is unchanged.
+The layer is **pure** (only `createdAt` timestamps vary), reads `lib/assessment/` and `lib/observation/` without modifying them, and adds no dependencies. It sits *above* the observation layer, so `MogaAnalysis` itself is unchanged.
 
-Integration point: `components/assessment/AssessmentReview.tsx` calls `evaluateTreatmentOpportunities` right after `buildMogaFaceAnalysis`, and the existing development view (`MultiPhotoDevResults`) lists the result. `/results` is not changed.
+Integration point: `components/assessment/AssessmentReview.tsx` calls `evaluateTreatmentOpportunities` right after `buildMogaAnalysis`, and the existing development view (`MultiPhotoDevResults`) lists the result. `/results` is not changed.
 
 ## The opportunity model
 

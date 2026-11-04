@@ -2,6 +2,8 @@ import sharp from "sharp";
 import { ALL_PORTRAIT_EDIT_REGIONS, portraitRegionWeights, validPortraitGeometry, type PortraitEditRegions, type PortraitGeometry } from "./portraitGeometry.ts";
 export async function preparePortraitEdit(source:Buffer, geometry:PortraitGeometry, regions:PortraitEditRegions=ALL_PORTRAIT_EDIT_REGIONS){
   if(!validPortraitGeometry(geometry))throw new Error("invalid_portrait_geometry");
+  const added=["brow_opening","lip_vermilion","lower_face_balance","mentolabial","chin_projection"] as const;
+  if(added.some(key=>regions[key]) && !geometry.refinements)throw new Error("refinement_geometry_unavailable");
   const normalized=await sharp(source).rotate().removeAlpha().toColourspace("srgb").png().toBuffer();
   const {width,height}=await sharp(normalized).metadata();
   if(!width||!height)throw new Error("invalid_source");
@@ -22,7 +24,7 @@ export async function compositePortraitEdit(prepared:Awaited<ReturnType<typeof p
   const {width,height,geometry,regions}=prepared;
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
     const weights=portraitRegionWeights((x+.5)/width,(y+.5)/height,geometry,regions);
-    const alpha=Math.max(weights.hair*.88,weights.skin*.38,weights.jaw*.42,weights.underEye*.32,weights.forehead*.35);
+    const alpha=Math.max(weights.hair*.88,weights.skin*.38,weights.jaw*.42,weights.underEye*.32,weights.forehead*.35,weights.browOpening*.45,weights.lipVermilion*.5,weights.mentolabial*.4,weights.chinProjection*.4,weights.lowerFaceBalance*.42,weights.beard*.6);
     if(alpha<.005)continue;
     const i=(y*width+x)*3;
     for(let c=0;c<3;c++)result[i+c]=Math.round(original[i+c]*(1-alpha)+generated[i+c]*alpha);

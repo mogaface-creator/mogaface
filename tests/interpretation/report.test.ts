@@ -13,7 +13,7 @@ import { buildDemoSnapshot } from "../../lib/results/demo.ts";
 import { VISUAL_OBSERVATIONS_CALIBRATED } from "../../lib/facial-analysis/calibration/status.ts";
 import { findForbiddenLanguage } from "../../lib/safety/language.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import type { InterpretationInput, InterpretationResult, MogaFaceReport, ReportStatement } from "../../lib/interpretation/types.ts";
+import type { InterpretationInput, InterpretationResult, MogaReport, ReportStatement } from "../../lib/interpretation/types.ts";
 import { assessmentWith, inputFor, snapshotFor } from "../results/fixtures.ts";
 
 const CAL = { calibrated: true };
@@ -22,13 +22,13 @@ const demoInput = () => {
   const s = buildDemoSnapshot();
   return { snapshot: s, input: buildInterpretationInput(s.assessment, s.analysis, s.opportunities) };
 };
-const statementsOf = (r: MogaFaceReport): ReportStatement[] => [
+const statementsOf = (r: MogaReport): ReportStatement[] => [
   r.overview,
   ...r.priorities.flatMap((p) => [p.why, p.evidence]),
   ...Object.values(r.sections).flatMap((s) => s?.statements ?? []),
   ...r.opportunities.map((o) => o.why),
 ];
-const allStrings = (r: MogaFaceReport): string[] => [
+const allStrings = (r: MogaReport): string[] => [
   ...statementsOf(r).map((s) => s.text),
   ...r.priorities.map((p) => p.concern),
   ...r.opportunities.flatMap((o) => [o.title, o.clinicianCanEvaluate, ...o.evidenceLines]),
@@ -59,7 +59,7 @@ test("report: every section exists and none is blank (demo evidence, gate open)"
 test("report: user-reported sections are worded as user-reported, descriptive, and never make conclusions", () => {
   const { input } = inputFor(assessmentWith({ selected: ["SKIN_TONE"] }));
   const { report } = buildInterpretation(input);
-  const text = (k: keyof MogaFaceReport["sections"]) => report.sections[k]!.statements.map((s) => s.text).join(" ");
+  const text = (k: keyof MogaReport["sections"]) => report.sections[k]!.statements.map((s) => s.text).join(" ");
   assert.match(text("lifestyle"), /You reported sleeping 6–7 hours per night\./);
   assert.match(text("lifestyle"), /exercise 3–4 times per week, including strength training and cardio/);
   assert.match(text("hair"), /You described your hair as short and straight hair with medium density\./);
@@ -74,7 +74,7 @@ test("report: user-reported sections are worded as user-reported, descriptive, a
   assert.equal(report.sections.hair.statements.some((s) => /textured crop/.test(s.text)), false, "free-text answers are not echoed");
 });
 
-test("report: skin separates 'your assessment reports' from what MogaFace can analyze, and never invents a skin observation", () => {
+test("report: skin separates 'your assessment reports' from what Moga can analyze, and never invents a skin observation", () => {
   const { input } = inputFor(assessmentWith({ selected: ["SKIN_TEXTURE", "PIGMENTATION"] }));
   const skin = buildInterpretation(input).report.sections.skin;
   assert.match(skin.statements[0].text, /^Your assessment reports skin-related concerns: skin texture and evenness of skin colour\.$/);
@@ -335,8 +335,8 @@ test("report view: the date comes from assessment metadata only, and the visuali
 // ---- the AI provider ----
 
 /** A stub model: receives the prompt, edits the draft it was sent (only the editable part is in the payload) and returns it. */
-const modelReturning = (edit: (r: MogaFaceReport) => void) => async ({ user }: { system: string; user: string }) => {
-  const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaFaceReport;
+const modelReturning = (edit: (r: MogaReport) => void) => async ({ user }: { system: string; user: string }) => {
+  const draft = JSON.parse(user.slice(user.indexOf(DRAFT_MARKER) + DRAFT_MARKER.length)) as MogaReport;
   edit(draft);
   return JSON.stringify(draft);
 };
@@ -352,7 +352,7 @@ test("AI provider: a valid rewrite of the wording is used", async () => {
 
 test("AI provider: invented evidence, changed decisions, forbidden wording and bad JSON all fall back to the local rules", async () => {
   const { input } = demoInput();
-  const attempts: [string, (r: MogaFaceReport) => void, RegExp][] = [
+  const attempts: [string, (r: MogaReport) => void, RegExp][] = [
     ["invented evidence", (r) => { r.sections.eyeArea.statements[0].evidenceRefs = [{ sourceType: "visual_observation", sourceId: "eyeArea.madeUp" }]; }, /does not exist/],
     ["dropped evidence", (r) => { r.sections.skin.statements[0].evidenceRefs = []; }, /no evidence/],
     ["a promoted area", (r) => { const o = r.opportunities.find((x) => x.status === "insufficient_evidence")!; o.status = "discuss"; o.why.sourceType = "opportunity"; }, /differs|invalid/],
@@ -376,7 +376,7 @@ test("AI prompt: carries the rules and the editable draft only — no age, gende
   a.profile = { ageYears: 61, genderPresentation: "female", heightCm: 163, weightKg: 58 };
   const { input } = inputFor(a);
   const prompt = buildInterpretationPrompt(input, buildInterpretation(input).report);
-  for (const rule of ["You are the MogaFace report wording assistant", "not performing analysis", "Never diagnose", "Never prescribe", "Never assess attractiveness", "Never assess treatment suitability", "Never add a new finding", "may be worth discussing with your clinician", "insufficient", "preserve the limitation"]) {
+  for (const rule of ["You are the Moga report wording assistant", "not performing analysis", "Never diagnose", "Never prescribe", "Never assess attractiveness", "Never assess treatment suitability", "Never add a new finding", "may be worth discussing with your clinician", "insufficient", "preserve the limitation"]) {
     assert.ok(INTERPRETATION_SYSTEM_PROMPT.includes(rule), rule);
   }
   assert.ok(INTERPRETATION_SYSTEM_PROMPT.includes("STRUCTURED EVIDENCE"));

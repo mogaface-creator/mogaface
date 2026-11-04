@@ -1,6 +1,6 @@
 /**
  * What this analysis explicitly cannot currently determine. Every
- * MogaFaceAnalysis carries this list unmodified — nothing here is hidden
+ * MogaAnalysis carries this list unmodified — nothing here is hidden
  * or reduced based on how much data a given assessment happens to have.
  */
 export const ANALYSIS_LIMITATIONS: string[] = [

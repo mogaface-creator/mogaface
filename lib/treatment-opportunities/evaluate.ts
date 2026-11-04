@@ -3,13 +3,13 @@ import { TREATMENT_RULES } from "./rules.ts";
 import { validateOpportunity } from "./validate.ts";
 import { CONCERN_SIGNAL_KINDS } from "./types.ts";
 import type { Assessment } from "../assessment/types.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import type { EvaluationContext, TreatmentOpportunity, VideoObservation } from "./types.ts";
 
 export interface TreatmentEngineInput {
   assessment: Assessment;
   /** Null when photos have not been analyzed yet. */
-  analysis: MogaFaceAnalysis | null;
+  analysis: MogaAnalysis | null;
   /**
    * Extra video evidence supplied directly. Normally omitted: video evidence
    * is derived from the expression observations already in `analysis`.

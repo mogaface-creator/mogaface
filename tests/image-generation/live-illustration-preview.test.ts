@@ -24,7 +24,7 @@ import { CALIBRATION_STATE, VISUAL_OBSERVATIONS_CALIBRATED, isCategoryCalibrated
 import { ILLUSTRATION_POLICY, decideIllustrationEligibility } from "../../lib/visualization/eligibility.ts";
 import { buildVisualizationPlan } from "../../lib/visualization/build.ts";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { createEmptyAppearanceConcerns } from "../../lib/assessment/appearanceConcerns.ts";
 import { buildFilledAssessment, buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
 
@@ -253,7 +253,7 @@ test("9. production illustration eligibility for expression_lines through the no
   const assessment = buildFilledAssessment();
   assessment.goals = { areas: [], priorities: [] };
   assessment.appearanceConcerns = { ...createEmptyAppearanceConcerns(), selected: ["FACIAL_LINES"] };
-  const analysis = buildMogaFaceAnalysis(assessment, buildMultiPhotoAnalysisWithFront());
+  const analysis = buildMogaAnalysis(assessment, buildMultiPhotoAnalysisWithFront());
   const opportunities = evaluateTreatmentOpportunities({ assessment, analysis });
   const plan = buildVisualizationPlan({ frontPhoto: { ref: "blob:x", qualityValid: true }, opportunities });
   assert.equal(decideIllustrationEligibility(plan, opportunities).eligible, false);

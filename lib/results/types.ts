@@ -10,7 +10,7 @@ import type { IllustrationDecision } from "../visualization/eligibility.ts";
 import type { PhotoVisualizationConsent } from "../visualization/consent.ts";
 import type { Visualization } from "../image-generation/types.ts";
 import type { InterpretationResult } from "../interpretation/types.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import type { FrontPhotoRef, } from "../visualization/build.ts";
 import type { VisualizationPlan } from "../visualization/types.ts";
@@ -24,7 +24,7 @@ export type ResultStage =
   | "visualization_unavailable"
   | "error";
 
-export interface MogaFaceResult {
+export interface MogaResult {
   id: string;
   assessmentId: string;
   createdAt: string;
@@ -33,7 +33,7 @@ export interface MogaFaceResult {
   interpretation: InterpretationResult;
   treatmentOpportunities: TreatmentOpportunity[];
   visualizationPlan: VisualizationPlan;
-  /** Whether an image model may be called at all — decided by MogaFace before any generation. */
+  /** Whether an image model may be called at all — decided by Moga before any generation. */
   illustration: IllustrationDecision;
   visualization: Visualization;
   status: ResultStage;
@@ -60,7 +60,7 @@ export interface AssessmentSnapshot {
   /** Consent to send the front photo to an external AI image service. Absent means "pending": nothing is sent until the person agrees. */
   photoVisualizationConsent?: PhotoVisualizationConsent;
   assessment: Assessment;
-  analysis: MogaFaceAnalysis;
+  analysis: MogaAnalysis;
   opportunities: TreatmentOpportunity[];
   frontPhoto: FrontPhotoRef | null;
   /**
@@ -83,7 +83,7 @@ export interface AssessmentSnapshot {
  * in sessionStorage would leave a dead reference the moment this page's
  * document reloads (backgrounding, memory pressure, or just hitting
  * reload — common on mobile). "front" is the only slot this concerns: it is
- * MogaFace's required front-facing photo.
+ * Moga's required front-facing photo.
  */
 export interface StoredFrontPhotoRef {
   mediaKey: "front";

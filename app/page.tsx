@@ -9,7 +9,7 @@ import { AnatomyDiagram, AnatomyOverview } from "@/components/marketing/AnatomyD
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AsSeenInMarquee } from "@/components/marketing/AsSeenInMarquee";
-import { HeroConsultationPortal } from "@/components/marketing/HeroConsultationPortal";
+
 import { TransformationShowcase } from "@/components/marketing/TransformationShowcase";
 import { QovesWhyGlowUp } from "@/components/marketing/QovesWhyGlowUp";
 import { ApproachComparison } from "@/components/marketing/ApproachComparison";
@@ -44,7 +44,7 @@ export default function Home() {
             <h1 id="hero-heading">Improve your<br />{" "}looks. <span>Without<br />{" "}surgery.</span></h1>
             <p className="moga-hero-description">Get your personalized facial analysis and transformation plan based on your unique features.</p>
             <div className="moga-hero-actions">
-              <Link href="/#portal" className="moga-pill moga-pill-light">Start my plan <span aria-hidden="true">↗</span></Link>
+              <Link href="/assessment" className="moga-pill moga-pill-light">Start my plan <span aria-hidden="true">↗</span></Link>
               <Link href="/#how-it-works" className="moga-pill moga-pill-glass">How it works</Link>
             </div>
           </div>
@@ -86,14 +86,6 @@ export default function Home() {
 
         {/* How It Works (3-step roadmap) */}
         <QovesHowItWorks />
-
-        {/* Instant Interactive AI Consultation & Simulation Portal */}
-        <section className="moga-portal-section py-12 sm:py-16 bg-[#ffffff] border-b border-[#e6ebed]">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <HeroConsultationPortal />
-          </div>
-        </section>
-
 
         {/* Value Comparison */}
         <ValueComparison />

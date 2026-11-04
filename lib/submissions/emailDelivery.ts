@@ -1,11 +1,11 @@
 /**
- * MogaFace Email Delivery Module
+ * Moga Email Delivery Module
  *
  * Sends the personalized aesthetic consultation PDF report to the client via
  * Resend.
  *
  * Features:
- *   - Luxury HTML email template matching the MogaFace design system
+ *   - Luxury HTML email template matching the Moga design system
  *   - High-resolution PDF attachment
  *   - WhatsApp and clinic consultation booking links
  *   - Graceful dev simulation fallback when RESEND_API_KEY is not configured
@@ -41,7 +41,7 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
     return { ok: true, simulated: true };
   }
 
-  const fromEmail = env.RESEND_FROM_EMAIL?.trim() || "MogaFace <onboarding@resend.dev>";
+  const fromEmail = env.RESEND_FROM_EMAIL?.trim() || "Moga <onboarding@resend.dev>";
   const resend = new Resend(apiKey);
 
   const subject = `Your Personalized Aesthetic Analysis & Simulation Dossier [${dossierId}]`;
@@ -82,14 +82,14 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
       <div class="greeting">Hello ${firstName},</div>
       <div class="badge">Dossier: ${dossierId}</div>
       <p>
-        Thank you for submitting your facial aesthetic assessment. Your Next Face report brings together your questionnaire answers, submitted photo views and any usable video-expression observations.
+        Thank you for submitting your facial aesthetic assessment. Your Moga report brings together your questionnaire answers, submitted photo views and any usable video-expression observations.
       </p>
       <p>
-        Your full <strong>Next Face Personal Appearance Protocol</strong> has been generated and is attached to this email as a PDF.
+        Your full <strong>Moga Personal Appearance Protocol</strong> has been generated and is attached to this email as a PDF.
       </p>
 
       <div class="attachment-notice">
-        📎 <strong>Attachment: MogaFace-Aesthetic-Dossier-${refCode}.pdf</strong><br>
+        📎 <strong>Attachment: Moga-Aesthetic-Dossier-${refCode}.pdf</strong><br>
         <span style="font-size: 12px; color: #6b5a7e;">Includes detailed appearance guidance and an illustrative comparison when requested and quality-screened. Treatment options require clinician review.</span>
       </div>
 
@@ -118,7 +118,7 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
       </p>
     </div>
     <div class="footer">
-      MogaFace Clinical Aesthetics • Confidential Medical Dossier<br>
+      Moga Clinical Aesthetics • Confidential Medical Dossier<br>
       Reference ID: ${dossierId} • Generated for ${input.clientName}
     </div>
   </div>
@@ -136,7 +136,7 @@ export async function sendReportEmail(input: SendReportEmailInput): Promise<Send
       html: htmlContent,
       attachments: [
         {
-          filename: `MogaFace-Aesthetic-Dossier-${refCode}.pdf`,
+          filename: `Moga-Aesthetic-Dossier-${refCode}.pdf`,
           content: pdfBuffer,
         },
       ],

@@ -10,11 +10,11 @@ import assert from "node:assert/strict";
 import { buildPredictionPlan, PROHIBITED_CHANGES, PREDICTION_CATEGORY_POLICY } from "../../lib/visualization/predict.ts";
 import { PRESERVATION_RULES, VISUALIZATION_DISCLAIMER } from "../../lib/visualization/types.ts";
 import { createEmptyAssessment } from "../../lib/assessment/defaults.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
 import type { AppearanceConcernId, AppearanceConcernDetailId } from "../../lib/assessment/appearanceConcerns.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 
 function baseAssessment(selected: AppearanceConcernId[], details: AppearanceConcernDetailId[] = []): Assessment {
   const a = createEmptyAssessment();
@@ -22,25 +22,25 @@ function baseAssessment(selected: AppearanceConcernId[], details: AppearanceConc
   return a;
 }
 
-function emptyAnalysis(assessment: Assessment): MogaFaceAnalysis {
-  return buildMogaFaceAnalysis(assessment, null);
+function emptyAnalysis(assessment: Assessment): MogaAnalysis {
+  return buildMogaAnalysis(assessment, null);
 }
 
-function withExpressionEvidence(analysis: MogaFaceAnalysis): MogaFaceAnalysis {
+function withExpressionEvidence(analysis: MogaAnalysis): MogaAnalysis {
   analysis.observations.push(
     measuredObservation({ id: "expression.browRaise.foreheadRegionMovementPct", domain: "expression", label: "Brow raise movement", value: 24, source: "video_frame_0" }),
   );
   return analysis;
 }
 
-function withContourEvidence(analysis: MogaFaceAnalysis): MogaFaceAnalysis {
+function withContourEvidence(analysis: MogaAnalysis): MogaAnalysis {
   analysis.observations.push(
     measuredObservation({ id: "facialStructure.contour.cheekContourAngle.front.left", domain: "facial-structure", label: "Cheek contour angle", value: 140, source: "front" }),
   );
   return analysis;
 }
 
-function withUnderEyeEvidence(analysis: MogaFaceAnalysis): MogaFaceAnalysis {
+function withUnderEyeEvidence(analysis: MogaAnalysis): MogaAnalysis {
   analysis.observations.push(
     measuredObservation({ id: "eyeArea.visibleUnderEyeDarkness", domain: "eye-area", label: "Visible under-eye darkness", value: true, source: "front" }),
   );

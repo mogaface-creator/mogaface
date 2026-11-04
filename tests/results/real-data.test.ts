@@ -1,7 +1,7 @@
 /**
  * The report must work with REAL assessment data. None of these tests uses the
  * demo fixture: assessments and analyses are built by the production
- * functions (buildMogaFaceAnalysis, evaluateTreatmentOpportunities,
+ * functions (buildMogaAnalysis, evaluateTreatmentOpportunities,
  * runResultPipeline) from fixture INPUTS (test landmarks/records), which is
  * exactly what the app does after a real photo has been analysed. The
  * calibration gate stays closed (VISUAL_OBSERVATIONS_CALIBRATED = false).
@@ -11,7 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
 import { runResultPipeline } from "../../lib/results/pipeline.ts";
 import { toReportView } from "../../lib/results/reportView.ts";
@@ -19,11 +19,11 @@ import { chooseResultSource } from "../../lib/results/source.ts";
 import { buildDemoSnapshot } from "../../lib/results/demo.ts";
 import { clearSnapshot, loadSnapshot, resolveStoredFrontPhoto, saveSnapshot } from "../../lib/results/store.ts";
 import { SNAPSHOT_VERSION } from "../../lib/results/types.ts";
-import type { AssessmentSnapshot, MogaFaceResult } from "../../lib/results/types.ts";
+import type { AssessmentSnapshot, MogaResult } from "../../lib/results/types.ts";
 import { selectInterpretationProvider } from "../../lib/interpretation/select.ts";
 import { VISUAL_OBSERVATIONS_CALIBRATED } from "../../lib/facial-analysis/calibration/status.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 import type { ReportStatement } from "../../lib/interpretation/types.ts";
 import { buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
 import { assessmentWith, snapshotFor } from "./fixtures.ts";
@@ -45,7 +45,7 @@ const ALL_CONCERNS = ["FACIAL_DEFINITION", "FACIAL_LINES", "FACIAL_VOLUME", "FAC
  * media key — not what AssessmentReview.openResults persists (see
  * lib/results/store.ts's StoredFrontPhotoRef for that).
  */
-function realSnapshot(assessment: Assessment, analysis: MogaFaceAnalysis): AssessmentSnapshot {
+function realSnapshot(assessment: Assessment, analysis: MogaAnalysis): AssessmentSnapshot {
   return {
     version: SNAPSHOT_VERSION,
     createdAt: new Date().toISOString(),
@@ -55,15 +55,15 @@ function realSnapshot(assessment: Assessment, analysis: MogaFaceAnalysis): Asses
     frontPhoto: { ref: FRONT_URL, qualityValid: true },
   };
 }
-const noPhotos = (a: Assessment) => realSnapshot(a, buildMogaFaceAnalysis(a, null));
-const frontOnly = (a: Assessment) => realSnapshot(a, buildMogaFaceAnalysis(a, buildMultiPhotoAnalysisWithFront()));
+const noPhotos = (a: Assessment) => realSnapshot(a, buildMogaAnalysis(a, null));
+const frontOnly = (a: Assessment) => realSnapshot(a, buildMogaAnalysis(a, buildMultiPhotoAnalysisWithFront()));
 const run = (s: AssessmentSnapshot) => runResultPipeline(s, { imageProvider: null });
 
-const statementsOf = (r: MogaFaceResult): ReportStatement[] => {
+const statementsOf = (r: MogaResult): ReportStatement[] => {
   const rep = r.interpretation.report;
   return [rep.overview, ...rep.priorities.flatMap((p) => [p.why, p.evidence]), ...Object.values(rep.sections).flatMap((s) => s?.statements ?? []), ...rep.opportunities.map((o) => o.why)];
 };
-const refTypes = (r: MogaFaceResult) => new Set(statementsOf(r).flatMap((s) => s.evidenceRefs.map((e) => e.sourceType)));
+const refTypes = (r: MogaResult) => new Set(statementsOf(r).flatMap((s) => s.evidenceRefs.map((e) => e.sourceType)));
 
 test("the calibration gate is closed for every test in this file", () => {
   assert.equal(VISUAL_OBSERVATIONS_CALIBRATED, false);

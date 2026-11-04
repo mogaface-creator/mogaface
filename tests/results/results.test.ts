@@ -112,7 +112,7 @@ test("consumer view: ready state has before, illustrative after, 'what changed',
 test("consumer view: the required sections exist with human-readable copy", async () => {
   const { snapshot, run } = demoRun(MOCK());
   const v = toConsumerView(await run, snapshot.frontPhoto!.ref);
-  assert.equal(v.headline, "Your MogaFace assessment");
+  assert.equal(v.headline, "Your Moga assessment");
   assert.equal(v.intro, "Here's what your assessment highlighted.");
   assert.deepEqual(v.priorities, ["A more defined appearance", "Expression-related facial lines", "Skin tone"]);
   assert.ok(v.keyObservations.length > 0);

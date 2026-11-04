@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { evaluateTreatmentOpportunities } from "../../lib/treatment-opportunities/evaluate.ts";
 import { explainOpportunity } from "../../lib/treatment-opportunities/evidence.ts";
 import { validateOpportunity } from "../../lib/treatment-opportunities/validate.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { calculateContourGeometry } from "../../lib/facial-analysis/contour.ts";
 import { LANDMARK } from "../../lib/facial-analysis/landmarkMapping.ts";
 import { analyzeVideoFrames } from "../../lib/facial-analysis/video/observe.ts";
@@ -44,7 +44,7 @@ const flatVideo = () =>
   analyzeVideoFrames(META, withNeutralOpening(BROW_RAISED()).map((f) => ({ ...f, gray: stripeRows(flatGray(), 300, 700, 150, 330) })));
 
 const run = (a: Assessment, opts: { left45?: boolean; video?: ReturnType<typeof stripedVideo> | null } = {}) =>
-  evaluateTreatmentOpportunities({ assessment: a, analysis: buildMogaFaceAnalysis(a, photos(opts.left45 ?? false), opts.video ?? null) });
+  evaluateTreatmentOpportunities({ assessment: a, analysis: buildMogaAnalysis(a, photos(opts.left45 ?? false), opts.video ?? null) });
 
 const lines: Partial<AppearanceConcerns> = { selected: ["FACIAL_LINES"], details: ["FOREHEAD_LINES"] };
 
@@ -108,7 +108,7 @@ test("lifting stays insufficient_evidence even with every new observation presen
 
 test("under-eye concern with a real 'dark-looking' observation is still only recorded — no opportunity", () => {
   const a = assessmentWith({ selected: ["UNDER_EYE"], details: ["DARK_LOOKING_UNDER_EYES"] });
-  const analysis = buildMogaFaceAnalysis(a, photos(false));
+  const analysis = buildMogaAnalysis(a, photos(false));
   assert.ok(analysis.observations.some((o) => o.id === "eyeArea.visibleUnderEyeDarkness"));
   assert.deepEqual(evaluateTreatmentOpportunities({ assessment: a, analysis }), []);
 });

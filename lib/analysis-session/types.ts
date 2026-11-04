@@ -8,7 +8,7 @@
 
 import type { LeadContact } from "../leads/contact.ts";
 import type { Assessment } from "../assessment/types.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import type { TreatmentOpportunity } from "../treatment-opportunities/types.ts";
 import type { AngleSlot } from "../image-generation/angles.ts";
 import type { PredictionPlan } from "../visualization/predict.ts";
@@ -19,6 +19,8 @@ export const ANALYSIS_RECORD_VERSION = "0.1.0";
 export type AnalysisRecordStatus = "active" | "expired";
 
 export interface AnalysisRecord {
+  /** Separate permission for sharing bounded video-derived context; absent on older records. */
+  videoPreviewContextConsent?: "granted" | "declined";
   /** Client-side MediaPipe geometry for tightly masked preview edits; optional on older records. */
   portraitGeometry?: PortraitGeometry;
   /** Validated, compressed side photographs stored with this private record for report generation. */
@@ -44,7 +46,7 @@ export interface AnalysisRecord {
    * ONCE, here, server-side, from these raw values, and never again trusted
    * as a pre-built object from any later request.
    */
-  analysis: MogaFaceAnalysis;
+  analysis: MogaAnalysis;
   /** SERVER-COMPUTED via evaluateTreatmentOpportunities — never accepted from a client as a pre-built object. */
   opportunities: TreatmentOpportunity[];
   /**

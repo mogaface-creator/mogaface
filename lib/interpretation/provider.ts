@@ -19,7 +19,7 @@ import type { BuildOptions } from "./build.ts";
 import { findAiReportViolations } from "./immutable.ts";
 import { buildInterpretationPrompt, restoreAssessmentId } from "./prompts.ts";
 import { validateInterpretation } from "./validate.ts";
-import type { InterpretationInput, InterpretationProvider, InterpretationResult, MogaFaceReport } from "./types.ts";
+import type { InterpretationInput, InterpretationProvider, InterpretationResult, MogaReport } from "./types.ts";
 
 export class ProviderNotConfigured extends Error {}
 
@@ -72,9 +72,9 @@ export function createAiInterpretationProvider(config: { id?: string; complete?:
       // interpretWithFallback: nothing the model returns is trusted.
       const o = parsed as Record<string, unknown>;
       if ("summary" in o && "report" in o) return parsed as InterpretationResult;
-      const returned = restoreAssessmentId(o.report && typeof o.report === "object" ? o.report : o, input.assessmentId) as Partial<MogaFaceReport>;
+      const returned = restoreAssessmentId(o.report && typeof o.report === "object" ? o.report : o, input.assessmentId) as Partial<MogaReport>;
       // Whatever the model returned is kept (so an attempt to alter limitations, the CTA or any other field is seen and rejected).
-      const report: MogaFaceReport = { ...draft.report, ...returned, sections: { ...draft.report.sections, ...(returned.sections ?? {}) } };
+      const report: MogaReport = { ...draft.report, ...returned, sections: { ...draft.report.sections, ...(returned.sections ?? {}) } };
       return { ...draft, report };
     },
   };

@@ -1,5 +1,5 @@
 /**
- * Core types for the MogaFace facial-analysis engine.
+ * Core types for the Moga facial-analysis engine.
  * This module has no React or browser dependency — pure data shapes only.
  */
 

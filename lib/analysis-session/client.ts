@@ -1,7 +1,7 @@
 /**
  * Browser-side call for POST /api/analysis-session. Called exactly once, from
  * AssessmentReview.tsx's "Analyze My Face" action, right after real local
- * analysis produces a MogaFaceAnalysis — never re-created on every visit to
+ * analysis produces a MogaAnalysis — never re-created on every visit to
  * /results (see lib/results/types.ts's AssessmentSnapshot.analysisSession).
  * Never throws: any failure (network, malformed response, a 4xx/5xx) yields
  * `null`, which the caller treats exactly like "not eligible" — the report
@@ -10,19 +10,20 @@
 
 import type { LeadContact } from "../leads/contact.ts";
 import type { Assessment } from "../assessment/types.ts";
-import type { MogaFaceAnalysis } from "../observation/types.ts";
+import type { MogaAnalysis } from "../observation/types.ts";
 import type { AnalysisSessionHandle } from "./types.ts";
 import { ANGLE_SLOTS } from "../image-generation/angles.ts";
 import type { PortraitGeometry } from "../image-generation/portraitGeometry.ts";
 
 export interface CreateAnalysisSessionInput {
   assessment: Assessment;
-  analysis: MogaFaceAnalysis;
+  analysis: MogaAnalysis;
   photoQualityValid: boolean;
   /** Whether a real left 45°/right 45° photo was actually captured this session — informational only, see AnalysisRecord.availableAngles. */
   hasLeftFortyFive?: boolean;
   hasRightFortyFive?: boolean;
   portraitGeometry?: PortraitGeometry | null;
+  videoPreviewContextConsent?: "granted" | "declined";
   contact?: LeadContact;
   fetchImpl?: typeof fetch;
 }
@@ -37,6 +38,7 @@ export async function createAnalysisSession(input: CreateAnalysisSessionInput): 
         assessment: input.assessment,
         analysis: input.analysis,
         photoQualityValid: input.photoQualityValid,
+        videoPreviewContextConsent: input.videoPreviewContextConsent === "granted" ? "granted" : "declined",
         hasLeftFortyFive: input.hasLeftFortyFive === true,
         hasRightFortyFive: input.hasRightFortyFive === true,
         ...(input.portraitGeometry ? { portraitGeometry: input.portraitGeometry } : {}),

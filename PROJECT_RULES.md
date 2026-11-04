@@ -1,6 +1,6 @@
 # Project Rules
 
-These are the standing constraints for MogaFace. If a future change would
+These are the standing constraints for Moga. If a future change would
 violate one of these, stop and raise it rather than working around it.
 
 ## Product / scientific

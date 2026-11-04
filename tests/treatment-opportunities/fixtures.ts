@@ -1,8 +1,8 @@
 import { buildFilledAssessment, buildMultiPhotoAnalysisWithFront } from "../observation/fixtures.ts";
-import { buildMogaFaceAnalysis } from "../../lib/observation/build.ts";
+import { buildMogaAnalysis } from "../../lib/observation/build.ts";
 import { measuredObservation } from "../../lib/observation/helpers.ts";
 import type { Assessment } from "../../lib/assessment/types.ts";
-import type { MogaFaceAnalysis } from "../../lib/observation/types.ts";
+import type { MogaAnalysis } from "../../lib/observation/types.ts";
 import type { ConcernSignal, ConcernSignalKind, EvaluationContext, EvidenceItem } from "../../lib/treatment-opportunities/types.ts";
 
 export function assessmentWithGoals(priorities: Assessment["goals"]["priorities"], areas: Assessment["goals"]["areas"] = []): Assessment {
@@ -12,8 +12,8 @@ export function assessmentWithGoals(priorities: Assessment["goals"]["priorities"
   return a;
 }
 
-export function analysisWithFront(): MogaFaceAnalysis {
-  return buildMogaFaceAnalysis(buildFilledAssessment(), buildMultiPhotoAnalysisWithFront());
+export function analysisWithFront(): MogaAnalysis {
+  return buildMogaAnalysis(buildFilledAssessment(), buildMultiPhotoAnalysisWithFront());
 }
 
 /** A visual-feature observation of the kind a FUTURE skin/lines layer would emit. Not produced by the app today. */
