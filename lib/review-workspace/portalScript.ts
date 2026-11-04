@@ -5,7 +5,6 @@ export const PORTAL_SCRIPT=String.raw`
 const assets=JSON.parse(document.getElementById('portal-assets').textContent||'{}');
 const pageOrder=JSON.parse(document.getElementById('portal-pages').textContent||'[]');
 document.querySelectorAll('img[data-photo]').forEach(img=>{const source=assets[img.dataset.photo];if(source)img.src=source;});
-document.querySelectorAll('[data-photo-bg]').forEach(node=>{const source=assets[node.dataset.photoBg];if(source)node.style.backgroundImage='url("'+source+'")';});
 const modal=document.getElementById('mobile-nav');
 const mobileBody=document.getElementById('mobile-nav-body');
 mobileBody.innerHTML=document.getElementById('desktop-rails').innerHTML;

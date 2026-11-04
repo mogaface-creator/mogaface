@@ -1,3 +1,4 @@
+import {prepareReportDisplay} from "./display.server.ts";
 import {appearancePlanFromAssessment} from "../image-generation/appearanceFromAssessment.ts";
 import {getSubmission} from "../submissions/store.ts";
 import {getAnalysisRecord,persistIllustrationUse} from "../analysis-session/store.ts";
@@ -35,7 +36,7 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
   const consent=sub.photo_visualization_consent==="granted";
   const selected=appearancePlanFromAssessment(record.assessment).editRegions;
   const suggestedTargets=[...(selected.skin?["skin"]:[]),...(selected.underEye?["under_eye"]:[]),...(selected.hair?["hair"]:[]),...(["brow_opening","lip_vermilion","lower_face_balance","mentolabial","chin_projection"] as const).filter(key=>selected[key])];
-  if(request.method==="GET")return json({suggestedTargets,name:record.contact?.name||"Your appearance review",original,
+  if(request.method==="GET")return json({display:await prepareReportDisplay(sub.before_image_base64,record.portraitGeometry),suggestedTargets,name:record.contact?.name||"Your appearance review",original,
     initial:consent&&sub.after_image_base64&&sub.report_summary?.startsWith("Your Next Face protocol")?wrap(sub.after_image_base64,sub.after_image_mime||"image/jpeg"):null,
     sidePhotos:record.reportPhotos?[{label:"Left oblique — original",...record.reportPhotos.leftFortyFive},{label:"Right oblique — original",...record.reportPhotos.rightFortyFive}]:[],
     video:expressionContext(record.analysis.expression),consent,canRefine:consent&&validPortraitGeometry(record.portraitGeometry),summary:sub.report_summary||"",status:sub.status});
@@ -57,7 +58,7 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
     versions.push({label:v.label,image,notes:v.notes,targets:v.targets});
    }
    const sidePhotos=record.reportPhotos?[{label:"Left oblique — original",...record.reportPhotos.leftFortyFive},{label:"Right oblique — original",...record.reportPhotos.rightFortyFive}]:[];
-   const html=exportReviewHtml(record.contact?.name||"Your appearance review",original,review,versions,body.active,{sidePhotos,videoSummary:expressionContext(record.analysis.expression).summary});
+   const html=exportReviewHtml(record.contact?.name||"Your appearance review",original,review,versions,body.active,{sidePhotos,videoSummary:expressionContext(record.analysis.expression).summary,display:await prepareReportDisplay(sub.before_image_base64,record.portraitGeometry)});
    const key=await deps.saveReport(html);
    return json({url:`${new URL(request.url).origin}/reports/${key}.html`});
   }

@@ -1,0 +1,5 @@
+/** Repair only the known legacy display bug; original report data and images stay unchanged. */
+export function repairLegacyReportDisplay(html:string):string{
+ if(!html.includes('class="masked-portrait"')&&!html.includes('class="photo-crop"'))return html;
+ return html.replace(/<div class="status-panel"><div class="label">Dimorphism range<\/div>[\s\S]*?(?=<div class="explanation">)/, '<div class="status-panel" style="min-height:0"><div class="label">Original evidence</div><h2 class="status-title">Your feature summary</h2><p class="status-description">Read the observations and individual feature breakdowns below.</p></div>').replace('</head>',`<style data-legacy-display-repair>.masked-portrait{clip-path:none!important}.portrait-panel{align-items:center!important}.portrait-panel>img{object-position:center!important}.photo-crop{background-size:contain!important;background-position:center!important;width:100%!important;aspect-ratio:4/3!important}.feature-art{height:200px!important}</style></head>`);
+}

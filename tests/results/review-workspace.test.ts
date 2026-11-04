@@ -123,3 +123,29 @@ test("portal does not transfer reference scores or turn model prose into executa
  const data=JSON.parse(/<script type="application\/json" id="portal-assets">([\s\S]*?)<\/script>/.exec(html)![1]);
  assert.deepEqual(Object.keys(data),["original"]);assert.equal(data.original,"data:image/png;base64,aGVsbG8=");
 });
+
+test("real submissions render without demo illustrations, fixed crops or generic masks",async()=>{
+ const {prepareReportDisplay}=await import("../../lib/review-workspace/display.server.ts");
+ const sharp=(await import("sharp")).default;
+ const source=await sharp({create:{width:800,height:400,channels:3,background:"#9c735c"}}).jpeg().toBuffer();
+ const geometry={face:{cx:.7,cy:.6,rx:.17,ry:.3},hair:{cx:.7,cy:.22,rx:.2,ry:.18},protected:[{cx:.64,cy:.45,rx:.04,ry:.05},{cx:.76,cy:.45,rx:.04,ry:.05},{cx:.7,cy:.6,rx:.04,ry:.1},{cx:.7,cy:.78,rx:.07,ry:.04},{cx:.7,cy:.32,rx:.1,ry:.02}]};
+ const display=await prepareReportDisplay(source.toString("base64"),geometry);
+ assert.ok(display.portrait);assert.ok(display.features.eyes&&display.features.lips);
+ const eyes=await sharp(Buffer.from(display.features.eyes.base64,"base64")).metadata();
+ const lips=await sharp(Buffer.from(display.features.lips.base64,"base64")).metadata();
+ assert.notEqual(eyes.width! / eyes.height!,lips.width! / lips.height!);
+ const image={mime:"image/jpeg",base64:source.toString("base64"),receipt:"private"};
+ const html=exportReviewHtml("Real submission",image,null,[],-1,{sidePhotos:[],videoSummary:"",display});
+ assert.doesNotMatch(html,/masked-portrait|clip-path:polygon|data-photo-bg|Hyper feminine|Hyper masculine/);
+ assert.match(html,/data-photo="display-portrait"/);assert.match(html,/data-photo="feature-eyes"/);
+ assert.deepEqual(await prepareReportDisplay(source.toString("base64"),undefined),{features:{}});
+ assert.deepEqual(await prepareReportDisplay("invalid",geometry),{features:{}});
+});
+
+test("existing saved reports receive the crop repair without altering their evidence",async()=>{
+ const {repairLegacyReportDisplay}=await import("../../lib/review-workspace/legacyDisplay.ts");
+ const legacy='<head></head><img class="masked-portrait" data-photo="original"><script>const evidence="unchanged"</script>';
+ const fixed=repairLegacyReportDisplay(legacy);
+ assert.match(fixed,/clip-path:none!important/);assert.match(fixed,/const evidence="unchanged"/);
+ const current='<head></head><img data-photo="original">';assert.equal(repairLegacyReportDisplay(current),current);
+});
