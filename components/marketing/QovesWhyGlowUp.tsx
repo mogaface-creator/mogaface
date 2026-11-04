@@ -1,86 +1,36 @@
-import React from "react";
+"use client";
 
-const RESEARCH_POINTS = [
-  {
-    category: "Professional & Economic",
-    headline: "Career Trajectory & Earnings",
-    stat: "+14%",
-    statLabel: "Lifetime Income Advantage",
-    body: "Extensive economic research across Western and Asian demographics confirms individuals with higher facial symmetry and clear dermal health receive significantly higher starting salary offers and faster promotions.",
-    source: "Federal Reserve Bank of St. Louis & University of Texas",
-  },
-  {
-    category: "Cognitive Psychology",
-    headline: "Instant Subconscious Perception",
-    stat: "100ms",
-    statLabel: "First Impression Window",
-    body: "Human observers form definitive assessments of competence, trustworthiness, and social dominance within a tenth of a second, driven largely by lower-face mandibular structure and periorbital vitality.",
-    source: "Princeton University Department of Psychology",
-  },
-  {
-    category: "Mental Well-Being",
-    headline: "Certainty & Self-Confidence",
-    stat: "91%",
-    statLabel: "Reduction in Guesswork",
-    body: "Most insecurity arises from uncertainty. Understanding your exact facial morphology and having an evidence-based, non-surgical roadmap eliminates anxiety and restores authentic confidence.",
-    source: "Aesthetic Science & Dermatological Research Institute",
-  },
-];
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { RESEARCH_CATEGORIES } from "@/lib/marketing/researchCategories";
+import "./research-cards.css";
 
 export function QovesWhyGlowUp() {
-  return (
-    <section id="why-glowup" className="py-20 sm:py-28 bg-[#ffffff] border-b border-[#e6ebed]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#71858c]">
-            The Objective Reality
-          </p>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-medium tracking-tight text-[#141e22] leading-[1.12]">
-            Studies show your looks influence almost everything,{" "}
-            <span className="text-[#84989e] font-light">from your career to your romantic life.</span>
-          </h2>
-          <p className="mt-5 text-base sm:text-lg text-[#556970] leading-relaxed">
-            Aesthetic science is not vanity—it is biology. Decades of peer-reviewed literature demonstrate that facial harmony, bilateral symmetry, and dermal vitality are universal subconscious signals of health and biological fitness.
-          </p>
-        </div>
-
-        {/* 3 Grid Cards */}
-        <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {RESEARCH_POINTS.map((item, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl border border-[#e2e7e9] bg-[#fafcfc] p-7 sm:p-8 flex flex-col justify-between hover:border-[#ccd6da] transition-all"
-            >
-              <div>
-                <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#73888f] mb-4">
-                  {item.category}
-                </span>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#162125]">
-                    {item.stat}
-                  </span>
-                  <span className="text-xs font-medium text-[#73888f]">
-                    {item.statLabel}
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-medium text-[#162125] mt-3">
-                  {item.headline}
-                </h3>
-                <p className="mt-3 text-sm text-[#55686f] leading-relaxed">
-                  {item.body}
-                </p>
-              </div>
-
-              <div className="mt-8 pt-4 border-t border-[#e8eded]">
-                <p className="text-[11px] text-[#86999f]">
-                  Source: <span className="text-[#4b5d63] font-medium">{item.source}</span>
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+ const [active,setActive] = useState(0);
+ const tabs = useRef<Array<HTMLButtonElement | null>>([]);
+ const category = RESEARCH_CATEGORIES[active];
+ function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+  let next = index;
+  if(event.key === "ArrowRight") next = (index+1)%RESEARCH_CATEGORIES.length;
+  else if(event.key === "ArrowLeft") next = (index-1+RESEARCH_CATEGORIES.length)%RESEARCH_CATEGORIES.length;
+  else if(event.key === "Home") next = 0;
+  else if(event.key === "End") next = RESEARCH_CATEGORIES.length-1;
+  else return;
+  event.preventDefault(); setActive(next); tabs.current[next]?.focus();
+ }
+ function moveGlass(event: PointerEvent<HTMLElement>) {
+  if (event.pointerType === "touch") return;
+  const card = event.currentTarget;
+  const box = card.getBoundingClientRect();
+  card.style.setProperty("--glass-x", `${((event.clientX-box.left)/box.width)*100}%`);
+  card.style.setProperty("--glass-y", `${((event.clientY-box.top)/box.height)*100}%`);
+ }
+ return <section id="why-glowup" className="visual-research research-cards-section">
+  <div className="research-card-heading"><h2>Studies show your looks influence almost everything, <span>from your career to your romantic life.</span></h2>
+   <div className="research-tab-scroll"><div className="research-card-tabs" role="tablist" aria-label="Research categories">{RESEARCH_CATEGORIES.map((item,index)=><button key={item.id} type="button" role="tab" id={`research-tab-${item.id}`} aria-controls={`research-panel-${item.id}`} aria-selected={active===index} tabIndex={active===index?0:-1} ref={node=>{tabs.current[index]=node;}} onClick={()=>setActive(index)} onKeyDown={event=>onKeyDown(event,index)}>{item.label}</button>)}</div></div>
+  </div>
+  <div className="research-card-grid" key={category.id} role="tabpanel" id={`research-panel-${category.id}`} aria-labelledby={`research-tab-${category.id}`} tabIndex={0} style={{"--research-columns":category.cards.length} as React.CSSProperties}>
+   {category.cards.map(card=><div className="research-card-cell" key={card.lead+(card.title||"")}><article className="research-finding-card" tabIndex={0} aria-label={`${card.lead} ${card.title || ""}`.trim()} onPointerMove={moveGlass} onPointerLeave={event=>{event.currentTarget.style.removeProperty("--glass-x");event.currentTarget.style.removeProperty("--glass-y");}}><div><h3><span>{card.lead}</span>{card.title&&<> {card.title}</>}</h3><p>{card.body}</p></div><footer><svg width="13" height="15" viewBox="0 0 16 18" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true"><path d="M4 1h6l3 3v12H4zM10 1v4h3M6 8h5M6 11h4"/><circle cx="4" cy="10" r="2.5"/><path d="M2 12l-1 3"/></svg>{card.href?<a href={card.href} target="_blank" rel="noopener noreferrer">{card.citation}<span className="sr-only"> (opens study in a new tab)</span></a>:<cite>{card.citation}</cite>}</footer></article></div>)}
+  </div>
+  <p className="research-evidence-note">Research summaries describe associations and perception bias, not guaranteed personal outcomes. Appearance does not determine ability, health or worth.</p>
+ </section>;
 }

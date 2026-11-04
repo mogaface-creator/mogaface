@@ -71,6 +71,7 @@ export function QovesFaqSection() {
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
+                  aria-expanded={isOpen}
                   className="w-full text-left px-6 sm:px-8 py-5 sm:py-6 flex items-center justify-between gap-4"
                 >
                   <span className="text-base sm:text-lg font-medium text-[#141e22]">

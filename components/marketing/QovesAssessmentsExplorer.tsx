@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface AssessmentZone {
   id: string;
@@ -12,7 +13,7 @@ interface AssessmentZone {
   expectedOutcome: string;
 }
 
-const ZONES: AssessmentZone[] = [
+export const ZONES: AssessmentZone[] = [
   {
     id: "jaw",
     name: "Jaw & Mandible",
@@ -189,6 +190,8 @@ export function QovesAssessmentsExplorer() {
           </p>
         </div>
 
+        <div className="feature-map"><div className="feature-map-portrait"><Image src="/images/transformations/female_studio_before.webp" fill sizes="(max-width: 800px) 90vw, 440px" alt="Illustrative portrait: choose a feature to explore" />{ZONES.map((zone,i)=>{const positions:Record<string,[number,number]>={hair:[50,15],eyebrows:[34,36],eyes:[64,40],nose:[50,49],skin:[28,51],cheeks:[72,53],lips:[50,62],smile:[66,64],jaw:[27,69],chin:[50,75],neck:[50,88]};const [x,y]=positions[zone.id];return <button key={zone.id} style={{left:`${x}%`,top:`${y}%`}} aria-label={`Explore ${zone.name}`} aria-pressed={activeId===zone.id} onClick={()=>setActiveId(zone.id)}><span>{String(i+1).padStart(2,"0")}</span></button>})}<span className="feature-map-tag">ILLUSTRATIVE FEATURE MAP</span></div><div className="feature-map-intro"><span className="visual-eyebrow">Touch a point. Explore a feature.</span><h3>{current.name}</h3><p>{current.highlight}</p><p className="visual-note">Select a numbered point or a feature below. The detailed explanation updates with your selection.</p><span className="visual-caption">Example positioning only · not detected landmarks</span></div></div>
+
         {/* Feature Tabs Selector */}
         <div className="mt-10 flex flex-wrap gap-2 pb-2">
           {ZONES.map((zone) => {
@@ -197,6 +200,7 @@ export function QovesAssessmentsExplorer() {
               <button
                 key={zone.id}
                 onClick={() => setActiveId(zone.id)}
+                aria-pressed={isActive}
                 className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
                   isActive
                     ? "bg-[#182327] text-white shadow-xs"

@@ -11,5 +11,5 @@ const AssessmentShell = dynamic(() => import("@/components/assessment/Assessment
 });
 
 export default function AssessmentPage() {
-  return <AssessmentShell />;
+  return <div className="moga-workflow"><AssessmentShell /></div>;
 }

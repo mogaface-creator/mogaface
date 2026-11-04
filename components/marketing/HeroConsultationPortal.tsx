@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import { OptionalVideoUpload } from "./OptionalVideoUpload";
 import { BeforeAfterToggle } from "./BeforeAfterToggle";
 
 interface SimulationResult {
@@ -418,6 +419,7 @@ export function HeroConsultationPortal() {
                     </div>
                   </div>
                 )}
+                <OptionalVideoUpload />
               </div>
 
               {/* Right Column: Clinical Parameters & Trigger */}

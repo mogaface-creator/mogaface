@@ -1,74 +1,14 @@
-import React from "react";
-
-const STEPS = [
-  {
-    step: "01",
-    title: "Upload Your Photos",
-    body: "Take or upload photos of your face from your phone or camera. We guide you through simple lighting and angle instructions to ensure pristine measurement accuracy.",
-    badge: "Takes 2 Minutes",
-  },
-  {
-    step: "02",
-    title: "160+ Facial Assessments",
-    body: "Our models place 512 anatomical landmarks, calculate your facial thirds, measure bilateral symmetry, evaluate dermal micro-pores, and identify your highest potential features.",
-    badge: "Sub-Millimeter Analysis",
-  },
-  {
-    step: "03",
-    title: "Get Your Protocol & Visuals",
-    body: "Receive your comprehensive non-surgical transformation protocol, realistic identity-locked before/after previews, and your 2-Page Executive Clinical Consultation Dossier.",
-    badge: "Compounding Non-Surgical Results",
-  },
-];
-
-export function QovesHowItWorks() {
-  return (
-    <section id="how-it-works" className="py-20 sm:py-28 bg-[#ffffff] border-b border-[#e6ebed]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#71858c]">
-            Simple 3-Step Process
-          </p>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-medium tracking-tight text-[#141e22] leading-[1.12]">
-            How it works
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#556970]">
-            From initial photo upload to your personalized facial transformation plan.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {STEPS.map((step, idx) => (
-            <div
-              key={idx}
-              className="relative rounded-2xl border border-[#e2e7e9] bg-[#fafcfc] p-8 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="font-mono text-2xl font-bold text-[#141e22]">
-                    {step.step}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#73888f] px-2.5 py-1 rounded-full bg-[#edf2f4]">
-                    {step.badge}
-                  </span>
-                </div>
-                <h3 className="text-lg font-medium text-[#141e22]">
-                  {step.title}
-                </h3>
-                <p className="mt-3 text-sm text-[#55686f] leading-relaxed">
-                  {step.body}
-                </p>
-              </div>
-
-              <div className="mt-8 pt-4 border-t border-[#e8eded]">
-                <span className="text-xs font-semibold text-[#141e22]">
-                  Step {idx + 1} of 3
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+"use client";
+import { useState, type PointerEvent } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import "./how-it-works-cards.css";
+const STEPS=[{title:"Upload Your Photos",body:"Take or upload photos of your face from your phone or camera. We guide you through simple lighting and angle instructions to ensure pristine measurement accuracy.",badge:"Takes 2 Minutes"},{title:"160+ Facial Assessments",body:"Our models place 512 anatomical landmarks, calculate your facial thirds, measure bilateral symmetry, evaluate dermal micro-pores, and identify your highest potential features.",badge:"Sub-Millimeter Analysis"},{title:"Get Your Protocol & Visuals",body:"Receive your comprehensive non-surgical transformation protocol, realistic identity-locked before/after previews, and your 2-Page Executive Clinical Consultation Dossier.",badge:"Compounding Non-Surgical Results"}];
+function ProcessCard({index}:{index:number}){
+ const [progress,setProgress]=useState(.35);const [pinned,setPinned]=useState(false);const step=STEPS[index];const percentage=Math.round(progress*100);
+ function move(event:PointerEvent<HTMLButtonElement>){if(event.pointerType==="touch")return;const box=event.currentTarget.getBoundingClientRect();setProgress(Math.max(0,Math.min(1,(event.clientX-box.left)/box.width)));}
+ return <article className={`process-editorial-card ${pinned?"is-pinned":""}`}><button type="button" className="process-live-preview" aria-label={`Explore ${step.title} preview`} aria-pressed={pinned} onClick={()=>{setPinned(!pinned);setProgress(pinned?.35:1);}} onPointerMove={move} onPointerLeave={()=>{if(!pinned)setProgress(.35);}}>
+ {index===0?<><span className="process-upload-panel"><span className="process-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M12 16V4m-4 4 4-4 4 4M5 15v5h14v-5"/></svg></span><span>Take or upload your photos</span><span className="process-mini-bar"><i style={{width:`${percentage}%`}}/></span></span><span className="process-photo-strip">{["female_studio_before.webp","male_jawline_before.webp","female_glow_before.webp","male_lifestyle_before.webp"].map((src,i)=><span key={src} className={i===Math.min(3,Math.floor(progress*4))?"selected":""}><Image src={`/images/transformations/${src}`} fill alt="" sizes="80px"/></span>)}</span></>:index===1?<span className="process-check-stack">{["Facial proportions","Eyebrow density","Bilateral symmetry","Skin appearance","Feature relationships"].map((text,i)=><span key={text} className={i<Math.round(progress*5)?"checked":""}><span className="process-check-icon">{i+1}</span>{text}<span className="process-check-state">{i<Math.round(progress*5)?"✓":"○"}</span></span>)}</span>:<span className="process-report-sheet"><span className="process-report-title">Your Moga report<span>Illustrative preview</span></span><span className="process-report-summary"><Image src="/images/transformations/female_studio_before.webp" width={70} height={90} alt=""/><span>Feature overview<strong>{Math.round(54+progress*25)}<small> example points</small></strong><span className="process-mini-bar"><i style={{width:`${percentage}%`}}/></span></span></span><svg className="process-report-graph" viewBox="0 0 250 85" aria-hidden="true"><path d="M0 20h250M0 45h250M0 70h250"/><path d={`M0 65Q80 63 125 ${55-progress*20}T250 ${48-progress*35}`}/></svg><span className="process-report-lines"><i/><i/><i/></span></span>}
+ <span className="process-preview-caption">Interactive example · {percentage}%</span></button><div className="process-editorial-copy"><span className="process-step-index">[0{index+1}]</span><h3>{step.title}</h3><p>{step.body}</p><details><summary>{step.badge}</summary><p>Hover across the preview to explore the illustration, or tap to toggle it. This example does not upload photos or run an assessment.</p></details></div></article>;
 }
+export function QovesHowItWorks(){return <section id="how-it-works" className="process-editorial"><header><span>How it works</span><h2>How it works</h2><p>From initial photo upload to your personalized facial transformation plan.</p></header><div className="process-editorial-grid">{STEPS.map((step,index)=><ProcessCard key={step.title} index={index}/>)}</div><div className="process-editorial-action"><Link href="/assessment">Start my plan <span aria-hidden="true">↗</span></Link></div></section>}

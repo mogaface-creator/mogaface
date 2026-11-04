@@ -1,0 +1,261 @@
+/* MogaFace / Art & Anatomy. Palette sampled from the supplied brand artwork. */
+.moga-art-brand{--ivory:#faf7ef;--paper:#f3eee3;--ink:#24231f;--muted:#6d675e;--line:#31271d20;--panel:#f3eee3;--panel-raised:#ebe4d5;--teal:#245c61;--copper:#a64322;--coral:#be473b;--gold:#b18b51;--accent:var(--teal);--action:linear-gradient(110deg,#a64322,#873b27);background:var(--ivory);color:var(--ink)}
+.moga-art-brand .moga-home,.moga-art-brand .moga-hero{background:var(--ivory)}
+.moga-art-brand .moga-home>section:not(.moga-hero){background:var(--ivory);border-color:var(--line)}
+.moga-art-brand .moga-home h4,.moga-art-brand .moga-home strong{color:var(--ink)}
+.moga-art-brand .moga-home [class*="text-[#"]{color:var(--muted)}
+.moga-art-brand .moga-home :is(.text-slate-900,.text-slate-800,.text-slate-700){color:var(--ink)}
+.moga-art-brand .moga-home :is(.text-slate-600,.text-slate-500,.text-slate-400){color:var(--muted)}
+.moga-art-brand .moga-home :is(.text-violet-600,.text-violet-700,.text-indigo-600){color:var(--teal)}
+.moga-art-brand .moga-home :is(.bg-violet-50,.bg-indigo-50){background:#e7eeea}
+.moga-art-brand .moga-home :is(.bg-violet-600,.bg-violet-700){background:var(--teal);color:#fff}
+.moga-art-brand .moga-home .uppercase,.moga-art-brand .moga-home .visual-eyebrow{color:#776047}
+.moga-art-brand .moga-home>section:not(.moga-hero):before{color:#8a7660}
+.moga-art-brand :is(a,button,input,select,[tabindex]):focus-visible{outline-color:var(--teal)}
+/* Gallery-like opening: full artwork stays visible, rather than cropping the logo. */
+.moga-art-brand .moga-hero:before{background:radial-gradient(ellipse at 75% 45%,#dbb87815,transparent 60%)}
+.moga-art-brand .moga-hero-index{color:#7d6c57}
+.moga-art-brand .moga-hero-content{width:48%;padding-top:225px}
+.moga-art-brand .moga-hero h1{font-size:clamp(58px,6.4vw,92px);color:var(--ink)}
+.moga-art-brand .moga-hero h1 span{color:var(--copper)}
+.moga-art-brand .moga-hero-description{color:var(--muted)}
+.moga-art-brand .moga-hero-proof,.moga-art-brand .moga-hero-proof strong{color:#6c6357}
+.moga-art-brand .moga-proof-avatars img{border-color:var(--ivory)}
+.moga-art-brand .moga-hero-artwork{top:174px;bottom:auto;right:4%;width:46%;aspect-ratio:1;border-radius:0;overflow:visible;border:0;box-shadow:none;background:transparent}
+.moga-art-brand .moga-hero-artwork:after{display:none}
+.moga-art-brand .moga-hero-artwork>img{object-fit:contain;object-position:center;filter:none;mix-blend-mode:multiply}
+.moga-art-brand .moga-portrait-label{bottom:-32px;left:30px;right:30px;color:#746856;border-top:1px solid var(--line);padding-top:13px;font-size:9px;letter-spacing:.07em}
+.moga-art-brand .moga-portrait-label>span:last-child{color:#746856}
+.moga-art-brand .moga-live-dot{background:var(--teal);box-shadow:none}
+.moga-art-brand .moga-hero-highlights{border-color:var(--line)}
+.moga-art-brand .moga-hero-highlights p{color:var(--ink)}
+.moga-art-brand .moga-hero-highlights span{color:var(--muted)}
+.moga-art-brand .moga-hero-scroll{border-color:#2d352633;color:var(--teal)}
+.moga-art-brand .moga-pill-light,.moga-art-brand .moga-nav-cta{background:var(--action);border-color:#9f492b;box-shadow:0 7px 22px #98421c15;color:#fff}
+.moga-art-brand .moga-pill-light:hover,.moga-art-brand .moga-nav-cta:hover{box-shadow:0 9px 24px #98421c2b}
+.moga-art-brand .moga-pill-glass{background:#ffffff33;color:var(--ink);border-color:#4f412d30}
+.moga-art-brand .moga-pill-glass:hover{background:#e9e3d7}
+/* The emblem, wordmark and navigational frame use the supplied asset. */
+.moga-brand-emblem{width:46px;height:46px;object-fit:contain;flex-shrink:0;border-radius:50%;background:#faf7ef}
+.moga-art-brand .moga-nav{background:#faf7efe8;color:var(--ink);border-color:#31271d1a;backdrop-filter:blur(20px)}
+.moga-art-brand .moga-nav.is-scrolled{background:#f5f0e6f5;border-color:#31271d26;box-shadow:0 14px 40px #3b302315}
+.moga-art-brand .moga-wordmark{color:var(--ink);gap:11px}
+.moga-art-brand .moga-brand-caption,.moga-art-brand .moga-desktop-nav,.moga-art-brand .moga-testing-link{color:#70675b}
+.moga-art-brand .moga-desktop-nav a:hover{color:var(--copper)}
+.moga-art-brand .moga-mobile-menu a{border-color:var(--line)}
+/* Alternating paper and ink chapters make the artwork's colours feel intentional. */
+.moga-art-brand .moga-home>div:first-of-type{background:#f0ebdf;border-color:var(--line)}
+.moga-art-brand .moga-home>div:first-of-type [class*="text-[#"]{color:#71685b}
+.moga-art-brand .moga-home #transformations>div>div:nth-child(2) button{color:#73695d}
+.moga-art-brand .moga-home #transformations>div>div:nth-child(2) button[aria-pressed=true]{color:var(--copper);border-color:var(--copper)}
+.moga-art-brand .moga-home #transformations img{filter:saturate(.9)}
+.moga-art-brand .moga-home #transformations .grid-cols-3{background:#eee7d9}
+.moga-art-brand .moga-home #transformations .bg-white{background:#d9e4de}
+.moga-art-brand .moga-home #transformations [class*="bg-violet-600/"]{background:#245c61e8}
+.moga-art-brand .moga-home #transformations .case-details p{color:var(--muted)}
+.moga-art-brand .moga-home #why-glowup{background:#f1ecdf}
+.moga-art-brand .moga-home .moga-analysis{background:linear-gradient(130deg,#edf0e8,#f7f3e8);border-color:var(--line)}
+.moga-art-brand .moga-home #assessments button{background:#f0eadf;border-color:#31271d26;color:#625b50}
+.moga-art-brand .moga-home #assessments button[aria-pressed=true]{background:#dfeae4;border-color:var(--teal);color:#214d50}
+.moga-art-brand .moga-home #assessments>div>div:last-child{background:#f2ede3;border-color:var(--line)}
+.moga-art-brand .moga-home .moga-portal-section{background:#ede6d8}
+.moga-art-brand .moga-home #portal{background:#faf7ef;border-color:#a7957355;box-shadow:0 20px 65px #7760400b}
+.moga-art-brand .moga-home #portal input,.moga-art-brand .moga-home #portal select{background:#fffdf8;border-color:#31271d30;color:var(--ink);color-scheme:light}
+.moga-art-brand .moga-home #portal [class*="bg-slate-50"]{background:#f0eade}
+.moga-art-brand .moga-home #portal [class*="border-dashed"]:hover{background:#f1e9db;border-color:#ae7242}
+.moga-art-brand .moga-home #how-it-works .font-mono{color:var(--copper)}
+.moga-art-brand .moga-home .moga-value .grid>div{background:#f1ecdf;border-color:var(--line)}
+.moga-art-brand .moga-home #faq button>span:first-child{color:var(--ink)}
+.moga-art-brand .moga-home #faq button:hover>span:first-child{color:var(--copper)}
+.moga-art-brand .moga-home #faq button>span:last-child{background:#e6dccb;color:var(--copper)}
+/* Visual explorers retain their interactions in an ivory/teal finish. */
+.moga-art-brand .visual-heading p:not(.visual-eyebrow),.moga-art-brand .visual-story>p,.moga-art-brand .feature-map-intro p,.moga-art-brand .technology-detail p{color:var(--muted)}
+.moga-art-brand .visual-switch{background:#eee8dc;border-color:var(--line)}
+.moga-art-brand .visual-switch button{color:#6d6355}
+.moga-art-brand .visual-switch button[aria-pressed=true]{background:var(--teal);color:#fff;box-shadow:none}
+.moga-art-brand .visual-stage,.moga-art-brand .feature-map{background:linear-gradient(130deg,#f5f0e5,#ede9dc);border-color:var(--line)}
+.moga-art-brand .visual-caption{color:#6d675e}
+.moga-art-brand .visual-note{border-color:var(--teal);color:#6d675e}
+.moga-art-brand .visual-option-list>button{border-color:var(--line);color:#71675a}
+.moga-art-brand .visual-option-list>button>span:first-child{color:#916b48}
+.moga-art-brand .visual-option-list>button small{color:#786c5d}
+.moga-art-brand .visual-option-list>button[aria-pressed=true]{color:var(--teal);border-color:#245c6166}
+.moga-art-brand .visual-details{border-color:var(--line);color:#73695c}
+.moga-art-brand .visual-details summary{color:var(--teal)}
+.moga-art-brand .visual-details p{color:#73695c}
+.moga-art-brand .face-illustration{border-color:#245c613b}
+.moga-art-brand .face-illustration>svg{stroke:#bce7df;filter:drop-shadow(0 0 3px #143f40)}
+.moga-art-brand .face-illustration .face-point{fill:#e8fcf2;stroke:#245c61}
+.moga-art-brand .orbit-ring{border-color:#245c6133;background:radial-gradient(circle,#b5c4b118,transparent 70%)}
+.moga-art-brand .orbit-ring.inner{border-color:#245c6126}
+.moga-art-brand .orbit-centre{background:#e0e7d9;border-color:#245c6155;box-shadow:none}
+.moga-art-brand .orbit-centre span{color:#526b5f}
+.moga-art-brand .orbit-node{color:#6a6659}
+.moga-art-brand .orbit-node>span{border-color:#245c6144;background:#f7f3e8;color:var(--teal)}
+.moga-art-brand .orbit-node[aria-pressed=true]{color:var(--teal)}
+.moga-art-brand .orbit-node[aria-pressed=true]>span{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 0 0 4px #245c6112}
+.moga-art-brand .report-viewer,.moga-art-brand .report-paper{background:#e4dfd3;border-color:#31271d25;scrollbar-color:#9b8564 #e4dfd3}
+.moga-art-brand .report-toolbar{border-color:var(--line);color:#6d5f4c}
+.moga-art-brand .report-toolbar button{border-color:#31271d35}
+.moga-art-brand .research-topics button{color:#6e6558;border-color:var(--line)}
+.moga-art-brand .research-topics small{color:#7d7263}
+.moga-art-brand .research-topics button[aria-pressed=true]{background:linear-gradient(90deg,#b37a4020,transparent);color:var(--copper);border-color:#a6432266}
+.moga-art-brand .research-panel{border-color:var(--line);background:#f8f4ea}
+.moga-art-brand .research-art>span{color:var(--copper)}
+.moga-art-brand .research-orbit{border-color:#91623844}
+.moga-art-brand .research-art i{background:var(--teal);box-shadow:none}
+.moga-art-brand .feature-map-portrait>button>span{background:#173f3dd9;border-color:#b4dbcc88;color:#f1fcf5}
+.moga-art-brand .feature-map-portrait>button[aria-pressed=true]>span{background:#ab4e2e;border-color:#f9e6c5;box-shadow:0 0 0 5px #ab4e2e30}
+.moga-art-brand .process-rail{border-color:var(--line)}
+.moga-art-brand .process-rail button{color:#71675a}
+.moga-art-brand .process-rail button>span{border-color:#31271d35}
+.moga-art-brand .process-rail button[aria-pressed=true]{color:var(--teal);border-color:var(--teal)}
+.moga-art-brand .process-rail button[aria-pressed=true]>span{background:var(--teal);color:#fff;border-color:var(--teal)}
+.moga-art-brand .process-preview{background:radial-gradient(ellipse,#b37a4014,transparent 70%);border-color:var(--line)}
+.moga-art-brand .process-badge{border-color:#a8784d44;color:#7b5133}
+.moga-art-brand .process-start{color:var(--teal)}
+.moga-art-brand .flow-report-badge{border-color:#245c6144;background:#e1e8ddef}
+.moga-art-brand .flow-report-badge span{border-color:#245c6155;color:var(--teal)}
+.moga-art-brand .technology-console{background:#f0ebdf;border-color:var(--line)}
+.moga-art-brand .technology-nodes:before{background:#245c6144}
+.moga-art-brand .technology-nodes>button{color:#766959}
+.moga-art-brand .technology-nodes small{color:#8b7557}
+.moga-art-brand .technology-symbol{background:#e9e4d6;border-color:#245c6133}
+.moga-art-brand .technology-symbol svg{stroke:var(--teal)}
+.moga-art-brand .technology-nodes>button[aria-pressed=true]{color:var(--teal)}
+.moga-art-brand .technology-nodes>button[aria-pressed=true] .technology-symbol{background:#dbe6dd;border-color:var(--teal);box-shadow:none}
+.moga-art-brand .technology-detail{border-color:var(--line)}
+.moga-art-brand .technology-pagination button:before{background:#c9bdab}
+.moga-art-brand .technology-pagination button[aria-pressed=true]:before{background:var(--teal)}
+.moga-art-brand .benefit-connector{border-color:#245c6140}
+.moga-art-brand .benefit-centre{background:#dbe6dd;border-color:#245c614d;color:var(--teal);box-shadow:none}
+.moga-art-brand .benefit-point{background:#f7f3e8;border-color:#245c6133;color:var(--teal)}
+/* An ink footer anchors the warm paper composition. */
+.moga-art-brand>footer{--ink:#f7efdf;background:#202b2a;border-color:#a58b5c33;color:#e7deca}
+.moga-art-brand>footer [class*="text-[#"]{color:#c4c0ae}
+.moga-art-brand>footer [class*="bg-[#"]{background:#34423d}
+.moga-art-brand>footer span.font-sans{color:#f7efdf}
+@media(max-width:1100px) and (min-width:801px){.moga-art-brand .moga-hero-artwork{width:46%;top:220px;right:2%}.moga-art-brand .moga-hero h1{font-size:76px}}
+@media(max-width:800px){.moga-art-brand .moga-hero{padding-top:145px}.moga-art-brand .moga-hero-content{width:100%;padding-top:0}.moga-art-brand .moga-hero h1{font-size:clamp(58px,12vw,84px)}.moga-art-brand .moga-hero-artwork{position:relative;inset:auto;width:calc(100% + 24px);height:auto;aspect-ratio:1;margin:25px -12px 30px}.moga-art-brand .moga-portrait-label{bottom:-20px;left:15px;right:15px;font-size:8px}.moga-art-brand .moga-hero-highlights{margin-top:25px}.moga-art-brand .moga-nav .moga-brand-emblem{width:40px;height:40px}.moga-art-brand .moga-hero-index{top:110px}}
+/* Qoves-style photographic opening; the supplied emblem stays in the navigation. */
+.moga-art-brand .moga-hero{height:100svh;min-height:820px;max-height:1080px;background:#326d70;overflow:hidden;color:#fff}
+.moga-art-brand .moga-hero-photo{position:absolute;top:0;bottom:0;right:0;width:70%;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none;z-index:-2;background:#467a7b;overflow:hidden}
+.moga-art-brand .moga-hero-photo>img{object-fit:cover;object-position:55% 35%;filter:saturate(.7);mix-blend-mode:normal}
+.moga-art-brand .moga-hero-photo:after{display:block;content:"";position:absolute;inset:0;background:linear-gradient(90deg,#326d70,transparent 38%)}
+.moga-art-brand .moga-hero-shade{display:block;position:absolute;inset:0;background:linear-gradient(90deg,#285d62f5 0%,#326d70d9 30%,#326d7055 58%,#326d701a 100%),linear-gradient(0deg,#214e53b3,transparent 50%);z-index:-1}
+.moga-art-brand .moga-hero-content{padding-top:clamp(210px,24vh,290px);margin-left:4.8%;width:46%;max-width:620px}
+.moga-art-brand .moga-hero h1{color:#fff;font-size:clamp(48px,4.4vw,64px);line-height:1.07;letter-spacing:-.055em}
+.moga-art-brand .moga-hero h1 span{color:#d0e0dc;font-family:inherit;font-style:normal;font-weight:400;letter-spacing:-.055em}
+.moga-art-brand .moga-hero h1 br{display:none}
+.moga-art-brand .moga-hero-description{color:#e1eae5;font-size:16px;max-width:425px;margin-top:30px}
+.moga-art-brand .moga-hero-proof,.moga-art-brand .moga-hero-proof strong{color:#f0f4eb;font-size:13px}
+.moga-art-brand .moga-proof-avatars{display:none}
+.moga-art-brand .moga-hero-index{top:140px;left:4.8%;color:#d0ded7;font-size:9px}
+.moga-art-brand .moga-hero-actions .moga-pill-light{background:#faf4e7;color:#143f44;border-color:#faf4e7;box-shadow:none;font-size:14px}
+.moga-art-brand .moga-hero-actions .moga-pill-glass{background:#e1ebe428;border-color:#ffffff20;color:#fff}
+.moga-art-brand .moga-hero-highlights{left:4.8%;right:auto;bottom:8%;max-width:660px;width:55%;padding-top:0;border:0;gap:20px}
+.moga-art-brand .moga-hero-highlights>div{border-color:#ffffff30}
+.moga-art-brand .moga-hero-highlights p{color:#f5f6ef;font-size:13px}
+.moga-art-brand .moga-hero-highlights span{color:#d0ded7;font-size:11px}
+.moga-art-brand .moga-hero-scroll{color:#f2f4e9;border-color:#ffffff40;bottom:8%;right:4.8%}
+.moga-art-brand .moga-nav:not(.is-scrolled){background:transparent;border-color:transparent;color:#fff;backdrop-filter:none}
+.moga-art-brand .moga-nav:not(.is-scrolled) .moga-wordmark,.moga-art-brand .moga-nav:not(.is-scrolled) .moga-brand-caption,.moga-art-brand .moga-nav:not(.is-scrolled) .moga-desktop-nav,.moga-art-brand .moga-nav:not(.is-scrolled) .moga-testing-link{color:#f5f3e9}
+.moga-art-brand .moga-nav .moga-brand-emblem{height:40px;width:40px;border-radius:50%}
+.moga-art-brand .moga-nav .moga-nav-cta{background:#faf4e7;border-color:#faf4e7;color:#17494d;box-shadow:none}
+.hero-anatomy-profile{position:absolute;left:-35px;bottom:16%;width:200px;height:270px;opacity:.13;pointer-events:none;color:#d6e9e2;z-index:-1}
+.anatomy-diagram{width:100%;height:100%;color:inherit}
+.moga-home>section.anatomy-overview{display:grid;grid-template-columns:1fr 1fr;gap:35px;padding:65px max(40px,calc((100% - 1216px)/2));background:#285e62;border-color:#ffffff20;color:#f5f0e4}
+.moga-home>section.anatomy-overview:before{display:none}
+.moga-home>section.anatomy-overview>.anatomy-panel{display:flex;align-items:center;gap:26px;border:1px solid #d5e4dc3b;border-radius:12px;padding:26px;max-width:none}
+.anatomy-panel>.anatomy-diagram{width:165px;height:235px;flex-shrink:0;color:#cce0d7}
+.moga-art-brand .anatomy-panel h3{color:#f5f0e4!important;font-size:30px;line-height:1.12;margin:16px 0;font-weight:400}
+.anatomy-panel span{font-size:9px;letter-spacing:.14em;color:#cadfd4}
+.anatomy-panel p{font-size:12px;line-height:1.7;color:#d7e4dc;max-width:240px}
+.anatomy-footnote{grid-column:1/-1;text-align:center;font-size:10px;color:#bed2c9;margin-top:-10px}
+/* Optional local video intake: no change to the image-generation contract. */
+.optional-video{margin-top:26px;padding-top:24px;border-top:1px solid #31271d26}
+.video-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.moga-art-brand .optional-video h3{font-size:21px;margin-top:8px;line-height:1.25}
+.optional-video>p{font-size:12px;color:#6d675e;margin-top:12px;line-height:1.7}
+.video-optional-badge{font-size:10px;color:#245c61;border:1px solid #245c6144;border-radius:99px;padding:6px 10px}
+.video-dropzone{margin-top:18px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 18px;border:1px dashed #245c6166;border-radius:12px;background:#e7eeea66;color:#245c61;min-height:155px}
+.video-dropzone:hover{background:#e1e9e2;border-color:#245c61}
+.video-dropzone strong{font-size:13px;color:#245c61!important;font-weight:500}
+.video-dropzone span{font-size:10px;color:#6d675e}
+.video-preview{margin-top:18px}.video-preview video{width:100%;max-height:330px;object-fit:contain;background:#143f44;border-radius:10px}
+.video-preview>div{display:flex;justify-content:space-between;gap:15px;margin-top:10px;font-size:11px;color:#6d675e}
+.video-preview>div>span{overflow-wrap:anywhere;min-width:0}.video-preview button{flex-shrink:0;text-decoration:underline;color:#a64322}
+.video-check{margin-top:15px;border-color:#245c6144!important;color:#245c61!important;min-height:44px;font-size:12px}
+.video-check:disabled{opacity:.6;cursor:not-allowed}
+.video-error{color:#9f3620!important;font-size:12px}
+.video-result{margin-top:16px;border:1px solid #245c6133;border-radius:10px;padding:16px;background:#e8eee5;color:#245c61}
+.video-result strong{color:#245c61!important;font-size:13px}.video-result p,.video-result li{font-size:11px;line-height:1.7}.video-result ul{margin-top:8px}
+.optional-video>.video-privacy{font-size:10px;color:#7b7365;line-height:1.6}
+@media(max-width:1100px) and (min-width:801px){.moga-art-brand .moga-hero h1{font-size:55px}.anatomy-panel>.anatomy-diagram{width:130px;height:210px}.moga-home>section.anatomy-overview>.anatomy-panel{padding:20px;gap:18px}.moga-art-brand .anatomy-panel h3{font-size:26px}}
+@media(max-width:800px){.moga-art-brand .moga-hero{height:100svh;min-height:850px;max-height:1050px;display:block;padding:0}.moga-art-brand .moga-hero-photo{position:absolute;inset:0;width:100%;height:100%;margin:0;aspect-ratio:auto;z-index:-2}.moga-art-brand .moga-hero-photo>img{object-position:55% 25%}.moga-art-brand .moga-hero-photo:after{display:none}.moga-art-brand .moga-hero-shade{background:linear-gradient(0deg,#17474df5 0%,#245c61e0 27%,#245c611a 75%)}.moga-art-brand .moga-hero-content{position:absolute;left:24px;right:24px;bottom:160px;width:auto;max-width:none;margin:0;padding:0}.moga-art-brand .moga-hero h1{font-size:43px;max-width:370px;line-height:1.08}.moga-art-brand .moga-hero-proof{font-size:12px;margin-bottom:20px}.moga-art-brand .moga-hero-description{font-size:14px;max-width:340px;margin-top:22px}.moga-art-brand .moga-hero-actions{margin-top:24px}.moga-art-brand .moga-hero-actions .moga-pill-light{font-size:12px}.moga-art-brand .moga-hero-highlights{position:absolute;left:24px;right:24px;bottom:35px;width:auto;max-width:none;padding:0;margin:0;gap:12px}.moga-art-brand .moga-hero-highlights p{font-size:11px}.moga-art-brand .moga-hero-highlights span{font-size:10px}.moga-art-brand .moga-hero-index{display:none}.hero-anatomy-profile{display:none}.moga-home>section.anatomy-overview{grid-template-columns:1fr;padding:40px 24px;gap:20px}.moga-home>section.anatomy-overview>.anatomy-panel{padding:22px;gap:22px}.anatomy-panel>.anatomy-diagram{width:120px;height:200px}.moga-art-brand .anatomy-panel h3{font-size:25px}.anatomy-panel p{font-size:11px}}
+.moga-art-brand .moga-home>section.anatomy-overview{background:#285e62;color:#f5f0e4;border-color:#ffffff20}
+/* Quiet comparison controls and a continuous publication strip. */
+.moga-art-brand .moga-home #transformations .transformation-layout{display:grid;grid-template-columns:minmax(260px,.82fr) minmax(0,1.18fr);column-gap:56px;row-gap:28px;align-items:start;max-width:1328px;padding-inline:40px}
+.moga-art-brand .moga-home #transformations .case-intro{grid-column:1;grid-row:1;max-width:430px;margin:0}
+.moga-art-brand .moga-home #transformations .case-intro h2{margin:20px 0 24px;font-size:clamp(36px,3.5vw,52px);line-height:1.06}
+.moga-art-brand .moga-home #transformations .case-intro h2>span{color:#809a98}
+.moga-art-brand .moga-home #transformations .case-intro>p:last-child{max-width:370px;color:#6d675e;font-size:14px;line-height:1.75}
+.moga-art-brand .moga-home #transformations .case-filters{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:0;align-self:start;margin:10px 0 0;max-width:360px}
+.moga-art-brand .moga-home #transformations .case-filters button{display:flex;align-items:center;gap:20px;min-height:52px;padding:14px 0;text-align:left;border:0;border-bottom:1px solid #31271d12;border-radius:0;background:transparent;box-shadow:none;color:#716b60;font-size:12px;font-weight:400;letter-spacing:0;white-space:nowrap}
+.case-filter-index{font:9px monospace;color:#9b9284}.case-filter-arrow{margin-left:auto;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
+.moga-art-brand .moga-home #transformations .case-filters button:hover,.moga-art-brand .moga-home #transformations .case-filters button[aria-pressed=true]{color:#245c61;background:transparent;border-bottom-color:#245c6155}
+.case-filters button[aria-pressed=true] .case-filter-arrow,.case-filters button:hover .case-filter-arrow{opacity:1;transform:none}
+.moga-art-brand .moga-home #transformations .case-gallery{grid-column:2;grid-row:1 / span 2;min-width:0;margin:0;padding:0;display:block}
+.case-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.case-card{min-width:0;margin:0;padding:0;border:0;background:transparent}
+.comparison{width:100%;min-width:0}
+.comparison-frame{position:relative;width:100%;overflow:hidden;background:#bccac8;border:0;isolation:isolate;cursor:ew-resize}
+.moga-art-brand .moga-home #transformations .comparison-frame{border-radius:7px;box-shadow:none;border:0}
+.comparison-image{object-fit:cover;object-position:center;pointer-events:none;user-select:none}
+.comparison-before{position:absolute;inset:0;pointer-events:none}
+.comparison-labels{position:absolute;inset:15px 14px auto;display:flex;justify-content:space-between;gap:14px;pointer-events:none;z-index:2}
+.comparison-labels>span{font-size:9px;font-weight:500;letter-spacing:.035em;text-transform:uppercase;color:white;text-shadow:0 1px 8px #0009;white-space:nowrap}
+.comparison-divider{position:absolute;top:0;bottom:0;width:1px;background:#ffffffe6;z-index:3;pointer-events:none;box-shadow:none}
+.comparison-divider>span{position:absolute;left:0;top:50%;transform:translate(-50%,-50%);height:25px;width:25px;display:grid;place-items:center;border:1px solid #fff;border-radius:50%;color:white;background:#ffffff26;backdrop-filter:blur(4px);box-shadow:0 1px 5px #0002;transition:background .2s}
+.comparison-frame:hover .comparison-divider>span{background:#245c6180}
+.comparison-input{position:absolute;inset:0;z-index:4;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:0;opacity:0;cursor:ew-resize;touch-action:pan-y;appearance:auto}
+.comparison-frame:focus-within{outline:2px solid #245c61;outline-offset:4px}
+.case-caption{position:relative;padding:16px 65px 0 0;min-height:95px}
+.moga-art-brand .moga-home #transformations .case-caption h3{font-size:13px;line-height:1.5;letter-spacing:-.02em;margin:0;font-weight:500!important}
+.case-caption h3>span{font-size:11px;color:#8c8273;font-weight:400}
+.case-caption>div>p{font-size:10px;color:#797062;line-height:1.6;margin-top:4px;font-weight:400;max-width:240px}
+.case-more{margin-right:-65px}
+.case-more>summary{position:absolute;top:12px;right:0;display:flex;align-items:center;gap:8px;min-height:44px;font-size:10px;color:#426965;cursor:pointer;list-style:none;white-space:nowrap}
+.case-more>summary::-webkit-details-marker{display:none}
+.case-more>summary>span{display:grid;place-items:center;width:17px;height:17px;font-size:13px;line-height:1;transition:transform .2s;border:1px solid #245c6126;border-radius:50%}
+.case-more[open]>summary>span{transform:rotate(45deg)}
+.case-expanded{border-top:1px solid #31271d18;padding-top:14px;margin-top:14px}
+.case-expanded>p{font-size:11px;color:#6d675e;line-height:1.75}
+.case-expanded dl{margin-top:14px}.case-expanded dl>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #31271d0f;font-size:10px;line-height:1.5}.case-expanded dt{color:#847965}.case-expanded dd{color:#315956;text-align:right}
+.case-expanded .case-disclaimer{font-size:9px;margin-top:12px;color:#8e8270}
+.case-pagination{display:flex;align-items:center;justify-content:space-between;padding-top:12px;margin-top:6px;border-top:1px solid #31271d18;font:10px monospace;color:#315956}
+.case-pagination>span>span{color:#a89b88}.case-pagination>div{display:flex;gap:8px}.case-pagination button{display:grid;place-items:center;width:44px;height:44px;border:1px solid #31271d26;border-radius:50%;font-size:17px;color:#245c61;background:transparent}.case-pagination button:hover:not(:disabled){background:#245c610c;border-color:#245c6155}.case-pagination button:disabled{opacity:.3;cursor:not-allowed}
+/* Duplicated equal-width groups form a seamless, constant-speed loop. */
+.moga-art-brand .moga-home>.press-strip{padding:0;background:#faf7ef;border-top:1px solid #31271d16;border-bottom:1px solid #31271d16;overflow:hidden}
+.press-strip-inner{display:flex;align-items:center;gap:28px;width:100%;max-width:1400px;margin:auto;padding:0 36px;min-height:100px}
+.press-heading{flex-shrink:0;white-space:nowrap;color:#28565a;font-size:12px;letter-spacing:-.02em}
+.moga-art-brand .moga-home .press-viewport{flex:1;min-width:0;overflow:hidden;opacity:1;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.moga-art-brand .moga-home .press-track{display:flex;width:max-content;gap:0;opacity:1;animation:publication-scroll 42s linear infinite;will-change:transform}
+.press-group{display:flex;align-items:center;flex:none;gap:52px;padding:0 26px;margin:0;list-style:none}
+.press-group li{flex:none;white-space:nowrap;color:#8aa3a4;line-height:1.2;user-select:none}
+.press-group .press-serif{font-family:Georgia,serif;font-size:21px;font-weight:700;letter-spacing:-.06em}
+.press-group .press-gothic{font-family:Georgia,serif;font-size:21px;font-weight:700;font-style:italic;letter-spacing:-.04em}
+.press-group .press-heavy{font-family:Arial,sans-serif;font-size:26px;font-weight:900;letter-spacing:-.08em}
+.press-group .press-sans{font-family:Arial,sans-serif;font-size:15px;font-weight:800;letter-spacing:-.05em}
+.press-group .press-small{font-size:11px;font-weight:600;letter-spacing:.03em;max-width:105px;white-space:normal}
+.press-group .press-condensed{font-family:Impact,'Arial Narrow',sans-serif;font-size:15px;letter-spacing:-.025em}
+.press-group .press-mono{font-family:monospace;font-size:22px;font-weight:700;letter-spacing:.05em}
+.press-group .press-italic{font-family:Georgia,serif;font-size:15px;font-weight:800;font-style:italic;letter-spacing:-.05em}
+.press-pause{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;border:1px solid #245c6118;border-radius:50%;color:#7b9999;background:transparent}
+.press-pause:hover{background:#245c6108;color:#245c61}
+.press-strip:hover .press-track,.press-strip:focus-within .press-track,.press-strip[data-paused=true] .press-track{animation-play-state:paused}
+@keyframes publication-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(max-width:1000px){.moga-art-brand .moga-home #transformations .transformation-layout{grid-template-columns:minmax(230px,.8fr) minmax(0,1.2fr);gap:28px;padding-inline:28px}.case-grid{gap:14px}.comparison-labels{inset:12px 10px auto}.comparison-labels>span{font-size:8px}.case-caption{padding-right:58px}.case-more{margin-right:-58px}}
+@media(max-width:800px){.moga-art-brand .moga-home #transformations .transformation-layout{display:block;padding-inline:24px}.moga-art-brand .moga-home #transformations .case-intro{max-width:550px}.moga-art-brand .moga-home #transformations .case-filters{flex-direction:row;max-width:none;gap:22px;margin:24px 0;overflow:auto;white-space:nowrap;padding:0 0 8px}.moga-art-brand .moga-home #transformations .case-filters button{min-height:44px;gap:0;font-size:11px;flex-shrink:0;padding:10px 0}.case-filter-index,.case-filter-arrow{display:none}.case-grid{gap:16px}.moga-art-brand .moga-home #transformations .comparison-frame{border-radius:6px}.case-caption{padding:12px 0 0;min-height:110px}.case-more{margin-right:0}.case-more>summary{position:static;justify-content:flex-start;min-height:40px}.moga-art-brand .moga-home #transformations .case-caption h3{font-size:12px}.case-caption>div>p{font-size:10px}.comparison-labels>span{font-size:7px}.comparison-labels{inset:11px 8px auto;gap:8px}.comparison-divider>span{height:23px;width:23px}.case-expanded{margin-top:0}.press-strip-inner{padding-inline:20px;gap:16px;min-height:80px}.press-heading{font-size:11px}.press-group{gap:34px;padding-inline:17px}.press-pause{width:34px;height:44px;border:0}.case-pagination{margin-top:16px}}
+@media(max-width:430px){.case-grid{grid-template-columns:minmax(0,1fr)}.moga-art-brand .moga-home #transformations .comparison-frame{aspect-ratio:4/4.7}.case-caption{min-height:85px;padding-right:65px}.case-more{margin-right:-65px}.case-more>summary{position:absolute;top:7px;right:0}.comparison-labels>span{font-size:9px}.case-card+.case-card{margin-top:14px}}
+@media(prefers-reduced-motion:reduce){.moga-art-brand .moga-home .press-track{animation:none;transform:none;will-change:auto}.press-group[aria-hidden=true]{display:none}.moga-art-brand .moga-home .press-viewport{overflow:auto;mask-image:none}.press-pause{display:none}.case-filter-arrow,.comparison-divider>span,.case-more>summary>span{transition:none}}

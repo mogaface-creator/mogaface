@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Cormorant_Garamond, Playfair_Display, Cinzel, DM_Sans, Josefin_Sans } from "next/font/google";
 import "./globals.css";
+import "./moga-workflow.css";
+import "./palette-2.css";
+import "./palette-3.css";
+import "./qoves-reference.css";
+import palette from "@/config/palette.json";
 
 // Brand System v1.0 (Clinic Next Face brand guide, applied to MogaFace) — five
 // intentional typographic roles, never one font everywhere. See globals.css's
@@ -54,7 +59,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="en" data-moga-palette={palette.active}
       className={`${geistMono.variable} ${cormorantGaramond.variable} ${playfairDisplay.variable} ${cinzel.variable} ${dmSans.variable} ${josefinSans.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">{children}</body>

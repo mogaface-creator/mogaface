@@ -13,7 +13,7 @@ const INCLUDED_BENEFITS = [
 
 export function ValueComparison() {
   return (
-    <section className="border-b border-[#e6ebed] bg-[#ffffff] py-20 sm:py-28">
+    <section className="moga-value border-b border-[#e6ebed] bg-[#ffffff] py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#71858c]">
@@ -41,6 +41,7 @@ export function ValueComparison() {
                 </span>
               </div>
 
+              <details className="visual-details"><summary>Explore the traditional approach</summary>
               <ul className="mt-8 space-y-4">
                 {[
                   "3–6 week waiting list just for an initial verbal consultation",
@@ -57,6 +58,7 @@ export function ValueComparison() {
                   </li>
                 ))}
               </ul>
+              </details>
             </div>
 
             <div className="mt-8 pt-4 border-t border-[#e8eded] text-xs text-[#73888f]">
@@ -81,6 +83,8 @@ export function ValueComparison() {
                 </span>
               </div>
 
+              <div className="benefit-constellation" aria-hidden="true"><div className="benefit-connector"/><span className="benefit-centre">MOGA</span>{["Analysis","Protocol","Scores","Visuals","Dossier","Care","Privacy"].map((label,i)=><span className={`benefit-point benefit-point-${i}`} key={label}>{label}</span>)}</div>
+              <details className="visual-details"><summary>Explore all {INCLUDED_BENEFITS.length} included benefits</summary>
               <ul className="mt-8 space-y-3.5">
                 {INCLUDED_BENEFITS.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-[#182327]">
@@ -91,6 +95,7 @@ export function ValueComparison() {
                   </li>
                 ))}
               </ul>
+              </details>
             </div>
 
             <div className="mt-8 pt-6 border-t border-[#edf2f4]">

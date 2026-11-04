@@ -7,7 +7,7 @@ import { ResultsExperience } from "@/components/results/ResultsExperience";
 // ResultsExperience; it is not what a person completing an assessment sees.
 export default function ResultsPage() {
   return (
-    <>
+    <div className="moga-workflow">
       <Header />
       <main className="flex-1">
         <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
@@ -15,6 +15,6 @@ export default function ResultsPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

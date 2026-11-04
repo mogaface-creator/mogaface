@@ -1,0 +1,11 @@
+html[data-moga-palette] .moga-art-brand .moga-home>section#facial-studies.refined-anatomy{width:100%;max-width:none;margin-inline:0;box-sizing:border-box;padding:72px max(28px,calc((100% - 1360px)/2));border:0;gap:32px;--ink:#fff;background:radial-gradient(ellipse at 25% 0,#9bb5b326,transparent 65%),#5d767e;color:#fff}
+html[data-moga-palette] .moga-art-brand .moga-home>section#facial-studies>.anatomy-panel{display:grid;grid-template-columns:minmax(170px,1.2fr) minmax(0,1fr);padding:16px 28px 16px 0;gap:8px;min-width:0;max-width:none;border:1px solid #e2eeea25;border-radius:18px;background:linear-gradient(140deg,#ffffff07,#203d470b);overflow:hidden}
+.facial-study{display:block;width:100%;height:auto;max-width:360px;margin:auto}
+#facial-studies .anatomy-panel>div{padding-block:24px}
+#facial-studies .anatomy-panel span{font-size:10px;letter-spacing:.15em;color:#d5e5e3}
+.moga-art-brand #facial-studies .anatomy-panel h3{font-size:clamp(24px,2.5vw,38px);font-weight:400;line-height:1.08;letter-spacing:-.045em;margin:22px 0;color:#fff}
+#facial-studies .anatomy-panel p{font-size:13px;line-height:1.7;color:#e1eae9;margin:0;max-width:250px}
+#facial-studies .anatomy-footnote{grid-column:1/-1;text-align:center;margin:0;color:#d5e1e1;font-size:11px}
+html[data-moga-palette="2"] .moga-art-brand .moga-home>section#facial-studies.refined-anatomy{background:radial-gradient(ellipse at 25% 0,#7c499b33,transparent 65%),#17101f}
+@media(max-width:1000px){html[data-moga-palette] .moga-art-brand .moga-home>section#facial-studies.refined-anatomy{gap:20px;padding:48px 24px}html[data-moga-palette] .moga-art-brand .moga-home>section#facial-studies>.anatomy-panel{grid-template-columns:1fr;padding:0 24px 28px;gap:0}.facial-study{max-width:280px}#facial-studies .anatomy-panel>div{padding:0 8px}#facial-studies .anatomy-panel h3 br{display:none}#facial-studies .anatomy-panel p{max-width:none}}
+@media(max-width:600px){html[data-moga-palette] .moga-art-brand .moga-home>section#facial-studies.refined-anatomy{grid-template-columns:1fr;padding:40px 20px}#facial-studies .anatomy-panel h3{font-size:30px}.facial-study{max-width:300px}}

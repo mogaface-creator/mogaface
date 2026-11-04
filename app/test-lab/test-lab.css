@@ -1,0 +1,23 @@
+/* Route-specific treatment, scoped so Palette 1 remains available. */
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab{background:#060509;color:#f4f0ff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab header{background:#0d0915ed;color:#f4f0ff;border-color:#b99be52b}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.bg-white,.bg-white\/90,.bg-slate-50,.bg-slate-100){background:#100c18;color:#eee7f7;border-color:#b99be52b}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab [class*="bg-slate-50/"]{background:#0d0915}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.text-slate-900,.text-slate-800,.text-slate-700){color:#f4f0ff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.text-slate-600,.text-slate-500,.text-slate-400){color:#bdb2ce}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab [class*="border-slate"]{border-color:#b99be52b}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(input:not([type=checkbox]),select,textarea){background:#0a0711;color:#f4f0ff;border-color:#b99be53b;color-scheme:dark}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab input::placeholder{color:#92859f}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(input,select,textarea,button,a):focus-visible{outline:2px solid #bb94ff;outline-offset:3px}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab input[type=checkbox]{accent-color:#a970ff;color-scheme:dark}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.bg-violet-50,.bg-violet-100){background:#251338;border-color:#b99be53b}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.text-violet-600,.text-violet-700,.text-violet-800){color:#c6a3ff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab .bg-gradient-to-r{background-image:linear-gradient(110deg,#8b44eb,#6932bf);color:#fff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.bg-violet-600,.bg-violet-700){background:#7c3ccf;color:#fff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab .bg-emerald-50{background:#0d241f;border-color:#2a705f}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab .text-emerald-700{color:#87dfbd}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.bg-rose-50,.bg-rose-100){background:#2b111f;border-color:#86435e;color:#ffc1d2}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab :is(.text-rose-600,.text-rose-700,.text-rose-800){color:#ffc1d2}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab button[class*="border-dashed"]:hover{background:#1a1029;border-color:#bb94ff}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab button[class*="hover:bg-slate"]:hover{background:#251936}
+html[data-moga-palette="2"] .moga-workflow.moga-test-lab .bg-slate-900{background:#09060e;color:#dfd5ef}

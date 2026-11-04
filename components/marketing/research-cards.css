@@ -1,0 +1,46 @@
+/* Editorial research cards, matching the supplied reference's proportions. */
+html[data-moga-palette] .moga-art-brand .moga-home #why-glowup.research-cards-section{padding:90px 0 24px;max-width:calc(100% - 8vw);background:var(--ivory);border-color:var(--line)}
+.research-card-heading{padding:0 32px}
+html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-card-heading h2{max-width:800px;text-align:left;margin:0;font-size:clamp(34px,3.5vw,48px);line-height:1.12;letter-spacing:-.045em;font-weight:400}
+.research-card-heading h2 span{color:#9aaeb5}
+.research-tab-scroll{overflow-x:auto;margin-top:72px;margin-bottom:30px;max-width:100%;padding-bottom:2px;scrollbar-width:thin}
+.research-card-tabs{display:flex;align-items:center;gap:0;width:max-content;max-width:none;border:1px solid var(--line);border-radius:999px;padding:4px;background:transparent}
+.research-card-tabs button{flex-shrink:0;min-height:44px;padding:10px 22px;border:0;background:transparent;border-radius:999px;color:var(--muted);font-family:inherit;font-size:13px;font-weight:400;line-height:1.2;cursor:pointer;white-space:nowrap;transition:background .18s,color .18s}
+.research-card-tabs button[aria-selected=true]{background:#233137;color:#fff}
+.research-card-tabs button:hover:not([aria-selected=true]){background:#9aaeb514;color:var(--ink)}
+.research-card-tabs button:focus-visible,.research-card-grid:focus-visible{outline:2px solid #5d767e;outline-offset:3px}
+.research-card-grid{display:grid;grid-template-columns:repeat(var(--research-columns),minmax(0,1fr));gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);animation:research-card-enter .22s ease-out}
+.research-card-cell{padding:15px;border-right:1px solid var(--line);min-width:0}
+.research-card-cell:last-child{border-right:0}
+.research-finding-card{height:100%;min-height:355px;display:flex;flex-direction:column;justify-content:space-between;gap:64px;padding:22px 20px;background:#f9fbfb;border:1px solid #2331370d;border-radius:14px}
+html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card h3{font-size:23px;font-weight:400;line-height:1.18;letter-spacing:-.035em;color:#233137;margin:0 0 18px}
+.research-finding-card h3 span{color:#9aaeb5}
+.research-finding-card>div>p{font-size:14px;line-height:1.4;letter-spacing:-.02em;color:#233137;margin:0}
+.research-finding-card footer{display:flex;flex-direction:column;gap:8px;color:#758084;background:transparent;border:0;padding:0}
+.research-finding-card footer :is(cite,a){font-size:11px;line-height:1.5;letter-spacing:-.025em;font-style:normal;color:inherit;text-decoration:none}
+.research-finding-card footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.research-evidence-note{padding:18px 32px 0;font-size:11px;line-height:1.5;color:var(--muted);max-width:880px}
+html[data-moga-palette="1"] .research-finding-card{background:#f3eee3;border-color:#31271d15}
+html[data-moga-palette="2"] .research-finding-card{background:#100c18;border-color:#b99be52b}
+html[data-moga-palette="2"] .moga-art-brand .moga-home #why-glowup .research-finding-card h3,html[data-moga-palette="2"] .research-finding-card>div>p{color:#f4f0ff}
+html[data-moga-palette="2"] .research-card-tabs button[aria-selected=true]{background:#8b44eb}
+html[data-moga-palette="2"] .research-finding-card h3 span{color:#bb94ff}
+html[data-moga-palette="2"] .research-finding-card footer{color:#b6adc6}
+@keyframes research-card-enter{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:1100px){.research-card-heading{padding-inline:24px}.research-card-tabs button{padding-inline:17px}.research-card-cell{padding:10px}.research-finding-card{padding:20px 16px;min-height:330px}html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card h3{font-size:21px}.research-finding-card>div>p{font-size:13px}}
+@media(max-width:800px){html[data-moga-palette] .moga-art-brand .moga-home #why-glowup.research-cards-section{max-width:100%;padding-top:64px}.research-tab-scroll{margin-top:38px;margin-bottom:24px}.research-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.research-card-cell{border-bottom:1px solid var(--line)}.research-finding-card{min-height:300px}.research-evidence-note{padding-inline:24px}}
+@media(max-width:480px){.research-card-grid{grid-template-columns:minmax(0,1fr)}.research-card-cell{padding:12px 20px;border-right:0}.research-finding-card{min-height:260px;padding:22px;gap:48px}.research-card-heading{padding-inline:24px}.research-card-tabs button{padding-inline:18px}.research-finding-card>div>p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.research-card-grid{animation:none}.research-card-tabs button{transition:none}}
+/* Frosted slate glass with a pointer-positioned light reflection. */
+.research-finding-card{position:relative;isolation:isolate;transition:background .28s ease,border-color .28s ease,box-shadow .28s ease,transform .28s ease}
+.research-finding-card:before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(circle at var(--glass-x,50%) var(--glass-y,35%),#ffffff38 0%,#ffffff0a 35%,transparent 68%);transition:opacity .28s ease}
+html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card:is(:focus-visible,:has(a:focus-visible)){--ink:#fff;background:radial-gradient(ellipse at 45% 40%,#9c928a66,transparent 75%),linear-gradient(145deg,#83979fdd,#4b5e66f2);border-color:#ffffff60;box-shadow:inset 0 1px 0 #ffffff45,0 18px 30px -8px #23313755;backdrop-filter:blur(18px) saturate(1.15);transform:translateY(-3px);outline:2px solid #5d767e;outline-offset:3px}
+html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card:is(:focus-visible,:has(a:focus-visible)) :is(h3,h3 span,p,footer,cite,a){color:#fff}
+.research-finding-card:is(:focus-visible,:has(a:focus-visible)):before{opacity:1}
+@media(hover:hover) and (pointer:fine){
+ html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card:hover{--ink:#fff;background:radial-gradient(ellipse at 45% 40%,#9c928a66,transparent 75%),linear-gradient(145deg,#83979fdd,#4b5e66f2);border-color:#ffffff60;box-shadow:inset 0 1px 0 #ffffff45,0 18px 30px -8px #23313755;backdrop-filter:blur(18px) saturate(1.15);transform:translateY(-3px)}
+ html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card:hover :is(h3,h3 span,p,footer,cite,a){color:#fff}
+ .research-finding-card:hover:before{opacity:1}
+}
+html[data-moga-palette="2"] .moga-art-brand .moga-home #why-glowup .research-finding-card:is(:hover,:focus-visible,:has(a:focus-visible)){--ink:#fff;background:radial-gradient(ellipse at 45% 40%,#8e55bd44,transparent 75%),linear-gradient(145deg,#443050ee,#211629f5);border-color:#c6a3ff55;box-shadow:inset 0 1px 0 #ffffff25,0 18px 30px -8px #0008}
+@media(prefers-reduced-motion:reduce){.research-finding-card,.research-finding-card:before{transition:none}html[data-moga-palette] .moga-art-brand .moga-home #why-glowup .research-finding-card:is(:hover,:focus-visible,:has(a:focus-visible)){transform:none}}

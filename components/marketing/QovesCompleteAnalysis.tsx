@@ -1,5 +1,8 @@
-import React from "react";
-
+"use client";
+import { useState } from "react";
+import Image from "next/image";
+import { FaceIllustration } from "./VisualExplainers";
+import { AnalysisScrollVisual } from "./AnalysisScrollVisual";
 const DEMOGRAPHIC_FACTORS = [
   {
     title: "Ethnic background",
@@ -46,90 +49,22 @@ const LEARNING_OUTCOMES = [
   },
 ];
 
+
 export function QovesCompleteAnalysis() {
-  return (
-    <section className="py-20 sm:py-28 bg-[#fafcfc] border-b border-[#e6ebed]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Section Top Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#71858c]">
-            A New Way to Glow-Up
-          </p>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-medium tracking-tight text-[#141e22] leading-[1.12]">
-            Your complete facial analysis
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#556970]">
-            We analyze 512 anatomical facial landmarks, evaluating your features holistically rather than in isolation.
-          </p>
-        </div>
-
-        {/* 2 Column Layout: "Taking into account..." vs "You will learn..." */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
-          {/* Left Column: Taking into account your... */}
-          <div className="rounded-2xl border border-[#e2e7e9] bg-[#ffffff] p-8 sm:p-10 shadow-xs">
-            <h3 className="text-xl sm:text-2xl font-medium text-[#141e22]">
-              Taking into account your...
-            </h3>
-            <p className="mt-2 text-sm text-[#677b82]">
-              No two faces are alike. Your analysis is strictly customized across 5 individualized dimensions:
-            </p>
-
-            <div className="mt-8 space-y-6">
-              {DEMOGRAPHIC_FACTORS.map((factor, idx) => (
-                <div key={idx} className="flex gap-4">
-                  <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-[#1b2529] text-white text-[10px] font-semibold mt-0.5">
-                    ✓
-                  </span>
-                  <div>
-                    <h4 className="text-sm font-semibold text-[#141e22]">
-                      {factor.title}
-                    </h4>
-                    <p className="mt-1 text-xs sm:text-sm text-[#55686f] leading-relaxed">
-                      {factor.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column: You will learn... */}
-          <div className="rounded-2xl border border-[#e2e7e9] bg-[#ffffff] p-8 sm:p-10 shadow-xs flex flex-col justify-between">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-medium text-[#141e22]">
-                You will learn...
-              </h3>
-              <p className="mt-2 text-sm text-[#677b82]">
-                Direct, objective findings backed by measurable biometric markers:
-              </p>
-
-              <div className="mt-8 space-y-6">
-                {LEARNING_OUTCOMES.map((item, idx) => (
-                  <div key={idx} className="flex gap-4">
-                    <span className="flex-shrink-0 font-mono text-xs font-bold text-[#7a8f96] mt-0.5">
-                      {item.number}
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-semibold text-[#141e22]">
-                        {item.title}
-                      </h4>
-                      <p className="mt-1 text-xs sm:text-sm text-[#55686f] leading-relaxed">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-8 p-4 rounded-xl bg-[#f0f4f6] border border-[#e2e8ea]">
-              <p className="text-xs text-[#3f5258] leading-relaxed font-medium">
-                🎯 <strong>Zero Surgery Required:</strong> Every single recommendation is 100% non-surgical, structured so small changes compound into a noticeable, natural transformation.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+ const [view,setView]=useState("features");
+ const [factor,setFactor]=useState(0);
+ const [outcome,setOutcome]=useState(0);
+ const [mode,setMode]=useState("thirds");
+ const [page,setPage]=useState(1);
+ return <section className="moga-analysis visual-analysis" id="analysis"><div className="analysis-scroll-showcase">
+  <div className="visual-heading"><p className="visual-eyebrow">A New Way to Glow-Up</p><h2>Your complete facial analysis</h2><p>Explore your features, the context behind them, and the report you receive.</p></div>
+  <AnalysisScrollVisual /></div><div className="analysis-content mx-auto max-w-6xl px-4 sm:px-6"><div className="visual-switch" aria-label="Explore your analysis">{[["features","Your features"],["context","Your context"],["report","Your report"]].map(([key,label])=><button key={key} aria-pressed={view===key} onClick={()=>setView(key)}>{label}</button>)}</div>
+  {view==="features" && <div className="visual-two-column visual-stage">
+   <div className="visual-face-stage"><FaceIllustration mode={mode} /><span className="visual-caption">Illustrative overlay · not a measured assessment</span></div>
+   <div className="visual-story"><span className="visual-eyebrow">A closer look</span><h3>One face.<br />A connected picture.</h3><p>We analyze 512 anatomical facial landmarks, evaluating your features holistically rather than in isolation.</p>
+    <div className="visual-option-list">{[["thirds","Facial thirds","See how the upper, middle and lower face relate."],["symmetry","Bilateral symmetry","Explore balance across the centre of the face."],["features","Feature relationships","See individual features as part of the whole."]].map(([key,title,desc],i)=><button key={key} aria-pressed={mode===key} onClick={()=>setMode(key)}><span>0{i+1}</span><div><strong>{title}</strong><small>{desc}</small></div><span aria-hidden="true">↗</span></button>)}</div>
+   </div></div>}
+  {view==="context" && <div className="visual-two-column visual-stage"><div className="context-orbit"><div className="orbit-ring" /><div className="orbit-ring inner" /><div className="orbit-centre"><span>YOUR</span><strong>unique<br />context</strong></div>{DEMOGRAPHIC_FACTORS.map((item,i)=><button key={item.title} className={`orbit-node orbit-${i}`} aria-pressed={factor===i} onClick={()=>setFactor(i)}><span>0{i+1}</span>{item.title}</button>)}</div><div className="visual-story" aria-live="polite"><span className="visual-eyebrow">Taking into account your...</span><h3>{DEMOGRAPHIC_FACTORS[factor].title}</h3><p>{DEMOGRAPHIC_FACTORS[factor].desc}</p><p className="visual-note">No two faces are alike. Select a factor to explore the context behind a personalized plan.</p></div></div>}
+  {view==="report" && <div className="visual-two-column visual-stage"><div className="report-viewer"><div className="report-toolbar"><span>SAMPLE DOSSIER</span><div><button aria-label="Previous sample page" disabled={page===1} onClick={()=>setPage(1)}>←</button><span>{page} / 2</span><button aria-label="Next sample page" disabled={page===2} onClick={()=>setPage(2)}>→</button></div></div><div className="report-paper"><Image src={`/images/dossier/dossier_page_${page}.png`} width={720} height={1000} alt={`Sample MogaFace dossier page ${page}`} /></div></div><div className="visual-story"><span className="visual-eyebrow">You will learn...</span><h3>Clarity you<br />can come back to.</h3><div className="visual-option-list">{LEARNING_OUTCOMES.map((item,i)=><button key={item.number} aria-pressed={outcome===i} onClick={()=>setOutcome(i)}><span>{item.number}</span><strong>{item.title}</strong><span aria-hidden="true">↗</span></button>)}</div><p className="visual-note" aria-live="polite">{LEARNING_OUTCOMES[outcome].desc}</p><details className="visual-details"><summary>Zero Surgery Required</summary><p>Every single recommendation is 100% non-surgical, structured so small changes compound into a noticeable, natural transformation.</p></details></div></div>}
+ </div></section>;
 }

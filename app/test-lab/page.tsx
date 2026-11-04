@@ -1,4 +1,5 @@
 "use client";
+import "./test-lab.css";
 
 import { DEFAULT_APPEARANCE_CONTROLS, type AppearanceControls, type EditLevel } from "@/lib/image-generation/appearanceControls";
 import { useState, useRef, useEffect } from "react";
@@ -224,7 +225,7 @@ export default function TestLabPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 font-sans antialiased">
+    <div className="moga-workflow moga-test-lab min-h-screen bg-slate-50/70 text-slate-900 font-sans antialiased">
       {/* Top Banner */}
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">

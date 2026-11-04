@@ -1,0 +1,24 @@
+/* MogaFace / Art & Anatomy: application surfaces, aligned with the supplied emblem. */
+.moga-workflow{--accent:#a64322;--link:#245c61;--highlight:#b18b51;--light-accent:#e6eee7;--background:#faf7ef;--surface:#f3eee3;--surface-warm:#f3eee3;--surface-cool:#eae6dc;--surface-subtle:#eee8dc;--foreground:#24231f;--body-text:#514b42;--secondary-text:#665e51;--muted:#746a5d;--border:#31271d26;--gradient-brand:linear-gradient(110deg,#a64322,#873b27);--gradient-regal:var(--gradient-brand);font-family:var(--font-dm-sans),Arial,sans-serif;background:var(--background);color:var(--foreground);min-height:100vh}
+.moga-workflow :is(h1,h2,h3){font-family:var(--font-dm-sans),Arial,sans-serif;letter-spacing:-.04em;font-weight:400}
+.moga-workflow :is(p,label,button,input,select,textarea){font-family:inherit}
+.moga-workflow :is(.bg-white,.bg-white\/90,.bg-slate-50,.bg-slate-100){background-color:#f3eee3}
+.moga-workflow [class*="bg-slate-50/"]{background-color:#faf7ef}
+.moga-workflow :is(.text-slate-900,.text-slate-800,.text-slate-700){color:#24231f}
+.moga-workflow :is(.text-slate-600,.text-slate-500,.text-slate-400){color:#6d675e}
+.moga-workflow [class*="border-slate"]{border-color:#31271d26}
+.moga-workflow :is(input,select,textarea){border-radius:10px;background:#fffdf7;color:#24231f;border-color:#31271d33;color-scheme:light}
+.moga-workflow :is(input,select,textarea):focus-visible{outline:2px solid #245c61;outline-offset:3px}
+.moga-workflow :is(.rounded-3xl,.rounded-2xl){border-radius:16px}
+.moga-workflow :is(.shadow-lg,.shadow-xl,.shadow-2xl){box-shadow:0 14px 50px #5f44200c}
+.moga-workflow :is(.text-violet-600,.text-violet-700,.text-violet-500,.text-indigo-600,.text-indigo-700){color:#245c61}
+.moga-workflow :is(.bg-violet-50,.bg-indigo-50){background:#e6eee7}
+.moga-workflow :is(.border-violet-200,.border-indigo-200){border-color:#245c6144}
+.moga-workflow :is(.bg-violet-600,.bg-violet-700,.bg-indigo-600,.bg-indigo-700){background:#a64322;color:#fff}
+.moga-workflow .bg-gradient-to-r{background-image:var(--gradient-brand)}
+.moga-workflow header{box-shadow:none;background:#faf7efed;border-bottom:1px solid #31271d26;color:#24231f}
+.moga-workflow header [class*="text-[#"]{color:#6d675e}
+.moga-workflow footer{background:#202b2a;border-color:#a58b5c33;color:#eee5d2}
+.moga-workflow footer [class*="text-[#"]{color:#c4c0ae}
+.moga-workflow .moga-brand-emblem{width:46px;height:46px;object-fit:contain;border-radius:50%}
+@media(prefers-reduced-motion:reduce){.moga-workflow *{animation:none!important;transition:none!important}}

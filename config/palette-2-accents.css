@@ -1,0 +1,18 @@
+/* Art-directed lighting and primary actions for Palette 2. */
+html[data-moga-palette="2"]{color-scheme:dark;background:#060509}
+html[data-moga-palette="2"] body{background:#060509;color:#f4f0ff}
+html[data-moga-palette="2"] .moga-art-brand .moga-hero{background:#060509}
+html[data-moga-palette="2"] .moga-art-brand .moga-hero-shade{background:radial-gradient(ellipse at 75% 100%,#7728c973,transparent 60%),linear-gradient(90deg,#060509 0%,#08050ded 29%,#0b051466 64%,#09051026 100%),linear-gradient(0deg,#10061ce0,transparent 65%)}
+html[data-moga-palette="2"] .moga-art-brand .moga-hero:before{background:radial-gradient(ellipse at 75% 100%,#8133e529,transparent 65%)}
+html[data-moga-palette="2"] .moga-art-brand .moga-nav,html[data-moga-palette="2"] .moga-art-brand .moga-nav.is-scrolled{background:#0d0915e8;border-color:#bb94ff26;box-shadow:0 8px 40px #0005}
+html[data-moga-palette="2"] .moga-art-brand .moga-pill-light,html[data-moga-palette="2"] .moga-art-brand .moga-nav-cta{background:linear-gradient(115deg,#8b44eb,#6932bf);color:#fff;border-color:#b68bff4d;box-shadow:inset 0 1px 0 #ffffff26,0 6px 25px #7431c52b}
+html[data-moga-palette="2"] .moga-art-brand .moga-pill-glass{background:#ffffff08;border-color:#ffffff2b;color:#eee5ff}
+html[data-moga-palette="2"] .moga-art-brand .moga-home>section.anatomy-overview{background:radial-gradient(ellipse at 50% 100%,#4b1d7466,transparent 75%),#0d0815}
+html[data-moga-palette="2"] .moga-art-brand .moga-home #transformations .case-intro h2>span{color:#b488f2}
+html[data-moga-palette="2"] .comparison-divider{background:#ffffffe6}
+html[data-moga-palette="2"] .comparison-divider>span{background:#ffffff26;border-color:#fff;color:#fff}
+html[data-moga-palette="2"] .comparison-labels>span{color:#fff;text-shadow:0 1px 8px #0009}
+html[data-moga-palette="2"] .moga-brand-emblem{background:#faf7ef}
+html[data-moga-palette="2"] .moga-art-brand .moga-home #portal{box-shadow:0 0 70px #7e37be1a}
+@media(max-width:800px){html[data-moga-palette="2"] .moga-art-brand .moga-hero-shade{background:linear-gradient(0deg,#0b0615fa 0%,#170b2bdb 27%,#0b06151a 75%)}}
+html[data-moga-palette="2"] .moga-art-brand .moga-hero-actions .moga-pill-light,html[data-moga-palette="2"] .moga-art-brand .moga-nav .moga-nav-cta{background:linear-gradient(115deg,#8b44eb,#6932bf);color:#fff;border-color:#b68bff4d;box-shadow:inset 0 1px 0 #ffffff26,0 6px 25px #7431c52b}

@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function SubmittedPage() {
   return (
-    <>
+    <div className="moga-workflow">
       <Header />
       <main className="flex-1">
         <Suspense fallback={
@@ -22,6 +22,6 @@ export default function SubmittedPage() {
         </Suspense>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

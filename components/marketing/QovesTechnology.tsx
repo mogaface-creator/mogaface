@@ -1,5 +1,5 @@
-import React from "react";
-
+"use client";
+import { useState } from "react";
 const TECH_CARDS = [
   {
     title: "512-Point Precision Facial Analysis",
@@ -23,46 +23,5 @@ const TECH_CARDS = [
   },
 ];
 
-export function QovesTechnology() {
-  return (
-    <section className="py-20 sm:py-28 bg-[#fafcfc] border-b border-[#e6ebed]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#71858c]">
-            Proprietary Architecture
-          </p>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-medium tracking-tight text-[#141e22] leading-[1.12]">
-            The technology behind your transformation
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#556970]">
-            Combining advanced computer vision landmarking with clinical aesthetic science.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {TECH_CARDS.map((card, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl border border-[#e2e7e9] bg-[#ffffff] p-8 sm:p-9 shadow-xs hover:border-[#ccd6da] transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#73888f]">
-                  {card.subtitle}
-                </span>
-                <span className="font-mono text-xs text-[#87999f]">
-                  0{idx + 1}
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-medium text-[#141e22]">
-                {card.title}
-              </h3>
-              <p className="mt-3 text-sm text-[#55686f] leading-relaxed">
-                {card.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+export function QovesTechnology(){const [active,setActive]=useState(0);return <section className="moga-technology visual-technology"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="visual-heading"><p className="visual-eyebrow">Proprietary Architecture</p><h2>The technology behind your transformation</h2><p>Combining advanced computer vision landmarking with clinical aesthetic science.</p></div><div className="technology-console"><div className="technology-nodes" aria-label="Explore the technology">{TECH_CARDS.map((card,i)=><button key={card.title} aria-pressed={active===i} onClick={()=>setActive(i)}><span className="technology-symbol" aria-hidden="true">{i===0?<svg viewBox="0 0 40 40"><path d="M8 8h24v24H8zM8 20h24M20 8v24M8 8l24 24M8 32L32 8"/></svg>:i===1?<svg viewBox="0 0 40 40"><circle cx="20" cy="14" r="6"/><path d="M9 33v-5a11 11 0 0122 0v5M5 10h5M30 10h5"/></svg>:i===2?<svg viewBox="0 0 40 40"><path d="M9 6h8v28H9zM23 11h8v23h-8zM5 34h30M12 11h2M26 16h2"/></svg>:<svg viewBox="0 0 40 40"><path d="M20 4L33 10v10c0 8-13 16-13 16S7 28 7 20V10zM13 20l5 5 10-11"/></svg>}</span><small>0{i+1}</small><strong>{card.subtitle}</strong></button>)}</div><div className="technology-detail" aria-live="polite"><span className="visual-eyebrow">Explore layer 0{active+1}</span><h3>{TECH_CARDS[active].title}</h3><p>{TECH_CARDS[active].body}</p><div className="technology-pagination">{TECH_CARDS.map((card,i)=><button key={card.title} aria-label={`Technology layer ${i+1}`} aria-pressed={active===i} onClick={()=>setActive(i)}/>)}</div></div></div></div></section>}
