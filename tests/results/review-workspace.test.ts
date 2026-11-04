@@ -89,7 +89,7 @@ test("published HTML uses private durable storage and unguessable view keys",asy
  await assert.rejects(savePublishedReport("x",{env,fetchImpl:(async()=>new Response("{}",{status:403})) as typeof fetch}));
 });
 test("publishing validates the detailed review and excludes arbitrary image bytes",async()=>{
- const {sub,deps}=fixture();let saved="";
+ const {deps}=fixture();let saved="";
  const reviewed={summary:"Visible original evidence.",priorities:[],findings:[]};
  const request=(versions:unknown[],active=-1)=>new Request("https://moga.test/api/review-workspace?id=submission",{method:"POST",headers:{origin:"https://moga.test",authorization:"Bearer token"},body:JSON.stringify({action:"publish",review:reviewed,versions,active})});
  const response=await handleReviewWorkspace(request([]),{...deps,saveReport:async html=>{saved=html;return "a".repeat(64);}});
@@ -99,4 +99,27 @@ test("publishing validates the detailed review and excludes arbitrary image byte
 test("active delivery prepares web reports without PDF rendering or attachments",async()=>{
  const {readFile}=await import("node:fs/promises");
  for(const path of ["../../lib/submissions/processOne.ts","../../app/api/submission-report/route.ts"]){const source=await readFile(new URL(path,import.meta.url),"utf8");assert.doesNotMatch(source,/generatePdfReport|sendReportEmail|application\/pdf/);}
+});
+
+test("portal export has reachable report pages, all 169 findings and executable offline navigation",async()=>{
+ const {Script}=await import("node:vm");
+ const image={mime:"image/png",base64:"aGVsbG8=",receipt:"NEVER_EXPORT_THIS"};
+ const html=exportReviewHtml("Private person",image,null,[],-1);
+ const pageIds=[...html.matchAll(/<article id="page-([^"]+)" data-report-page/g)].map(m=>m[1]);
+ assert.equal(new Set(pageIds).size,pageIds.length);assert.equal(pageIds.length,22);
+ for(const match of html.split("<script")[0].matchAll(/data-page="([^"]+)"/g))assert.ok(pageIds.includes(match[1]),match[1]);
+ assert.equal([...html.matchAll(/<tr data-catalog-row /g)].length,169);
+ assert.ok(pageIds.includes("proportions")&&pageIds.includes("feature-lips")&&pageIds.includes("protocol"));
+ const executable=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];assert.equal(executable.length,1);assert.doesNotThrow(()=>new Script(executable[0][1]));
+ assert.doesNotMatch(html,/NEVER_EXPORT_THIS|https?:\/\/[^"\s<]+\.(?:png|jpg|jpeg)/);
+ assert.match(html,/role="tablist"/);assert.match(html,/<dialog class="mobile-nav"/);
+});
+test("portal does not transfer reference scores or turn model prose into executable markup",()=>{
+ const image={mime:"image/png",base64:"aGVsbG8=",receipt:"NO"};
+ const review={summary:'</script><script>alert("unsafe")</script>',priorities:['<img src=x onerror="bad">'],findings:[]};
+ const html=exportReviewHtml("<unsafe>",image,review,[],-1);
+ assert.match(html,/&lt;\/script&gt;/);assert.match(html,/&lt;unsafe&gt;/);assert.doesNotMatch(html,/<script>alert|<img src=x/);
+ assert.doesNotMatch(html,/score-number[^>]*>\s*(78|88)/);assert.match(html,/No reference score assigned/);
+ const data=JSON.parse(/<script type="application\/json" id="portal-assets">([\s\S]*?)<\/script>/.exec(html)![1]);
+ assert.deepEqual(Object.keys(data),["original"]);assert.equal(data.original,"data:image/png;base64,aGVsbG8=");
 });
