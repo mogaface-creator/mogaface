@@ -77,6 +77,7 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
   return json({draft:wrap(generated.base64,generated.mime),targets,notes:body.notes.trim()});
  }catch(error){
   const message=error instanceof Error?error.message:"";
+  if(message==="assessment_incomplete")return json({error:"assessment_incomplete"},502);
   if(message==="too_large")return json({error:"too_large"},413);
   if(message==="invalid_targets"||error instanceof SyntaxError)return json({error:"invalid_request"},400);
   return json({error:"workspace_unavailable"},503);

@@ -149,3 +149,14 @@ test("existing saved reports receive the crop repair without altering their evid
  assert.match(fixed,/clip-path:none!important/);assert.match(fixed,/const evidence="unchanged"/);
  const current='<head></head><img data-photo="original">';assert.equal(repairLegacyReportDisplay(current),current);
 });
+
+
+test("provider reviews must address all 169 correctly identified features rather than 13 categories",async()=>{
+ const {parseProviderDetailedReview,DETAILED_REVIEW_RESPONSE_FORMAT}=await import("../../lib/review-workspace/generate.server.ts");
+ const review={summary:"Visible original features.",priorities:["Discuss skin texture and hair framing."],findings:REVIEW_ITEMS.map(i=>({id:i.id,feature:i.label,observation:"The original view does not establish this specific relationship.",confidence:"not_assessable",source:"none"}))};
+ assert.equal(parseProviderDetailedReview(review).findings.length,169);
+ assert.throws(()=>parseProviderDetailedReview({...review,findings:review.findings.slice(0,13)}),/assessment_incomplete/);
+ assert.throws(()=>parseProviderDetailedReview({...review,findings:review.findings.map((f,i)=>i===0?{...f,feature:"Different catalog item"}:f)}),/assessment_incomplete/);
+ assert.equal(DETAILED_REVIEW_RESPONSE_FORMAT.json_schema.strict,true);
+ assert.equal(DETAILED_REVIEW_RESPONSE_FORMAT.json_schema.schema.properties.findings.minItems,169);
+});
