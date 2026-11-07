@@ -31,7 +31,13 @@ document.addEventListener('click',event=>{
  if(event.target.closest('[data-open-mobile]')){if(!modal.open)modal.showModal();return;}
  if(event.target.closest('[data-close-mobile]')){modal.close();return;}
  const ratio=event.target.closest('[data-ratio]');if(ratio){const key=ratio.dataset.ratio;document.querySelectorAll('[data-ratio]').forEach(b=>{b.setAttribute('aria-selected',String(b===ratio));b.tabIndex=b===ratio?0:-1;});document.querySelectorAll('[data-ratio-panel]').forEach(p=>p.hidden=p.dataset.ratioPanel!==key);return;}
- const view=event.target.closest('[data-feature-view]');if(view){const root=view.closest('[data-feature-root]'),mode=view.dataset.featureView;root.querySelectorAll('[data-feature-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===view)));root.querySelectorAll('[data-overview-photo]').forEach(img=>{const key=mode==='concept'?img.dataset.conceptKey:(img.dataset.originalKey||'original');if(assets[key])img.src=assets[key];});root.querySelectorAll('[data-overview-label]').forEach(n=>n.textContent=mode==='concept'?'AI concept — original findings remain below':(assets['isolation-portrait']?'Original-based display cutout — not measurement evidence':'Original photograph — assessment evidence'));return;}
+ const view=event.target.closest('[data-feature-view]');
+ if(view){
+  const root=view.closest('[data-feature-root]');
+  root.querySelectorAll('[data-feature-view]').forEach(button=>button.setAttribute('aria-pressed',String(button===view)));
+  root.querySelectorAll('[data-feature-panel]').forEach(panel=>panel.hidden=panel.dataset.featurePanel!==view.dataset.featureView);
+  return;
+ }
  const step=event.target.closest('[data-step]');if(step){const index=pageOrder.indexOf(current),next=pageOrder[index+(step.dataset.step==='next'?1:-1)];if(next)showPage(next,true);return;}
  if(event.target.closest('[data-help]')){const panel=document.getElementById('report-help');panel.hidden=!panel.hidden;document.querySelector('[data-help]').setAttribute('aria-expanded',String(!panel.hidden));return;}
 });

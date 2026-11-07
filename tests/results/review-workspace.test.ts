@@ -137,7 +137,17 @@ test("real submissions render without demo illustrations, fixed crops or generic
  const image={mime:"image/jpeg",base64:source.toString("base64"),receipt:"private"};
  const html=exportReviewHtml("Real submission",image,null,[],-1,{sidePhotos:[],videoSummary:"",display});
  assert.doesNotMatch(html,/masked-portrait|clip-path:polygon|data-photo-bg|Hyper feminine|Hyper masculine/);
- assert.match(html,/data-photo="display-portrait"/);assert.match(html,/data-photo="feature-eyes"/);
+ assert.match(html,/data-photo="display-portrait"/);
+ const page=(output:string,category:string)=>output.split(`id="page-feature-${category}"`)[1].split('<article id="page-')[0];
+ for(const category of ["eyebrows","eyes","nose","lips","neck"]){
+  assert.match(page(html,category),new RegExp(`data-photo="feature-${category}"`));
+  assert.doesNotMatch(page(html,category),/data-photo="display-portrait"/);
+ }
+ assert.match(page(html,"ears"),/Ears detail unavailable/);
+ assert.doesNotMatch(page(html,"ears"),/<img/);
+ const withOblique=exportReviewHtml("Real submission",image,null,[],-1,{sidePhotos:[{...image,label:"Left oblique — original"}],videoSummary:"",display});
+ assert.match(page(withOblique,"ears"),/data-photo="side-0"/);
+ assert.match(page(withOblique,"ears"),/ear context/);
  assert.deepEqual(await prepareReportDisplay(source.toString("base64"),undefined),{features:{}});
  assert.deepEqual(await prepareReportDisplay("invalid",geometry),{features:{}});
 });

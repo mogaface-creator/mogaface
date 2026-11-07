@@ -36,3 +36,10 @@ export function parseDetailedReview(value:unknown,videoAvailable=false):Detailed
  }
  return {summary:v.summary.trim().slice(0,1800),priorities:v.priorities.filter((p):p is string=>typeof p==="string"&&!!p.trim()).slice(0,5).map(p=>p.slice(0,600)),findings:REVIEW_ITEMS.map(item=>rows.get(item.id)??{id:item.id,observation:"Not assessed from the available original evidence. No finding is inferred.",confidence:"not_assessable",source:"none"})};
 }
+
+/** Describe the original view needed when the report has no reliable regional image. */
+export function featurePhotoGuidance(category:string):string{
+ if(category==="ears")return "Add a clear original photo of each side with hair pulled back and both ears unobstructed across the two views.";
+ if(category==="neck")return "Add an upright original photo showing the jaw, underside of the chin and upper neck. A side view helps show the contour.";
+ return "Use a clear, well-lit original photo with this area in frame to support a closer view.";
+}
