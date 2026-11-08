@@ -19,12 +19,11 @@ export function BeforeAfterSlider({ before, after, draft }: { before: Comparison
         <Image unoptimized src={afterSrc} alt="After: AI appearance illustration" width={1000} height={1333} className="moga-compare__after" />
         <Image unoptimized src={beforeSrc} alt="Before: original photograph" width={1000} height={1333} className="moga-compare__before" />
         <span className="moga-compare__divider" aria-hidden="true" />
-        <span className="moga-compare__handle" aria-hidden="true">‹ ›</span>
-        <input type="range" min={0} max={100} value={position} onChange={event => setPosition(event.currentTarget.valueAsNumber)}
-          aria-label="Before and after comparison" aria-valuetext={`${position}% original`} />
       </div>
+      <input className="moga-compare__slider" type="range" min={0} max={100} value={position} onChange={event => setPosition(event.currentTarget.valueAsNumber)}
+        aria-label="Before and after comparison" aria-valuetext={`${position}% original`} />
       <figcaption className="moga-compare__labels"><span>Before · original</span><span>{draft ? "After · revision draft" : "After · AI illustration"}</span></figcaption>
-      <p className="moga-compare__hint">Drag or use the arrow keys to compare.</p>
+      <p className="moga-compare__hint">Drag the slider below the photo or use the arrow keys to compare.</p>
     </figure>
   );
 }
