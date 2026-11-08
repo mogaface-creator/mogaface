@@ -5,6 +5,12 @@ export const PORTAL_SCRIPT=String.raw`
 const assets=JSON.parse(document.getElementById('portal-assets').textContent||'{}');
 const pageOrder=JSON.parse(document.getElementById('portal-pages').textContent||'[]');
 document.querySelectorAll('img[data-photo]').forEach(img=>{const source=assets[img.dataset.photo];if(source)img.src=source;});
+document.querySelectorAll('[data-compare-slider]').forEach(slider=>{
+ slider.addEventListener('input',()=>{
+  slider.parentElement.style.setProperty('--reveal',slider.value+'%');
+  slider.setAttribute('aria-valuetext',slider.value+'% original');
+ });
+});
 const modal=document.getElementById('mobile-nav');
 const mobileBody=document.getElementById('mobile-nav-body');
 mobileBody.innerHTML=document.getElementById('desktop-rails').innerHTML;

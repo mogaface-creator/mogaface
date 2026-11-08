@@ -7,17 +7,20 @@ export function readPreparedReport(value: string | null) {
   const raw = value || "";
   const index = raw.indexOf(marker);
   const summary = index < 0 ? raw : raw.slice(0, index);
+  let reportKey: string | null = null;
   let review: DetailedReview | null = null;
   if (index >= 0) {
     try {
-      review = parseDetailedReview(JSON.parse(raw.slice(index + marker.length)), true);
+      const payload = JSON.parse(raw.slice(index + marker.length));
+      review = parseDetailedReview(payload?.review ?? payload, true);
+      if (review && typeof payload?.reportKey === "string" && /^[a-f0-9]{64}$/.test(payload.reportKey)) reportKey = payload.reportKey;
     } catch { /* An invalid payload can be retried as a missing review. */ }
   }
-  return { summary, review, prepared: index >= 0 };
+  return { summary, review, reportKey, prepared: index >= 0 };
 }
 
-export function storePreparedReport(summary: string, review: DetailedReview | null) {
-  return summary + marker + JSON.stringify(review);
+export function storePreparedReport(summary: string, review: DetailedReview | null, reportKey: string | null = null) {
+  return summary + marker + JSON.stringify({ review, reportKey });
 }
 
 export function previewState(summary: string) {

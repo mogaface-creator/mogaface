@@ -15,10 +15,6 @@
 .previewStatus p{margin-top:5px;line-height:1.55}
 .previewStatus .textButton{margin-top:8px}
 .originalOnly{max-width:420px;background:var(--panel);border-radius:8px;overflow:hidden}
-.comparisonPair{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px;margin-bottom:0}
-.comparisonPair figure{border-radius:8px;overflow:hidden;min-width:0}
-.comparisonPair .photo{height:auto;aspect-ratio:3/4;object-fit:contain}
-.comparisonPair figcaption{font-size:12px;color:#43574c}
 .comparisonActions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
 .comparisonActions .textButton{margin:0;min-height:44px}
 .actionPrimary{border:0;border-radius:6px;background:#435b50;color:white;padding:10px 14px;min-height:44px}
@@ -36,9 +32,20 @@
 @media(max-width:580px){
  .main{padding-inline:16px;padding-top:20px}
  .pageHeading{margin-bottom:16px}
- .comparisonPair{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .comparisonPair figcaption{padding:8px;font-size:11px}
  .comparisonActions .actionPrimary{width:100%}
  .panel .actions button{min-height:44px}
  .originalOnly .photo{max-height:340px}
+}
+
+.sharePanel{max-width:640px;margin:26px auto 18px;padding:18px;border:1px solid #dbe4df;border-radius:10px;background:#f7f9f6}
+.sharePanel h2{font-size:20px}
+.sharePanel p{margin-top:7px;font-size:13px;line-height:1.5;color:#526158}
+.shareActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 10px}
+.shareActions button,.shareActions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 14px;border-radius:5px;border:1px solid #cdd9d2;background:white;color:#345247;font-size:14px;text-decoration:none}
+.shareActions .actionPrimary{background:#435b50;color:white}
+.shareUrl{width:100%;min-height:44px;padding:8px 10px;border:1px solid #cdd9d2;border-radius:5px;background:white;color:#345247;font-size:16px!important;text-overflow:ellipsis}
+.workspace :global(.moga-compare__labels){font-size:13px;color:#36483e;padding:10px 2px 4px}
+@media(max-width:580px){
+ .sharePanel{padding:14px;margin-top:18px}
+ .shareActions button,.shareActions a{flex:1 1 auto;padding-inline:8px}
 }

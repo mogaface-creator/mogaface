@@ -171,7 +171,7 @@ test("provider reviews must address all 169 correctly identified features rather
  assert.equal(DETAILED_REVIEW_RESPONSE_FORMAT.json_schema.schema.properties.findings.minItems,169);
 });
 
-test("one submission prepares both results and a reopened report can publish the first illustration", async () => {
+test("one submission prepares both results and a reusable link for the first illustration", async () => {
  const {processOne}=await import("../../lib/submissions/processOne.ts");
  const f=fixture();
  f.record.aiReportConsent=true;
@@ -187,6 +187,13 @@ test("one submission prepares both results and a reopened report can publish the
    return true;
   },
   assess:async()=>{starts.push("assessment");await started;return written;},
+  publish:async(id,_record,review,_original,illustration)=>{
+   assert.equal(id,f.sub.id);
+   assert.equal(review,written);
+   assert.equal(illustration?.base64,after);
+   starts.push("share link");
+   return "b".repeat(64);
+  },
   generate:async input=>{
    starts.push(input.conservative?"second illustration":"first illustration");
    release();
@@ -194,15 +201,21 @@ test("one submission prepares both results and a reopened report can publish the
   },
  });
  assert.equal((await job).outcome,"done");
- assert.deepEqual(starts,["assessment","first illustration","second illustration"]);
+ assert.deepEqual(starts,["assessment","first illustration","second illustration","share link"]);
  const opened=await(await handleReviewWorkspace(f.request(),f.deps)).json();
  assert.equal(opened.review.findings.length,169);
  assert.equal(opened.initial.base64,after);
  assert.equal(opened.canRetry,false);
  assert.equal(opened.needsPreparation,false);
+ assert.equal(opened.reportPath,`/reports/${"b".repeat(64)}.html#protocol`);
+ const reused=await handleReviewWorkspace(f.request({action:"publish_initial"}),{
+  ...f.deps,publishBaseline:async()=>{assert.fail("The saved baseline link should be reused");},
+ });
+ assert.equal((await reused.json()).url,`https://moga.test${opened.reportPath}`);
  let saved="";
  const published=await handleReviewWorkspace(f.request({action:"publish",versions:[{initial:true,label:"First AI illustration",targets:[],notes:""}],active:0}),{...f.deps,saveReport:async html=>{saved=html;return "a".repeat(64);}});
  assert.equal(published.status,200);
  assert.match(saved,/After · First AI illustration/);
  assert.ok(saved.includes(after));
+ assert.match(saved,/type="range" min="0" max="100" value="50" data-compare-slider/);
 });

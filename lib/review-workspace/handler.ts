@@ -10,13 +10,14 @@ import {expressionContext} from "../observation/expressionContext.ts";
 import {assessOriginals,generateRevision} from "./generate.server.ts";
 import {signReviewImage,verifyReviewImage} from "./receipt.ts";
 import {exportReviewHtml,type ExportVersion} from "./export.ts";
+import {publishBaselineReport,sharedReportPath} from "./baseline.server.ts";
 import {savePublishedReport} from "./published.ts";
 import {parseDetailedReview,parseTargets} from "./types.ts";
 const headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer"};
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers});
 export const MAX_REVIEW_REQUEST_BYTES=4_000_000;
-interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string;prepare:typeof processOne;saveReport:typeof savePublishedReport}
-const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,prepare:processOne,saveReport:savePublishedReport,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
+interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string;prepare:typeof processOne;saveReport:typeof savePublishedReport;publishBaseline:typeof publishBaselineReport}
+const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,prepare:processOne,saveReport:savePublishedReport,publishBaseline:publishBaselineReport,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw new Error("invalid_request");
  const chunks:Uint8Array[]=[];let size=0;
@@ -45,7 +46,7 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
   const needsPreparation=consent&&!needsAssessmentConsent&&!prepared.prepared&&sub.status==="done"&&(sub.retry_count??0)<3;
   const canRetry=consent&&(sub.retry_count??0)<3&&(sub.status==="failed"||sub.status==="done"&&(!prepared.review||wantsPreview&&!initial));
   if(request.method==="GET")return json({display:await prepareReportDisplay(sub.before_image_base64,record.portraitGeometry),suggestedTargets,name:record.contact?.name||"Your appearance review",original,
-    initial,review:consent?prepared.review:null,wantsPreview,needsPreparation,needsAssessmentConsent,canRetry,previewStatus:previewState(prepared.summary),
+    reportPath:consent&&prepared.reportKey?sharedReportPath(prepared.reportKey):null,initial,review:consent?prepared.review:null,wantsPreview,needsPreparation,needsAssessmentConsent,canRetry,previewStatus:previewState(prepared.summary),
     sidePhotos:record.reportPhotos?[{label:"Left oblique — original",...record.reportPhotos.leftFortyFive},{label:"Right oblique — original",...record.reportPhotos.rightFortyFive}]:[],
     video:expressionContext(record.analysis.expression),consent,canRefine:consent&&validPortraitGeometry(record.portraitGeometry),summary:prepared.summary,status:sub.status});
   if(!consent)return json({error:"photo_consent_required"},403);
@@ -61,6 +62,11 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
    if(prepared.review)return json({review:prepared.review});
    if(!await deps.persistUse(record.id,record))return json({error:"session_limit"},429);
    return json({review:await deps.assess(sub,record.aiReportConsent?record:{...record,reportPhotos:undefined})});
+  }
+  if(body.action==="publish_initial"){
+   if(sub.status!=="done"||!prepared.review)return json({error:"report_not_ready"},409);
+   const key=prepared.reportKey||await deps.publishBaseline(id,record,prepared.review,original,initial);
+   return json({url:new URL(sharedReportPath(key),request.url).href});
   }
   if(body.action==="publish"){
    const review=prepared.review||parseDetailedReview(body.review,record.videoPreviewContextConsent==="granted"&&expressionContext(record.analysis.expression).status==="usable");

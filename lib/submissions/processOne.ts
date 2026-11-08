@@ -7,14 +7,17 @@ import { IMAGE_PLACE_OPTIONS } from "../assessment/intakeQuestions.ts";
 import { assessOriginals } from "../review-workspace/generate.server.ts";
 import { readPreparedReport, storePreparedReport } from "../review-workspace/prepared.ts";
 
+import { publishBaselineReport } from "../review-workspace/baseline.server.ts";
+
 const defaultSummary = "Your Next Face protocol brings together your answers, original photo views and usable expression-video observations.";
-const dependencies = { claim: claimSubmission, update: updateSubmission, assess: assessOriginals, generate: generateAfterImage };
+const dependencies = { claim: claimSubmission, update: updateSubmission, assess: assessOriginals, generate: generateAfterImage, publish: publishBaselineReport };
 
 export async function processOne(
   submission: SubmissionRow,
   options?: { regenerate?: boolean; authenticatedRecord?: AnalysisRecord },
-  deps = dependencies,
+  overrides: Partial<typeof dependencies> = {},
 ): Promise<{ id: string; outcome: "done" | "failed" | "processing"; reason?: string }> {
+  const deps = { ...dependencies, ...overrides };
   const { id } = submission;
   const completedAt = options?.authenticatedRecord && submission.status === "done" ? submission.updated_at : undefined;
   if (!await deps.claim(id, {}, completedAt)) return { id, outcome: "processing" };
@@ -46,8 +49,16 @@ export async function processOne(
       : approved ? previous.summary : defaultSummary;
     const readable = `${summary.replace(/\s*\[PREVIEW_STATUS:[^\]]+\]/g, "")} [PREVIEW_STATUS:${status}]`;
     const retryCount = (submission.retry_count ?? 0) + (consented && ((record.aiReportConsent && !review) || (wantsPreview && !afterBase64)) ? 1 : 0);
+    let reportKey = previous.reportKey;
+    if (review && (!reportKey || afterBase64 !== submission.after_image_base64)) {
+      reportKey = await deps.publish(id, record, review,
+        { base64: submission.before_image_base64, mime: submission.before_image_mime },
+        afterBase64 ? { base64: afterBase64, mime: afterMime || "image/jpeg" } : null,
+        AbortSignal.timeout(12_000),
+      ).catch(() => null);
+    }
     if (!await deps.update(id, { status: "done", afterImageBase64: afterBase64, afterImageMime: afterMime,
-      reportSummary: storePreparedReport(readable, review), detectedAreas, retryCount,
+      reportSummary: storePreparedReport(readable, review, reportKey), detectedAreas, retryCount,
     })) throw new Error("report_storage_failed");
     return { id, outcome: "done" };
   } catch (err) {

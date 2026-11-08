@@ -1,3 +1,5 @@
+import { COMPARE_STYLES } from "./compareStyles.ts";
+
 /** Screenshot-grounded portal styles. Kept inline so saved reports work offline. */
 export const PORTAL_STYLES=String.raw`
 :root{--ink:#282d2b;--muted:#939c99;--body:#656a67;--line:#f1f2f1;--panel:#f9f9f8;--accent:#9aabad;--strong:#435456;--rail:220px;--subrail:220px;--pad:76px;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;font-synthesis:none}
@@ -25,6 +27,11 @@ export const PORTAL_STYLES=String.raw`
 .page-heading h1[tabindex="-1"]:focus{outline:none}
 
 .comparison-section{margin-top:0;margin-bottom:26px}.comparison-section>h2{margin-bottom:12px}
-.comparison-pair img{height:clamp(180px,35vw,500px);width:100%;object-fit:contain}
-@media(max-width:760px){.image-pair.comparison-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.comparison-pair figcaption{font-size:12px;padding:8px}.comparison-pair img{height:clamp(140px,55vw,270px)}}
+@media(max-width:760px){
+ .comparison-section>h2{font-size:22px}
+ .page-heading>p,.comparison-section .note{font-size:14px;line-height:1.55}
+ .nav-link,.nav-heading,.pager button{min-height:44px}
+ input,select{font-size:16px}
+}
+${COMPARE_STYLES}
 `;
