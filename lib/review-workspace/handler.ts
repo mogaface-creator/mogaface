@@ -1,5 +1,7 @@
 import {prepareReportDisplay} from "./display.server.ts";
 import {appearancePlanFromAssessment} from "../image-generation/appearanceFromAssessment.ts";
+import {readPreparedReport,previewState} from "./prepared.ts";
+import {processOne} from "../submissions/processOne.ts";
 import {getSubmission} from "../submissions/store.ts";
 import {getAnalysisRecord,persistIllustrationUse} from "../analysis-session/store.ts";
 import {validPortraitGeometry} from "../image-generation/portraitGeometry.ts";
@@ -13,8 +15,8 @@ import {parseDetailedReview,parseTargets} from "./types.ts";
 const headers={"Cache-Control":"private, no-store","Referrer-Policy":"no-referrer"};
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers});
 export const MAX_REVIEW_REQUEST_BYTES=4_000_000;
-interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string;saveReport:typeof savePublishedReport}
-const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,saveReport:savePublishedReport,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
+interface Deps {getSubmission:typeof getSubmission;getAnalysisRecord:typeof getAnalysisRecord;persistUse:typeof persistIllustrationUse;assess:typeof assessOriginals;generate:typeof generateRevision;secret:string;prepare:typeof processOne;saveReport:typeof savePublishedReport}
+const defaults=():Deps=>({getSubmission,getAnalysisRecord,persistUse:persistIllustrationUse,assess:assessOriginals,generate:generateRevision,prepare:processOne,saveReport:savePublishedReport,secret:process.env.REVIEW_REVISION_SECRET?.trim()||process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()||""});
 async function boundedJson(request:Request){
  const reader=request.body?.getReader();if(!reader)throw new Error("invalid_request");
  const chunks:Uint8Array[]=[];let size=0;
@@ -36,24 +38,37 @@ export async function handleReviewWorkspace(request:Request,overrides:Partial<De
   const consent=sub.photo_visualization_consent==="granted";
   const selected=appearancePlanFromAssessment(record.assessment).editRegions;
   const suggestedTargets=[...(selected.skin?["skin"]:[]),...(selected.underEye?["under_eye"]:[]),...(selected.hair?["hair"]:[]),...(["brow_opening","lip_vermilion","lower_face_balance","mentolabial","chin_projection"] as const).filter(key=>selected[key])];
+  const prepared=readPreparedReport(sub.report_summary);
+  const wantsPreview=record.assessment.clinicIntake.wantAfterPhoto!=="no";
+  const initial=consent&&wantsPreview&&sub.after_image_base64&&prepared.summary.startsWith("Your Next Face protocol")?wrap(sub.after_image_base64,sub.after_image_mime||"image/jpeg"):null;
+  const needsAssessmentConsent=consent&&!record.aiReportConsent&&!prepared.review;
+  const needsPreparation=consent&&!needsAssessmentConsent&&!prepared.prepared&&sub.status==="done"&&(sub.retry_count??0)<3;
+  const canRetry=consent&&(sub.retry_count??0)<3&&(sub.status==="failed"||sub.status==="done"&&(!prepared.review||wantsPreview&&!initial));
   if(request.method==="GET")return json({display:await prepareReportDisplay(sub.before_image_base64,record.portraitGeometry),suggestedTargets,name:record.contact?.name||"Your appearance review",original,
-    initial:consent&&sub.after_image_base64&&sub.report_summary?.startsWith("Your Next Face protocol")?wrap(sub.after_image_base64,sub.after_image_mime||"image/jpeg"):null,
+    initial,review:consent?prepared.review:null,wantsPreview,needsPreparation,needsAssessmentConsent,canRetry,previewStatus:previewState(prepared.summary),
     sidePhotos:record.reportPhotos?[{label:"Left oblique — original",...record.reportPhotos.leftFortyFive},{label:"Right oblique — original",...record.reportPhotos.rightFortyFive}]:[],
-    video:expressionContext(record.analysis.expression),consent,canRefine:consent&&validPortraitGeometry(record.portraitGeometry),summary:sub.report_summary||"",status:sub.status});
+    video:expressionContext(record.analysis.expression),consent,canRefine:consent&&validPortraitGeometry(record.portraitGeometry),summary:prepared.summary,status:sub.status});
   if(!consent)return json({error:"photo_consent_required"},403);
   const body=await boundedJson(request);
   if(!body||typeof body!=="object"||Array.isArray(body))return json({error:"invalid_request"},400);
+  if(body.action==="prepare"){
+   if(!canRetry)return json({status:sub.status});
+   if(needsAssessmentConsent&&body.allowAssessment!==true)return json({error:"assessment_consent_required"},403);
+   const outcome=await deps.prepare(sub,{authenticatedRecord:needsAssessmentConsent?{...record,aiReportConsent:true}:record});
+   return json({status:outcome.outcome});
+  }
   if(body.action==="assess"){
+   if(prepared.review)return json({review:prepared.review});
    if(!await deps.persistUse(record.id,record))return json({error:"session_limit"},429);
-   return json({review:await deps.assess(sub,record)});
+   return json({review:await deps.assess(sub,record.aiReportConsent?record:{...record,reportPhotos:undefined})});
   }
   if(body.action==="publish"){
-   const review=parseDetailedReview(body.review,record.videoPreviewContextConsent==="granted"&&expressionContext(record.analysis.expression).status==="usable");
+   const review=prepared.review||parseDetailedReview(body.review,record.videoPreviewContextConsent==="granted"&&expressionContext(record.analysis.expression).status==="usable");
    if(!review||!Array.isArray(body.versions)||body.versions.length>8||!Number.isInteger(body.active)||body.active < -1||body.active>=body.versions.length)return json({error:"invalid_request"},400);
    const versions:ExportVersion[]=[];
    for(const v of body.versions){
     if(!v||typeof v.label!=="string"||v.label.length>100||typeof v.notes!=="string"||v.notes.length>600||!Array.isArray(v.targets)||v.targets.length>9||v.targets.some((t:unknown)=>typeof t!=="string"||t.length>100))return json({error:"invalid_request"},400);
-    const image=v.image;
+    const image=v.initial===true?initial:v.image;
     if(!image||typeof image.base64!=="string"||typeof image.mime!=="string"||!/^[A-Za-z0-9+/]+={0,2}$/.test(image.base64)||!verifyReviewImage(Buffer.from(image.base64,"base64"),id,image.receipt,deps.secret))return json({error:"unapproved_source"},400);
     versions.push({label:v.label,image,notes:v.notes,targets:v.targets});
    }

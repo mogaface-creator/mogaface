@@ -23,6 +23,8 @@ export type ImageJobResult =
 
 export interface ImageJobInput {
   debugPreview?: boolean;
+  signal?: AbortSignal;
+  conservative?: boolean;
   /** Original identity reference for supervised revisions; never used as the editable source. */
   identityReference?: {bytes:Buffer;mime:ImageMime};
   beforeBytes: Buffer;
@@ -98,6 +100,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     appearancePlan=appearancePlanFromAssessment(input.record.assessment,input.record.videoPreviewContextConsent === "granted" ? input.record.analysis.expression : undefined,{improveAll:true});
     // Production preferences always determine the prompt; callers cannot replace them.
     prompt=appearancePlan.prompt;
+    if(input.conservative)prompt += "\nFor this retry, make only the smallest photographic changes needed for the selected goals. Keep face shape, landmarks, lighting and natural texture very close to the original.";
     editRegions=appearancePlan.editRegions;
   }
 
@@ -146,7 +149,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
         method: "POST",
         headers: { authorization: `Bearer ${apiKey}` },
         body: form,
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs),
       });
     };
 
@@ -211,7 +214,7 @@ export async function generateAfterImage(input: ImageJobInput): Promise<ImageJob
     // answer for this two-face comparison, so the reviewer defaults to gpt-4.1 (IMAGE_REVIEW_MODEL to override)
     // and an unusable reply is retried once.
     const reviewModel = env.IMAGE_REVIEW_MODEL?.trim() || "gpt-4.1";
-    const reviewInput = { apiKey, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt, ...(input.identityReference?{identityReference:`data:${input.identityReference.mime};base64,${input.identityReference.bytes.toString("base64")}`}:{}) };
+    const reviewInput = { apiKey, signal: input.signal, model: reviewModel, before: `data:${mimeType};base64,${input.beforeBytes.toString("base64")}`, after: `data:${finalMime};base64,${finalBase64}`, prompt, ...(input.identityReference?{identityReference:`data:${input.identityReference.mime};base64,${input.identityReference.bytes.toString("base64")}`}:{}) };
     let review = await reviewAfterImage(reviewInput);
     if (review.status === "unavailable" && review.code === "review_invalid_response") review = await reviewAfterImage(reviewInput);
 

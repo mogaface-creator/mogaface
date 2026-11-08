@@ -9,3 +9,36 @@
 .sideEvidence .photo{max-height:210px;object-fit:contain}
 .missingEvidence{padding:18px;line-height:1.5;font-size:13px}
 .missingEvidence p{margin-top:8px}
+
+.previewStatus{display:flex;gap:14px;align-items:flex-start;background:var(--panel);padding:16px;border-radius:8px;margin-bottom:14px}
+.previewStatus svg{flex:none;color:#435b50}
+.previewStatus p{margin-top:5px;line-height:1.55}
+.previewStatus .textButton{margin-top:8px}
+.originalOnly{max-width:420px;background:var(--panel);border-radius:8px;overflow:hidden}
+.comparisonPair{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px;margin-bottom:0}
+.comparisonPair figure{border-radius:8px;overflow:hidden;min-width:0}
+.comparisonPair .photo{height:auto;aspect-ratio:3/4;object-fit:contain}
+.comparisonPair figcaption{font-size:12px;color:#43574c}
+.comparisonActions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+.comparisonActions .textButton{margin:0;min-height:44px}
+.actionPrimary{border:0;border-radius:6px;background:#435b50;color:white;padding:10px 14px;min-height:44px}
+.mobileTabs{display:none}
+@media(max-width:900px){
+ .main{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+ .mobileHeader{background:#fff}
+ .mobileHeader button,.mobileNav header button{min-width:44px;min-height:44px}
+ .mobileTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));position:fixed;z-index:35;inset:auto 0 0;background:#fff;border-top:1px solid var(--line);padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
+ .mobileTabs button{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;border:0;background:transparent;color:#4f6258;font-size:12px;min-height:49px;border-radius:5px}
+ .mobileTabs button[aria-current=page]{background:#e8efe9;color:#253e32;font-weight:600}
+ .workspace .search input,.workspace .search select,.workspace .notes textarea{font-size:16px}
+ .navLinks button{min-height:44px}
+}
+@media(max-width:580px){
+ .main{padding-inline:16px;padding-top:20px}
+ .pageHeading{margin-bottom:16px}
+ .comparisonPair{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .comparisonPair figcaption{padding:8px;font-size:11px}
+ .comparisonActions .actionPrimary{width:100%}
+ .panel .actions button{min-height:44px}
+ .originalOnly .photo{max-height:340px}
+}

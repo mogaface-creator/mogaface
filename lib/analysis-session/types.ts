@@ -20,6 +20,7 @@ export type AnalysisRecordStatus = "active" | "expired";
 
 export interface AnalysisRecord {
   /** Separate permission for sharing bounded video-derived context; absent on older records. */
+  aiReportConsent?: boolean;
   videoPreviewContextConsent?: "granted" | "declined";
   /** Client-side MediaPipe geometry for tightly masked preview edits; optional on older records. */
   portraitGeometry?: PortraitGeometry;

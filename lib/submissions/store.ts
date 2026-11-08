@@ -272,9 +272,25 @@ export function isStaleProcessing(row: Pick<SubmissionRow, "status" | "updated_a
 }
 
 /** Compare-and-set prevents simultaneous polling and cron requests from duplicating a paid generation or email. */
-export async function claimSubmission(id:string,deps:SubmissionStoreDeps={}):Promise<boolean>{
- const {env,fetchImpl}=resolveDeps(deps);
- if(!isSupabaseConfigured(env)){if(env.NODE_ENV==="production")return false;const row=fallback.get(id);if(!row || !(["pending","failed"].includes(row.status) || isStaleProcessing(row)) || row.retry_count>=3)return false;row.status="processing";row.updated_at=new Date().toISOString();return true;}
- const r=await supabaseRequest(env,`/submissions?id=eq.${encodeURIComponent(id)}&retry_count=lt.3&or=(status.in.(pending,failed),and(status.eq.processing,updated_at.lt.${encodeURIComponent(new Date(Date.now()-STALE_PROCESSING_MS).toISOString())}))`,{method:"PATCH",headers:{prefer:"return=representation"},body:JSON.stringify({status:"processing"})},fetchImpl).catch(()=>null);
- if(!r?.ok)return false;const rows=await r.json().catch(()=>null);return Array.isArray(rows)&&rows.length===1;
+export async function claimSubmission(id: string, deps: SubmissionStoreDeps = {}, completedAt?: string): Promise<boolean> {
+ const { env, fetchImpl } = resolveDeps(deps);
+ const staleBefore = new Date(Date.now() - STALE_PROCESSING_MS).toISOString();
+ if (!isSupabaseConfigured(env)) {
+  if (env.NODE_ENV === "production") return false;
+  const row = fallback.get(id);
+  if (!row || row.retry_count >= 3) return false;
+  const eligible = completedAt ? row.status === "done" && row.updated_at === completedAt
+    : ["pending", "failed"].includes(row.status) || isStaleProcessing(row);
+  if (!eligible) return false;
+  row.status = "processing";
+  row.updated_at = new Date().toISOString();
+  return true;
+ }
+ const condition = completedAt ? `status=eq.done&updated_at=eq.${encodeURIComponent(completedAt)}`
+  : `or=(status.in.(pending,failed),and(status.eq.processing,updated_at.lt.${encodeURIComponent(staleBefore)}))`;
+ const r = await supabaseRequest(env, `/submissions?id=eq.${encodeURIComponent(id)}&retry_count=lt.3&${condition}`,
+  { method: "PATCH", headers: { prefer: "return=representation" }, body: JSON.stringify({ status: "processing" }) }, fetchImpl).catch(() => null);
+ if (!r?.ok) return false;
+ const rows = await r.json().catch(() => null);
+ return Array.isArray(rows) && rows.length === 1;
 }

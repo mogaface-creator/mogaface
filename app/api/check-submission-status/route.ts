@@ -1,12 +1,4 @@
-/**
- * Route: GET /api/check-submission-status?id=<submissionId>
- *
- * Checks the status of a submission. If the 60-second delay has elapsed and
- * the submission is still pending, it automatically claims and processes it
- * immediately (generating the AI after image, compiling the PDF, and sending
- * the email via Resend).
- */
-
+/** Poll the submission and resume queued background work if needed. */
 import type { NextRequest } from "next/server";
 import { getSubmission, isStaleProcessing, updateSubmission } from "@/lib/submissions/store";
 import { processOne } from "@/lib/submissions/processOne";
@@ -64,7 +56,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         ...(updated ? {hasAfterImage:!!updated.after_image_base64,previewMessage:previewStatusMessage(updated.report_summary||"",!!updated.after_image_base64)} : {}),
         message:
           outcome.outcome === "done"
-            ? "Your optional preview is ready. Open the review workspace to build and save your web report."
+            ? "Open your review to see the completed assessment and illustration status."
             : outcome.reason,
       });
     }
@@ -94,8 +86,8 @@ function previewStatusMessage(summary:string,hasAfter:boolean):string{
   case "aspect_mismatch": return "The generated image did not match the original photo framing, so it was left out rather than stretched.";
   case "composition_failed": return "The generated image could not be aligned safely with your original photo, so it was left out.";
   case "invalid_provider_image": return "The image service returned an unusable image, so no after photo was included.";
-  case "provider_unavailable": return "The image service could not generate a preview this time. Your written report is ready.";
-  case "generation_error": return "The image generation step failed before a usable preview was ready. Your written report is ready.";
-  default: return "No after photo was included. Your written report is ready.";
+  case "provider_unavailable": return "The image service could not generate an after photo this time.";
+  case "generation_error": return "The image generation step failed before an after photo was ready.";
+  default: return "No after photo was included.";
  }
 }

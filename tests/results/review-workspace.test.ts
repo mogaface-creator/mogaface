@@ -170,3 +170,39 @@ test("provider reviews must address all 169 correctly identified features rather
  assert.equal(DETAILED_REVIEW_RESPONSE_FORMAT.json_schema.strict,true);
  assert.equal(DETAILED_REVIEW_RESPONSE_FORMAT.json_schema.schema.properties.findings.minItems,169);
 });
+
+test("one submission prepares both results and a reopened report can publish the first illustration", async () => {
+ const {processOne}=await import("../../lib/submissions/processOne.ts");
+ const f=fixture();
+ f.record.aiReportConsent=true;
+ const written=parseDetailedReview({summary:"Original evidence only.",priorities:[],findings:[]})!;
+ const after=Buffer.from("illustration").toString("base64");
+ const starts:string[]=[];
+ let release!:()=>void;
+ const started=new Promise<void>(resolve=>{release=resolve;});
+ const job=processOne(f.sub,{authenticatedRecord:f.record},{
+  claim:async()=>{f.sub.status="processing";return true;},
+  update:async(_id,patch)=>{
+   Object.assign(f.sub,{status:patch.status,report_summary:patch.reportSummary,after_image_base64:patch.afterImageBase64,after_image_mime:patch.afterImageMime,retry_count:patch.retryCount});
+   return true;
+  },
+  assess:async()=>{starts.push("assessment");await started;return written;},
+  generate:async input=>{
+   starts.push(input.conservative?"second illustration":"first illustration");
+   release();
+   return input.conservative?{ok:true,base64:after,mime:"image/png"}:{ok:false,reason:"image_quality_review_failed"};
+  },
+ });
+ assert.equal((await job).outcome,"done");
+ assert.deepEqual(starts,["assessment","first illustration","second illustration"]);
+ const opened=await(await handleReviewWorkspace(f.request(),f.deps)).json();
+ assert.equal(opened.review.findings.length,169);
+ assert.equal(opened.initial.base64,after);
+ assert.equal(opened.canRetry,false);
+ assert.equal(opened.needsPreparation,false);
+ let saved="";
+ const published=await handleReviewWorkspace(f.request({action:"publish",versions:[{initial:true,label:"First AI illustration",targets:[],notes:""}],active:0}),{...f.deps,saveReport:async html=>{saved=html;return "a".repeat(64);}});
+ assert.equal(published.status,200);
+ assert.match(saved,/After · First AI illustration/);
+ assert.ok(saved.includes(after));
+});

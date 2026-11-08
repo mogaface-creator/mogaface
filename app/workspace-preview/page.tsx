@@ -8,5 +8,5 @@ export const dynamic="force-dynamic";
 export default async function WorkspacePreview(){
  if(process.env.NODE_ENV!=="development"||!process.env.REPORT_PREVIEW_DATA)notFound();
  const input=JSON.parse(await readFile(process.env.REPORT_PREVIEW_DATA,"utf8"));
- return <Suspense fallback={<p>Opening preview…</p>}><ReviewWorkspace previewData={{name:input.name,original:input.original,initial:null,sidePhotos:input.context?.sidePhotos||[],video:{summary:input.context?.videoSummary||"No usable video context."},consent:true,canRefine:false,status:"preview",suggestedTargets:[],display:await prepareReportDisplay(input.original.base64,input.geometry)}} previewReview={input.review}/></Suspense>;
+ return <Suspense fallback={<p>Opening preview…</p>}><ReviewWorkspace previewData={{name:input.name,original:input.original,initial:input.versions?.[input.active]?.image||null,sidePhotos:input.context?.sidePhotos||[],video:{summary:input.context?.videoSummary||"No usable video context."},consent:true,canRefine:false,status:"preview",suggestedTargets:[],display:await prepareReportDisplay(input.original.base64,input.geometry)}} previewReview={input.review}/></Suspense>;
 }

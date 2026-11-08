@@ -201,7 +201,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
     // Hands the raw analysis to the server: it independently recomputes
     // opportunities and eligibility (see lib/analysis-session/). Then creates
     // an async submission row (send_after = now + 30 min) and navigates to
-    // /submitted — the background job handles image generation + PDF + email.
+    // /submitted — the background job prepares the web assessment and requested illustration.
     const frontRecord = nextRecords.find((r) => r.slot === "front");
     const safePortraitGeometry=frontRecord?.landmarks ? buildPortraitGeometry(frontRecord.landmarks) : null;
     if (photoConsent === "granted" && assessment.clinicIntake.wantAfterPhoto !== "no" && !safePortraitGeometry) {
@@ -214,6 +214,7 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
       analysis: nextMogaAnalysis,
       photoQualityValid: frontRecord?.status === "complete" && frontRecord.quality?.valid === true,
       portraitGeometry:safePortraitGeometry,
+      aiReportConsent: photoConsent === "granted",
       videoPreviewContextConsent: photoConsent === "granted" && !!videoFile ? "granted" : "declined",
       hasLeftFortyFive: !!sessionFiles.leftFortyFive?.file,
       hasRightFortyFive: !!sessionFiles.rightFortyFive?.file,
@@ -422,8 +423,8 @@ export function AssessmentReview({ assessment, sessionFiles, mediaHydrated, vide
 
       <fieldset className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <legend className="px-2 text-sm font-medium">Optional illustrative after photo</legend>
-        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below and request a preview, your front photo and, if supplied and usable, a short summary of video expression observations are sent to OpenAI. Your video file and frames stay on this device. An after image is an illustration, not a prediction of treatment results.</p>
-        <label className="flex min-h-12 cursor-pointer items-start gap-3 py-3 text-sm"><input className="mt-0.5 h-5 w-5 shrink-0" type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI processing of my front photo and usable video-expression summary for an illustrative after photo.</label>
+        <p className="mb-3 text-sm text-muted">Your three photos and answers are uploaded and stored to prepare your report. If you agree below, your three photos and a usable video expression summary (if supplied) are sent to OpenAI for the detailed assessment. If you requested an after photo, the front portrait is also used to create it. Your video file and frames stay on this device. An after image is an illustration, not a prediction of treatment results.</p>
+        <label className="flex min-h-12 cursor-pointer items-start gap-3 py-3 text-sm"><input className="mt-0.5 h-5 w-5 shrink-0" type="radio" name="photoConsent" checked={photoConsent === "granted"} onChange={() => setPhotoConsent("granted")} /> I agree to AI processing of my three photos and usable video expression summary for the detailed assessment and any requested after photo.</label>
         <label className="mt-3 block min-h-12 w-full min-w-0 max-w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border file:bg-background file:px-3 file:text-sm"><input type="radio" name="photoConsent" checked={photoConsent === "declined"} onChange={() => setPhotoConsent("declined")} /> Clinic review only; do not send my photo or video-expression summary to AI.</label>
       </fieldset>
       {submitError && <p role="alert" className="mt-4 text-sm">{submitError}</p>}

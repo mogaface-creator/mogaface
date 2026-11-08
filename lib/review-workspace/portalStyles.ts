@@ -23,4 +23,8 @@ export const PORTAL_STYLES=String.raw`
 .region-overview .detail-explanation .explanation{min-height:0}
 .region-overview .detail-explanation .explanation p{padding-top:12px}
 .page-heading h1[tabindex="-1"]:focus{outline:none}
+
+.comparison-section{margin-top:0;margin-bottom:26px}.comparison-section>h2{margin-bottom:12px}
+.comparison-pair img{height:clamp(180px,35vw,500px);width:100%;object-fit:contain}
+@media(max-width:760px){.image-pair.comparison-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.comparison-pair figcaption{font-size:12px;padding:8px}.comparison-pair img{height:clamp(140px,55vw,270px)}}
 `;

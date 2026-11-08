@@ -29,7 +29,7 @@ export function SubmittedView() {
         if (data.status === "done") {
           setStatus("done");
           setPreviewMessage(data.previewMessage || "");
-          setStatusMessage(data.deliveryWarning ? "Your review is available. Open it below and create a report link." : "Your preview is ready. Open the detailed review and create your report link.");
+          setStatusMessage(data.deliveryWarning ? "Your review is available. Open it below and create a report link." : "Open your report to see your assessment and illustration status.");
         } else if (data.status === "failed") {
           setStatus("error");setStatusMessage("We could not complete your report. Please contact the clinic with your submission reference.");
         } else if (data.status === "processing") {
@@ -105,17 +105,17 @@ export function SubmittedView() {
           {status === "done" ? "Report Ready" : "Assessment Received"}
         </p>
         <h1 className="mt-4 font-serif text-3xl leading-[1.1] tracking-tight text-balance sm:text-5xl">
-          {status === "done" ? "Your report is ready." : "Your results are being prepared."}
+          {status === "done" ? "Your report is available." : "Your results are being prepared."}
         </h1>
         <div aria-hidden className="mx-auto mt-6 h-px w-16 bg-accent" />
 
         {status === "done" ? (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            Your personalized <strong>Next Face appearance protocol</strong> is ready. Check the note below to see whether an illustrative after photo was included. Open the detailed workspace below to create your report link.
+            Open your report to see your detailed assessment, before-and-after preview and the option to save a link.
           </p>
         ) : (
           <p className="mx-auto mt-6 max-w-md text-base leading-7 text-body-text">
-            We&apos;re reviewing your photos and building your personalised report. You can open the detailed review below while the optional preview is prepared.
+            We&apos;re preparing your detailed assessment and, if requested, your first illustrative after-image. You can open your report to follow progress.
           </p>
         )}
       </div>
@@ -140,7 +140,7 @@ export function SubmittedView() {
                   onClick={triggerInstantProcess}
                   className="text-xs font-medium text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent"
                 >
-                  Generate &amp; send immediately
+                  Check progress now
                 </button>
               </div>
             </div>
@@ -174,7 +174,7 @@ export function SubmittedView() {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
-                  Open detailed web report
+                  Open my report
                 </button>
               </div>
             </div>
@@ -184,7 +184,7 @@ export function SubmittedView() {
 
       {status === "error" && <p role="alert" className="mt-6 text-center text-sm">{statusMessage}</p>}
       {status === "done" && <p className="mt-4 text-center text-sm">{statusMessage}</p>}
-      {submissionId && <div className="mt-8 rounded-2xl border border-accent/30 bg-surface-warm p-7 text-center"><p className="eyebrow text-xs">Your interactive review</p><h2 className="mt-3 font-serif text-2xl">Review and refine your result.</h2><p className="mt-3 text-sm leading-6 text-body-text">Open your original photos, build the detailed assessment, review the after concept and direct targeted refinement rounds. Accept only the versions you want in your updated report.</p><Link href={`/review?id=${encodeURIComponent(submissionId)}`} className="mt-5 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-white">Open report & refinement workspace</Link><p className="mt-3 text-xs text-muted">Available in the browser session used for submission. Create a saved report link after reviewing your results.</p></div>}
+      {submissionId && status!=="done" && <div className="mt-8 rounded-2xl border border-accent/30 bg-surface-warm p-7 text-center"><p className="eyebrow text-xs">Your interactive review</p><h2 className="mt-3 font-serif text-2xl">Follow your report progress.</h2><p className="mt-3 text-sm leading-6 text-body-text">Your assessment and requested first after-image appear automatically when they are ready.</p><Link href={`/review?id=${encodeURIComponent(submissionId)}`} className="mt-5 inline-block rounded-full bg-accent px-6 py-3 text-sm font-medium text-white">Open my report</Link><p className="mt-3 text-xs text-muted">Available in the browser session used for submission. Create a saved report link after reviewing your results.</p></div>}
       {/* What's in your report */}
       <div className="mt-12 rounded-2xl border border-border bg-surface p-8">
         <p className="eyebrow text-[11px]">What&apos;s in your web report</p>
