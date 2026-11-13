@@ -3,10 +3,10 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#e6ebed] bg-[#ffffff] py-14 sm:py-18">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10">
-          <div>
+    <footer className="moga-footer border-t border-[#e6ebed] bg-[#ffffff] py-14 sm:py-18">
+      <div className="moga-footer-inner mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="moga-footer-primary flex flex-col md:flex-row md:items-start justify-between gap-10">
+          <div className="moga-footer-brand">
             <div className="flex items-center gap-3">
               <Image className="moga-brand-emblem" src="/images/brand/mogaface-artwork.png" width={48} height={48} alt="MogaFace emblem" />
               <span className="font-sans text-xl font-bold tracking-tight text-[#162125]">MOGA</span>
@@ -19,7 +19,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs font-medium text-[#50636a]">
+          <div className="moga-footer-links grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs font-medium text-[#50636a]">
             <div className="flex flex-col gap-2.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#90a2a8]">Navigation</span>
               <Link href="/#why-glowup" className="hover:text-[#162125] transition-colors">Why Glow-up</Link>
@@ -41,7 +41,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-[#f0f4f6] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#86999f]">
+        <div className="moga-footer-legal mt-12 pt-6 border-t border-[#f0f4f6] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#86999f]">
           <p>&copy; {new Date().getFullYear()} MOGA Studio. All rights reserved.</p>
           <p>This is an illustrative aesthetic guidance service. Not a medical prescription or surgical outcome guarantee.</p>
         </div>

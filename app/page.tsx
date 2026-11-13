@@ -5,7 +5,7 @@ import "./art-brand.css";
 import "./palette-2.css";
 import "./palette-3.css";
 import "./qoves-reference.css";
-import { AnatomyDiagram, AnatomyOverview } from "@/components/marketing/AnatomyDiagram";
+import { AnatomyDiagram } from "@/components/marketing/AnatomyDiagram";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AsSeenInMarquee } from "@/components/marketing/AsSeenInMarquee";
@@ -21,7 +21,6 @@ import { PersonalizedPlan } from "@/components/marketing/PersonalizedPlan";
 import { LearningOverview } from "@/components/marketing/LearningOverview";
 import { PersonalContext } from "@/components/marketing/PersonalContext";
 import { QovesCompleteAnalysis } from "@/components/marketing/QovesCompleteAnalysis";
-import { QovesAssessmentsExplorer } from "@/components/marketing/QovesAssessmentsExplorer";
 import { QovesTechnology } from "@/components/marketing/QovesTechnology";
 import { QovesHowItWorks } from "@/components/marketing/QovesHowItWorks";
 import { ValueComparison } from "@/components/marketing/ValueComparison";
@@ -34,13 +33,23 @@ export default function Home() {
       <main className="moga-home flex-1 bg-white">
         <section className="moga-hero" aria-labelledby="hero-heading">
           <div className="moga-hero-photo">
-            <Image src="/images/transformations/female_studio_before.webp" alt="Natural portrait showing individual facial features" fill priority sizes="(max-width: 800px) 100vw, 70vw" />
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              poster="/images/hero-transformation-after-first.jpg"
+              aria-hidden="true"
+            >
+              <source src="/images/hero-transformation-after-first.mp4" type="video/mp4" />
+            </video>
           </div>
           <div className="moga-hero-shade" />
           <div className="hero-anatomy-profile" aria-hidden="true"><AnatomyDiagram view="profile"/></div>
           <div className="moga-hero-index" aria-hidden="true">MOGA / AESTHETICS STUDIO</div>
           <div className="moga-hero-content">
-            <p className="moga-hero-proof"><span className="moga-proof-avatars" aria-hidden="true"><Image src="/images/transformations/female_glow_before.webp" width={28} height={28} alt="" /><Image src="/images/transformations/male_jawline_before.webp" width={28} height={28} alt="" /><Image src="/images/transformations/female_studio_before.webp" width={28} height={28} alt="" /></span> Join <strong>80,000+</strong> people</p>
+            <p className="moga-hero-proof"><span className="moga-proof-avatars" aria-hidden="true"><Image src="/images/transformations/dark_skinned_female_before.png" width={28} height={28} alt="" /><Image src="/images/transformations/dark_skinned_male_before.png" width={28} height={28} alt="" /><Image src="/images/transformations/female_character_06_before.png" width={28} height={28} alt="" /></span> Join <strong>80,000+</strong> people</p>
             <h1 id="hero-heading">Improve your<br />{" "}looks. <span>Without<br />{" "}surgery.</span></h1>
             <p className="moga-hero-description">Get your personalized facial analysis and transformation plan based on your unique features.</p>
             <div className="moga-hero-actions">
@@ -74,11 +83,10 @@ export default function Home() {
         <FutureVisualization />
         <ProgressDashboard />
 
-        <AnatomyOverview />
+
 
         {/* 160+ Aesthetic Assessments Diagnostic Explorer */}
         <AssessmentDirectory />
-        <QovesAssessmentsExplorer />
         <FeatureDiscovery />
 
         {/* Technology Behind Your Transformation */}

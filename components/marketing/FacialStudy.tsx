@@ -1,31 +1,20 @@
-import "./anatomy-overview.css";
+"use client";
 
-/** Stylized sculptural studies; all guide positions are illustrative. */
-export function FacialStudy({ profile=false }: { profile?: boolean }) {
- const id=profile?"study-profile":"study-front";
- return <svg className="facial-study" viewBox="0 0 360 360" fill="none" role="img" aria-label={profile?"Sculptural profile with illustrative proportion guides":"Sculptural front view with illustrative symmetry guides"}>
-  <defs>
-   <linearGradient id={`${id}-surface`} x1="110" y1="90" x2="235" y2="280" gradientUnits="userSpaceOnUse"><stop stopColor="#ecf0ed"/><stop offset=".45" stopColor="#a9bdbe"/><stop offset="1" stopColor="#546f78"/></linearGradient>
-   <linearGradient id={`${id}-shadow`} x1="145" y1="180" x2="225" y2="190" gradientUnits="userSpaceOnUse"><stop stopColor="#38535d" stopOpacity=".05"/><stop offset="1" stopColor="#314c57" stopOpacity=".7"/></linearGradient>
-   <radialGradient id={`${id}-halo`}><stop stopColor="#d5e5df" stopOpacity=".18"/><stop offset="1" stopColor="#d5e5df" stopOpacity="0"/></radialGradient>
-  </defs>
-  <circle cx="180" cy="180" r="164" fill={`url(#${id}-halo)`}/>
-  <g stroke="#d4e4e5" opacity=".13"><circle cx="180" cy="177" r="128"/><circle cx="180" cy="177" r="145" strokeDasharray="1 8"/><path d="M20 177h320M180 18v320"/></g>
-  {profile?<>
-   <path d="M108 318c12-23 22-42 28-70-23-25-37-64-35-103 1-55 28-92 71-93 43-2 70 32 67 72l-2 28 12 30 23 24c5 5 1 10-7 12l-22 4-3 13 11 9-12 10c8 14-5 28-28 30l-5 33 28 25Z" fill={`url(#${id}-surface)`}/>
-   <path d="M172 91c33 15 42 40 40 74l13 37-15 27 8 27-17 28-5 33h48l-28-25 5-33c23-2 36-16 28-30l12-10-11-9 3-13 22-4c8-2 12-7 7-12l-23-24-12-30 2-28c2-16-2-31-9-43Z" fill={`url(#${id}-shadow)`}/>
-   <path d="M207 159q14-8 28 0m-10 5h10m7 66h12m-32 49-42-4" stroke="#3d5861" strokeWidth="2" strokeLinecap="round"/><ellipse cx="153" cy="209" rx="13" ry="20" stroke="#dae5e2" strokeOpacity=".45"/>
-  </>:<>
-   <path d="m136 274-5 29-45 23h188l-45-23-5-29Z" fill={`url(#${id}-surface)`}/>
-   <path d="M180 51c-51 0-76 34-73 91l6 63c5 41 32 77 67 89 35-12 62-48 67-89l6-63c3-57-22-91-73-91Z" fill={`url(#${id}-surface)`}/>
-   <path d="M180 51c51 0 76 34 73 91l-6 63c-5 41-32 77-67 89l13-58-8-28 10-32-15-42Z" fill={`url(#${id}-shadow)`}/>
-   <g stroke="#3a5660" strokeWidth="2" strokeLinecap="round"><path d="M125 153q20-12 39-1m32 0q19-11 39 1M127 168q17-10 34 0m38 0q17-10 34 0M177 172l-8 39q11 7 22 0M156 244q24-9 48 0-24 13-48 0Z"/><path d="M144 165v6m72-6v6" strokeWidth="4"/></g>
-   <path d="M123 199q18 12 35 7m44 0q17 5 35-7" stroke="#e2e9e4" strokeOpacity=".4" strokeWidth="2"/>
-  </>}
-  <g stroke="#e7f2ef" strokeWidth=".8" opacity=".65" strokeDasharray="3 5"><path d="M55 124h250M55 202h250M55 280h250"/>{!profile&&<path d="M180 42v260"/>}</g>
-  <g stroke="#e7f2ef" strokeWidth="1"><path d="M64 124v156m-4-156h8m-8 78h8m-8 78h8"/>{[124,202,280].map(y=><circle key={y} cx={profile?239:180} cy={y} r="3" fill="#e7f2ef"/>)}</g>
-  <g fill="#e1eeeb" fontFamily="monospace" fontSize="9" letterSpacing="1"><text x="31" y="130">A</text><text x="31" y="208">B</text><text x="31" y="286">C</text><text x="246" y="332">{profile?"PROFILE / 01":"FRONTAL / 02"}</text></g>
- </svg>;
+import { useState } from "react";
+import "./anatomy-overview.css";
+import "./facial-study-options.css";
+
+type StudyStyle = "portrait" | "contour" | "data";
+const STYLES: {id:StudyStyle;name:string;description:string}[]=[
+ {id:"portrait",name:"01 — Portrait & precision",description:"A real portrait with restrained guides and a clean editorial presentation."},
+ {id:"contour",name:"02 — Contour atlas",description:"Fine layered curves, soft depth, and a technical drawing aesthetic."},
+ {id:"data",name:"03 — Pure proportions",description:"Abstract measurement graphics, generous spacing, and no illustrated face."},
+];
+
+export function FacialStudy({profile=false,style="contour"}:{profile?:boolean;style?:StudyStyle}){
+ if(style==="portrait")return <div className={`study-photo ${profile?"study-photo-detail":""}`}><img src="/images/transformations/female_character_06_before.png" alt={profile?"Illustrative portrait detail with feature relationship guides":"Illustrative frontal portrait with symmetry guides"}/><svg viewBox="0 0 360 360" fill="none" aria-hidden="true"><g stroke="currentColor" opacity=".65" strokeWidth=".7"><path d="M65 120h230M65 190h230M65 260h230" strokeDasharray="3 6"/>{!profile&&<path d="M180 50v265" strokeDasharray="3 6"/>}<path d="M55 120v140m-5-140h10m-10 70h10m-10 70h10"/></g>{[120,190,260].map((y,i)=><g key={y}><circle cx={profile?235:180} cy={y} r="3" fill="currentColor"/><text x="22" y={y+3} fill="currentColor" fontSize="9" fontFamily="monospace">0{i+1}</text></g>)}</svg><span>ILLUSTRATIVE PORTRAIT STUDY</span></div>;
+ if(style==="data")return <svg className="facial-study study-data" viewBox="0 0 360 360" fill="none" role="img" aria-label={profile?"Abstract feature relationship diagram":"Abstract symmetry and facial thirds diagram"}><g stroke="currentColor" opacity=".12"><path d="M45 70H315M45 140H315M45 210H315M45 280H315M90 40V310M180 40V310M270 40V310"/></g>{profile?<><path d="M95 82C225 82 130 155 215 160S110 245 220 278" stroke="currentColor" strokeWidth="1.4"/>{[[95,82,"FOREHEAD"],[215,160,"NOSE"],[172,220,"LIPS"],[220,278,"CHIN"]].map(([x,y,label])=><g key={label}><circle cx={Number(x)} cy={Number(y)} r="6" stroke="currentColor"/><path d={`M${x} ${y}H290`} stroke="currentColor" opacity=".3"/><text x="48" y={Number(y)-15}>{label}</text></g>)}</>:<><path d="M180 50v260" stroke="currentColor" opacity=".4" strokeDasharray="3 6"/>{[0,1,2].map((i)=><g key={i}><rect x={85-i*12} y={75+i*75} width={190+i*24} height="50" rx="25" fill="currentColor" opacity={.12+i*.06}/><path d={`M65 ${100+i*75}H295`} stroke="currentColor" opacity=".4"/><circle cx="180" cy={100+i*75} r="4" fill="currentColor"/><text x="42" y={105+i*75}>0{i+1}</text></g>)}<text x="180" y="320" textAnchor="middle">BALANCE / RELATIONSHIP / PROPORTION</text></>}</svg>;
+ return <svg className="facial-study study-contour" viewBox="0 0 360 360" fill="none" role="img" aria-label={profile?"Layered contour profile study":"Layered contour front-view study"}><g stroke="currentColor" opacity=".12"><circle cx="180" cy="175" r="135"/><path d="M35 175h290M180 30v290" strokeDasharray="2 6"/></g><g stroke="currentColor" strokeWidth=".8">{Array.from({length:14},(_,i)=>profile?<path key={i} d="M130 294c4-20 8-37 4-51-26-24-34-67-31-105 4-46 28-76 65-76 38 0 58 30 56 63l-1 27 12 26 22 22c4 5-1 9-18 12l-7 10 8 9-9 8c7 12-4 24-25 26l-4 29" transform={`translate(${i*2.3-16},${i*.8}) scale(${1-i*.008})`} opacity={.13+i*.045}/>:<ellipse key={i} cx="180" cy={168+i*2} rx={82-i*4.4} ry={115-i*5.4} opacity={.16+i*.045}/>)}</g>{!profile&&<g stroke="currentColor" strokeWidth="1.1"><path d="M123 151q21-13 39-1m36 0q18-12 39 1M129 166q15-8 30 0m42 0q15-8 30 0M180 168l-10 40q10 6 20 0M158 239q22-9 44 0-22 10-44 0"/></g>}<g stroke="currentColor" opacity=".5" strokeDasharray="3 7"><path d="M55 120h250M55 200h250M55 280h250"/></g><g fill="currentColor">{[120,200,280].map(y=><circle key={y} cx={profile?228:180} cy={y} r="2.5"/>)}</g><text x="180" y="335" textAnchor="middle" fill="currentColor" fontFamily="monospace" fontSize="8" letterSpacing="2">{profile?"PROFILE / CONTOUR STUDY":"FRONTAL / CONTOUR STUDY"}</text></svg>;
 }
 
-export function AnatomyOverview(){return <section id="facial-studies" className="anatomy-overview refined-anatomy"><div className="anatomy-panel"><FacialStudy profile/><div><span>01 / PROFILE</span><h3>Proportion.<br/>Perspective.</h3><p>Explore the relationship between the forehead, nose, lips and chin.</p></div></div><div className="anatomy-panel"><FacialStudy/><div><span>02 / FRONT VIEW</span><h3>Balance.<br/>Individuality.</h3><p>See facial thirds, symmetry and features as a connected whole.</p></div></div><p className="anatomy-footnote">Illustrative diagrams, not personal measurements.</p></section>}
+export function AnatomyOverview(){const [style,setStyle]=useState<StudyStyle>("portrait");return <section id="facial-studies" className="anatomy-overview refined-anatomy study-options"><header className="study-options-heading"><span>Choose a visual direction</span><h2>One subject. Three perspectives.</h2><div className="study-style-picker" role="group" aria-label="Diagram style">{STYLES.map(item=><button key={item.id} type="button" aria-pressed={style===item.id} onClick={()=>setStyle(item.id)}>{item.name}</button>)}</div><p>{STYLES.find(item=>item.id===style)?.description}</p></header><div className="anatomy-panel"><FacialStudy profile style={style}/><div><span>01 / {style==="portrait"?"FEATURE DETAIL":"PROFILE"}</span><h3>Proportion.<br/>Perspective.</h3><p>Explore the relationship between the forehead, nose, lips and chin.</p></div></div><div className="anatomy-panel"><FacialStudy style={style}/><div><span>02 / FRONT VIEW</span><h3>Balance.<br/>Individuality.</h3><p>See facial thirds, symmetry and features as a connected whole.</p></div></div><p className="anatomy-footnote">Illustrative studies, not personal measurements.</p></section>}

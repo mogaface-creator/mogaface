@@ -148,3 +148,19 @@ All current UI work is saved in D:/Moga/mogaface-audit. Current changes remain l
 ## Production release preparation — 2026-11-04
 User authorized deployment. Merged origin/main (133af5c) to preserve the team's updated assessment and HTML report delivery. Kept removal of public testing/instant simulation flows and routed plan CTAs to /assessment. Preserved marketing redesign and interactive sections. Bundled the same six Google Font families and OFL licenses locally to resolve next/font Google URL loader failure. No environment secrets included.
 
+
+## Diagram alternatives — local review
+Replaced shaded mannequin drawings with three switchable choices: portrait and precision, contour atlas, pure proportions. Front/detail labels reflect the photographic option accurately. Original explanatory copy preserved. Three-button accessible selector verified in browser, no overflow; TypeScript passed. Awaiting user's visual selection. Not deployed.
+
+
+## Diagram section removed
+User rejected all three alternatives. Removed the standalone facial-studies section and its selector from the homepage. Hero illustration remains unchanged. Local only; not deployed.
+
+
+## Assessment icon redesign
+Replaced repeated face thumbnails with twelve distinct feature-specific SVG icons: general scan, jaw contour, skin layers, eye/iris, cheek planes, brow hairs, nose, lips, chin, teeth/smile, neck alignment, hairline. Consistent optical grid, duotone strokes, light porcelain tiles and subtle state styling. Browser verified 12 rendered icons, accordion works and no overflow. TypeScript passed. Local only.
+
+
+## Supplied illustrated icons, recolored
+Recolored supplied 11-icon artwork with built-in image tool to slate, blue-gray, ivory. Integrated via sprite tiles, with four-tile General Analysis montage. Browser verified all images loaded and dropdown works, no overflow. TypeScript passed. Asset and full prompt documented in docs/ASSESSMENT_ICON_ARTWORK.md. Not deployed.
+

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ContextGlassCard } from "./ContextGlassCard";
 import "./personal-context.css";
 
@@ -9,16 +10,17 @@ const FACTORS = [
  { title: "Cultural beauty standards", description: "Personal aesthetics in the context of regional and cultural preferences.", kind: "culture" },
 ];
 
-function ContextIllustration({ kind }: { kind: string }) {
- return <svg viewBox="0 0 112 78" fill="none" aria-hidden="true">
-  <rect width="112" height="78" rx="7" fill="currentColor" opacity=".1"/>
-  {kind === "globe" ? <g stroke="currentColor" strokeWidth="1"><circle cx="56" cy="39" r="28"/><ellipse cx="56" cy="39" rx="13" ry="28"/><path d="M28 39h56M32 25h48M32 53h48M56 11v56"/><path d="m40 20 12 6-4 10 12 5 3 15 9-9-3-13 7-6" strokeWidth="2"/></g> : kind === "preferences" || kind === "culture" ? <g stroke="currentColor" strokeWidth="1.3">{[25,56,87].map((x,i)=><g key={x} transform={`translate(${x}, 0)`}><path d={i===1?"M-12 34C-16 8 16 8 12 34":"M-11 35C-17 13 17 13 11 35"}/><ellipse cy="33" rx="10" ry="14"/><path d="M-6 33h3m6 0h3m-7 8h4M-18 65q0-18 18-18t18 18"/></g>)}</g> : kind === "lifestyle" ? <g stroke="currentColor" strokeWidth="1.4"><rect x="12" y="15" width="40" height="48" rx="5"/><rect x="59" y="15" width="40" height="48" rx="5"/><path d="M22 26h20M22 33h13M22 52h20M70 52h18M81 24a10 10 0 1 0 8 16 11 11 0 0 1-8-16Z"/><path d="M26 44h4m4 0h4"/></g> : <g stroke="currentColor" strokeWidth="1.2"><path d="M17 58h78M24 58V45m21 13V36m21 22V27m21 31V18M21 37q35-2 66-25"/><circle cx="24" cy="45" r="3"/><circle cx="45" cy="36" r="3"/><circle cx="66" cy="27" r="3"/><circle cx="87" cy="18" r="3"/></g>}
- </svg>;
+function ContextPreview({ kind }: { kind: string }) {
+ if (kind === "globe") return <div className="context-globe-preview" aria-hidden="true"><svg viewBox="0 0 150 100" fill="none"><circle cx="75" cy="50" r="35"/><ellipse cx="75" cy="50" rx="17" ry="35"/><path d="M40 50h70M46 31h58M46 69h58M75 15v70"/><path className="context-continent" d="m56 31 15 6-5 13 17 4 6 16 11-11-5-17 11-9"/></svg><span>GLOBAL CONTEXT</span></div>;
+ if (kind === "preferences") return <div className="context-portrait-strip" aria-hidden="true">{["female_character_05_before.png","female_character_06_before.png","dark_skinned_female_before.png"].map(src => <span key={src} style={{ position: "relative" }}><Image src={`/images/transformations/${src}`} fill sizes="50px" alt="" /></span>)}</div>;
+ if (kind === "lifestyle") return <div className="context-lifestyle-preview" aria-hidden="true"><div><span>Sleep</span><strong>8.1<small>hrs</small></strong></div><div><span>Rhythm</span><b>83</b><i /></div></div>;
+ if (kind === "aging") return <div className="context-aging-preview" aria-hidden="true"><span>SKIN / TIME</span><svg viewBox="0 0 150 100" fill="none"><path d="M15 78H140M25 78V61M58 78V49M91 78V35M124 78V20M20 58C53 56 91 39 130 19"/><circle cx="25" cy="61" r="3"/><circle cx="58" cy="49" r="3"/><circle cx="91" cy="35" r="3"/><circle cx="124" cy="20" r="3"/></svg></div>;
+ return <div className="context-feature-preview" aria-hidden="true"><span style={{ position: "relative" }}><Image src="/images/transformations/dark_skinned_male_before.png" fill sizes="70px" alt="" /></span><span style={{ position: "relative" }}><Image src="/images/transformations/female_character_05_before.png" fill sizes="70px" alt="" /></span><i>FEATURE<br/>CONTEXT</i></div>;
 }
 
 export function PersonalContext() {
  return <section id="personal-context" className="personal-context" aria-labelledby="personal-context-heading">
   <header className="personal-context-heading"><span>Personalized analysis</span><h2 id="personal-context-heading">Taking into <em>account your...</em></h2></header>
-  <ul className="personal-context-list">{FACTORS.map(factor=><li key={factor.kind}><ContextGlassCard label={factor.title}><div className="personal-context-art"><ContextIllustration kind={factor.kind}/></div><div><h3>{factor.title}</h3><p>{factor.description}</p></div></ContextGlassCard></li>)}</ul>
+  <ul className="personal-context-list">{FACTORS.map(factor=><li key={factor.kind}><ContextGlassCard label={factor.title}><div className="personal-context-art"><ContextPreview kind={factor.kind}/></div><div><h3>{factor.title}</h3><p>{factor.description}</p></div></ContextGlassCard></li>)}</ul>
  </section>;
 }

@@ -76,6 +76,9 @@ html[data-moga-palette="3"] .moga-art-brand .visual-details{border-color:var(--l
 html[data-moga-palette="3"] .moga-art-brand .visual-details summary{color:var(--teal)}
 html[data-moga-palette="3"] .moga-art-brand .visual-details p{color:#758084}
 html[data-moga-palette="3"] .moga-art-brand .face-illustration{border-color:#9aaeb53b}
+/* Palette 3 is a light editorial surface: retain photographic detail instead of
+   inheriting the low-exposure filter from the legacy dark treatment. */
+html[data-moga-palette="3"] .moga-art-brand .face-illustration>img{filter:brightness(1.04) contrast(1.03) saturate(.94)}
 html[data-moga-palette="3"] .moga-art-brand .face-illustration>svg{stroke:#9aaeb5}
 html[data-moga-palette="3"] .moga-art-brand .face-illustration .face-point{fill:#ffffff;stroke:#233137}
 html[data-moga-palette="3"] .moga-art-brand .orbit-ring{border-color:#9aaeb533;background:radial-gradient(circle,#f9fbfb18,transparent 70%)}

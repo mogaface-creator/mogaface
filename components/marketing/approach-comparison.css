@@ -1,12 +1,15 @@
 /* Two aligned five-step journeys, based on the supplied editorial reference. */
 html[data-moga-palette] .moga-art-brand .moga-home #our-approach.approach-comparison{max-width:calc(100% - 8vw);margin-inline:auto;padding:88px 0 0;background:var(--ivory);border-inline:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* This section owns its full-width surface. Prevent the legacy generic
+   section-child rule from capping direct children on the left. */
+html[data-moga-palette] .moga-art-brand .moga-home #our-approach.approach-comparison>:is(.approach-heading,.approach-row-shell){max-width:none;margin-inline:0}
 .moga-home #our-approach:before{display:none}
 .approach-heading{padding:0 24px 40px;text-align:center}
 .approach-eyebrow{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:#758084;font-size:11px;text-transform:uppercase;letter-spacing:.025em}
 .moga-art-brand .moga-home #our-approach h2{margin:20px 0;font-size:clamp(34px,3.5vw,48px);font-weight:400;letter-spacing:-.045em;line-height:1.1}
 .approach-heading h2 span{color:#9aaeb5}
 .approach-heading>p{color:var(--ink);max-width:740px;margin:0 auto;font-size:14px;line-height:1.5;letter-spacing:-.02em}
-.approach-row-shell{padding:16px;border-top:1px solid var(--line)}
+.approach-row-shell{padding:16px max(32px,calc((100% - 1360px)/2));border-top:1px solid var(--line)}
 .approach-row{display:grid;grid-template-columns:minmax(150px,.95fr) minmax(0,5fr);gap:28px;padding:30px 32px;border:1px solid #2331370c;border-radius:11px;min-height:158px}
 .approach-old{background:#f9fbfb;color:#233137;--approach-dot:#aec2c9;--approach-dot-core:#f5fafb;--approach-line:#dce7eb;--approach-secondary:#91a9b3}
 .approach-new{background:radial-gradient(ellipse at 25% 30%,#aa9b8c55,transparent 65%),linear-gradient(105deg,#9ba5a5,#77868b 60%,#8fa6af);color:#fff;--ink:#fff;--approach-dot:#ffffff35;--approach-dot-core:#fff;--approach-line:#ffffff30;--approach-secondary:#e4edf1}
